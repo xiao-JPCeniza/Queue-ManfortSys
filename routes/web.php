@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\OfficeDashboardController;
 use App\Livewire\Auth\Login;
+use App\Livewire\ClientDashboard;
 use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
 use App\Livewire\QueueJoin;
 use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
@@ -47,4 +48,5 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+Route::get('/queue', ClientDashboard::class)->name('queue.client');
 Route::get('/queue/join/{office}', QueueJoin::class)->name('queue.join');

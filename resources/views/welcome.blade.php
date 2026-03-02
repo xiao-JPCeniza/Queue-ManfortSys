@@ -29,11 +29,14 @@
             <div class="text-center max-w-2xl">
                 <h2 class="text-3xl font-bold text-slate-800 mb-4">Welcome to the LGU Queue System</h2>
                 <p class="text-slate-600 mb-8">
-                    To get a queue number, scan the QR code displayed at your chosen office (MISO, LDRRMO, HRMO, etc.).
-                    Each office has its own queue. Staff may log in to manage queues and serve clients.
+                    Get a queue number by selecting your office (MENRO, MISO, MAO, etc.). Your ticket will be announced by voice and shown in a pop-up.
+                    Staff may log in to manage queues and serve clients.
                 </p>
                 <div class="flex flex-wrap justify-center gap-4">
-                    <a href="{{ route('login') }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition shadow-md">
+                    <a href="{{ route('queue.client') }}" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition shadow-md">
+                        Get queue number (Client)
+                    </a>
+                    <a href="{{ route('login') }}" class="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-xl transition shadow-md">
                         Staff / Admin login
                     </a>
                 </div>
