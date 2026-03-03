@@ -11,10 +11,32 @@ use Livewire\Component;
 class Dashboard extends Component
 {
     public Office $office;
+    public string $hrmoTab = 'dashboard';
 
-    public function mount(Office $office)
+    public function mount(Office $office): void
     {
         $this->office = $office;
+
+        $requestedTab = (string) request()->query('tab', 'dashboard');
+        $allowedTabs = ['dashboard', 'reports', 'queue-management'];
+
+        if ($this->office->slug === 'hrmo' && in_array($requestedTab, $allowedTabs, true)) {
+            $this->hrmoTab = $requestedTab;
+        }
+    }
+
+    public function setHrmoTab(string $tab): void
+    {
+        if ($this->office->slug !== 'hrmo') {
+            return;
+        }
+
+        $allowedTabs = ['dashboard', 'reports', 'queue-management'];
+        if (!in_array($tab, $allowedTabs, true)) {
+            return;
+        }
+
+        $this->hrmoTab = $tab;
     }
 
     public function callNext()
@@ -91,9 +113,36 @@ class Dashboard extends Component
             ->serving()
             ->first();
 
+        $summary = null;
+        $overallTickets = collect();
+        if ($this->office->slug === 'hrmo') {
+            $summary = [
+                'total_today' => QueueEntry::where('office_id', $this->office->id)
+                    ->whereDate('created_at', today())
+                    ->count(),
+                'completed_today' => QueueEntry::where('office_id', $this->office->id)
+                    ->whereDate('created_at', today())
+                    ->completed()
+                    ->count(),
+                'active_now' => QueueEntry::where('office_id', $this->office->id)
+                    ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
+                    ->count(),
+            ];
+
+            $overallTickets = QueueEntry::where('office_id', $this->office->id)
+                ->whereDate('created_at', today())
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get();
+        } else {
+            $this->hrmoTab = 'dashboard';
+        }
+
         return view('livewire.office-admin.dashboard', [
             'waiting' => $waiting,
             'serving' => $serving,
+            'summary' => $summary,
+            'overallTickets' => $overallTickets,
         ]);
     }
 }

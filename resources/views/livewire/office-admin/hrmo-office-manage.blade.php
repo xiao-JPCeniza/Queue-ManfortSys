@@ -1,12 +1,6 @@
 <div wire:poll.5s="tick">
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <h1 class="lgu-page-title">HRMO Live Queue Monitor</h1>
-            <p class="text-slate-600 text-sm mt-1">Real-time queue view with 1-minute auto-advance for currently served tickets.</p>
-        </div>
-        <a href="{{ route('office.dashboard', $office->slug) }}" class="lgu-btn inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-white rounded-xl hover:bg-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
-            Back to Office Dashboard
-        </a>
+    <div class="mb-6 text-center">
+        <h1 class="lgu-page-title">HRMO Live Queue Monitor</h1>
     </div>
 
     <section class="lgu-card p-6 mb-6" aria-labelledby="summary-heading">
