@@ -13,11 +13,6 @@
     @if($office->slug === 'hrmo')
         <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
             <div class="min-w-0 bg-white">
-                    <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-                        <p class="text-sm font-semibold text-slate-700">Laravel Dashboard</p>
-                        <p class="text-xs text-slate-500">{{ auth()->user()?->name ?? 'Admin User' }}</p>
-                    </div>
-
                     <div class="p-4 sm:p-6">
                         @if($hrmoTab === 'dashboard')
                             @include('livewire.office-admin.partials.queue-dashboard-panel', ['showHrmoMonitor' => true])

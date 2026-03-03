@@ -110,38 +110,17 @@ class HrmoOfficeMonitor extends Component
             ->limit(8)
             ->get();
 
-        $overallTickets = QueueEntry::where('office_id', $this->office->id)
-            ->whereDate('created_at', today())
-            ->orderByDesc('created_at')
-            ->limit(20)
-            ->get();
-
         $secondsLeft = null;
         if ($serving && $serving->called_at) {
             $elapsed = $serving->called_at->diffInSeconds(now());
             $secondsLeft = max(0, $this->timeoutSeconds - $elapsed);
         }
 
-        $summary = [
-            'total_today' => QueueEntry::where('office_id', $this->office->id)
-                ->whereDate('created_at', today())
-                ->count(),
-            'completed_today' => QueueEntry::where('office_id', $this->office->id)
-                ->whereDate('created_at', today())
-                ->completed()
-                ->count(),
-            'active_now' => QueueEntry::where('office_id', $this->office->id)
-                ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
-                ->count(),
-        ];
-
         return view('livewire.office-admin.hrmo-office-manage', [
             'serving' => $serving,
             'nextInline' => $nextInline,
             'recentlyCalled' => $recentlyCalled,
-            'overallTickets' => $overallTickets,
             'secondsLeft' => $secondsLeft,
-            'summary' => $summary,
         ]);
     }
 }

@@ -90,11 +90,11 @@
             </div>
         </nav>
     @endif
-    <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
-        @if(session('success'))
+    <main id="main-content" class="{{ $hideNav ? 'h-dvh overflow-hidden p-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' }}" role="main">
+        @if(!$hideNav && session('success'))
             <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm" role="status">{{ session('success') }}</div>
         @endif
-        @if(session('error'))
+        @if(!$hideNav && session('error'))
             <div class="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-xl text-sm" role="alert">{{ session('error') }}</div>
         @endif
         @hasSection('content')
