@@ -29,7 +29,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <section class="lgu-card p-6 xl:col-span-1" aria-labelledby="now-serving-heading">
-            <h2 id="now-serving-heading" class="lgu-section-title mb-4">Now Serving</h2>
+            <h2 id="now-serving-heading" class="lgu-section-title mb-4">NOW SERVING</h2>
             @if($serving)
                 <p class="text-5xl font-bold text-emerald-600 tracking-tight">{{ $serving->queue_number }}</p>
                 <p class="text-slate-500 text-sm mt-3">
@@ -54,11 +54,14 @@
         </section>
 
         <section class="lgu-card p-6 xl:col-span-1" aria-labelledby="recently-called-heading">
-            <h2 id="recently-called-heading" class="lgu-section-title mb-4">Recently Called</h2>
+            <h2 id="recently-called-heading" class="lgu-section-title mb-4">Recently Called (Not Served &gt; 1 min)</h2>
             <div class="space-y-2 max-h-80 overflow-y-auto">
                 @forelse($recentlyCalled as $entry)
                     <div class="rounded-lg border border-slate-200 px-3 py-2 flex items-center justify-between bg-slate-50">
-                        <span class="font-semibold text-slate-800">{{ $entry->queue_number }}</span>
+                        <div>
+                            <span class="font-semibold text-slate-800">{{ $entry->queue_number }}</span>
+                            <p class="text-xs text-red-600 font-medium mt-0.5">NOT SERVED</p>
+                        </div>
                         <span class="text-xs text-slate-500">{{ $entry->served_at?->format('h:i:s A') }}</span>
                     </div>
                 @empty
@@ -89,8 +92,9 @@
                                 <span class="px-2 py-1 rounded-full text-xs font-medium
                                     {{ $entry->status === 'serving' ? 'bg-emerald-100 text-emerald-700' : '' }}
                                     {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                    {{ $entry->status === 'completed' ? 'bg-slate-200 text-slate-700' : '' }}">
-                                    {{ strtoupper($entry->status) }}
+                                    {{ $entry->status === 'completed' ? 'bg-slate-200 text-slate-700' : '' }}
+                                    {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
+                                    {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
                                 </span>
                             </td>
                             <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->format('h:i:s A') }}</td>
@@ -107,4 +111,3 @@
         </div>
     </section>
 </div>
-

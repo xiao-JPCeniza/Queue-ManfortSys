@@ -70,7 +70,7 @@ class HrmoOfficeMonitor extends Component
             }
 
             $serving->update([
-                'status' => QueueEntry::STATUS_COMPLETED,
+                'status' => QueueEntry::STATUS_NOT_SERVED,
                 'served_at' => now(),
             ]);
 
@@ -104,10 +104,8 @@ class HrmoOfficeMonitor extends Component
             ->first();
 
         $recentlyCalled = QueueEntry::where('office_id', $this->office->id)
-            ->completed()
-            ->whereNotNull('served_at')
+            ->notServed()
             ->whereNotNull('called_at')
-            ->whereRaw('TIMESTAMPDIFF(SECOND, called_at, served_at) >= ?', [$this->timeoutSeconds])
             ->orderByDesc('served_at')
             ->limit(8)
             ->get();

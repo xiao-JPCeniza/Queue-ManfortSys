@@ -10,7 +10,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section class="lg:col-span-2 lgu-card overflow-hidden" aria-labelledby="serving-heading">
             <div class="px-5 py-4 bg-blue-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                <h2 id="serving-heading" class="lgu-section-title text-slate-800">Currently serving</h2>
+                <h2 id="serving-heading" class="lgu-section-title text-slate-800">NOW SERVING</h2>
                 <button wire:click="callNext" type="button"
                         class="lgu-btn px-5 py-3 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-sm">
                     Call next number
