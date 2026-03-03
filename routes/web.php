@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HrmoOfficeController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
@@ -45,6 +46,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['office.access'])->group(function () {
         Route::get('/office/{office}', OfficeDashboardController::class)->name('office.dashboard');
+        Route::get('/office/{office}/monitor', HrmoOfficeController::class)->name('office.hrmo.monitor');
     });
 });
 

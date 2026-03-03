@@ -51,11 +51,18 @@
         </section>
     </div>
 
-    <div class="mt-6">
+    <div class="mt-6 flex flex-wrap gap-3">
         <a href="{{ route('queue.join', $office->slug) }}" target="_blank" rel="noopener noreferrer"
            class="lgu-btn inline-flex items-center gap-2 px-4 py-2.5 text-blue-800 bg-blue-50 rounded-xl font-medium text-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             Open queue join page (for clients)
-            <span aria-hidden="true">→</span>
+            <span aria-hidden="true">&rarr;</span>
         </a>
+
+        @if($office->slug === 'hrmo')
+            <a href="{{ route('office.hrmo.monitor', $office->slug) }}"
+               class="lgu-btn inline-flex items-center gap-2 px-4 py-2.5 text-white bg-emerald-600 rounded-xl font-medium text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                Open HRMO live monitor
+            </a>
+        @endif
     </div>
 </div>
