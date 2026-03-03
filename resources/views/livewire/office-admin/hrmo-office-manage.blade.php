@@ -29,7 +29,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <section class="lgu-card p-6 xl:col-span-1" aria-labelledby="now-serving-heading">
-            <h2 id="now-serving-heading" class="lgu-section-title mb-4">NOW SERVING</h2>
+            <h2 id="now-serving-heading" class="lgu-section-title mb-4">Currently Serving</h2>
             @if($serving)
                 <p class="text-5xl font-bold text-emerald-600 tracking-tight">{{ $serving->queue_number }}</p>
                 <p class="text-slate-500 text-sm mt-3">

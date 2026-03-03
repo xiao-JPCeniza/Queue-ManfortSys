@@ -52,8 +52,36 @@ class Dashboard extends Component
         }
     }
 
+    private function ensureCurrentServing(): void
+    {
+        $servingExists = QueueEntry::where('office_id', $this->office->id)
+            ->serving()
+            ->exists();
+
+        if ($servingExists) {
+            return;
+        }
+
+        $next = QueueEntry::where('office_id', $this->office->id)
+            ->waiting()
+            ->orderBy('created_at')
+            ->first();
+
+        if (!$next) {
+            return;
+        }
+
+        $next->update([
+            'status' => QueueEntry::STATUS_SERVING,
+            'called_at' => now(),
+            'served_by' => auth()->id(),
+        ]);
+    }
+
     public function render()
     {
+        $this->ensureCurrentServing();
+
         $waiting = $this->office->queueEntries()
             ->waiting()
             ->orderBy('created_at')
