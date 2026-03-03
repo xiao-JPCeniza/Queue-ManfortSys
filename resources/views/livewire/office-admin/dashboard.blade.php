@@ -29,7 +29,7 @@
                         </button>
                     </div>
                 @else
-                    <p class="text-slate-500 text-center py-4">No one is being served. Click <strong>Call next number</strong> to start.</p>
+                    <p class="text-slate-500 text-center py-4">No one served right now.</p>
                 @endif
             </div>
         </section>
