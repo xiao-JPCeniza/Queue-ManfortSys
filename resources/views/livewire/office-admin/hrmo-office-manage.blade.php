@@ -90,9 +90,9 @@
                             <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
                             <td class="py-2 pr-4">
                                 <span class="px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $entry->status === 'serving' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                    {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
                                     {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                    {{ $entry->status === 'completed' ? 'bg-slate-200 text-slate-700' : '' }}
+                                    {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
                                     {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
                                     {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
                                 </span>
