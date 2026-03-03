@@ -1,57 +1,61 @@
 <div>
     @if(session('office_message'))
-        <div class="mb-4 p-3 bg-emerald-100 border border-emerald-400 text-emerald-800 rounded-lg text-sm">{{ session('office_message') }}</div>
+        <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm" role="status">{{ session('office_message') }}</div>
     @endif
     <div class="mb-6">
-        <h1 class="text-2xl font-bold text-slate-800">{{ $office->name }}</h1>
-        <p class="text-slate-500">Office queue dashboard</p>
+        <h1 class="lgu-page-title">{{ $office->name }}</h1>
+        <p class="text-slate-600 text-sm mt-1">Office queue dashboard — call numbers and manage the line.</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                <h2 class="font-semibold text-slate-800">Currently serving</h2>
+        <section class="lg:col-span-2 lgu-card overflow-hidden" aria-labelledby="serving-heading">
+            <div class="px-5 py-4 bg-blue-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <h2 id="serving-heading" class="lgu-section-title text-slate-800">Currently serving</h2>
                 <button wire:click="callNext" type="button"
-                        class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium text-sm">
+                        class="lgu-btn px-5 py-3 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-sm">
                     Call next number
                 </button>
             </div>
-            <div class="p-6">
+            <div class="p-6 min-h-[140px] flex flex-col justify-center">
                 @if($serving)
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
                         <div>
-                            <p class="text-4xl font-bold text-emerald-600">{{ $serving->queue_number }}</p>
-                            <p class="text-slate-500 text-sm">Called at {{ $serving->called_at?->format('h:i A') }}</p>
+                            <p class="text-4xl sm:text-5xl font-bold text-emerald-600 tracking-tight" aria-label="Current queue number {{ $serving->queue_number }}">{{ $serving->queue_number }}</p>
+                            <p class="text-slate-500 text-sm mt-1">Called at {{ $serving->called_at?->format('h:i A') }}</p>
                         </div>
                         <button wire:click="complete({{ $serving->id }})" type="button"
-                                class="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 text-sm">
+                                class="lgu-btn px-5 py-3 bg-slate-700 text-white rounded-xl font-medium text-sm hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
                             Mark completed
                         </button>
                     </div>
                 @else
-                    <p class="text-slate-500 text-center py-4">No one is being served. Click "Call next number" to start.</p>
+                    <p class="text-slate-500 text-center py-4">No one is being served. Click <strong>Call next number</strong> to start.</p>
                 @endif
             </div>
-        </div>
+        </section>
 
-        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            <h2 class="px-4 py-3 font-semibold text-slate-800 border-b border-slate-200">Waiting ({{ $waiting->count() }})</h2>
+        <section class="lgu-card overflow-hidden" aria-labelledby="waiting-heading">
+            <h2 id="waiting-heading" class="px-5 py-4 lgu-section-title border-b border-slate-200 bg-slate-50">
+                Waiting <span class="font-normal text-slate-500">({{ $waiting->count() }})</span>
+            </h2>
             <div class="max-h-80 overflow-y-auto">
                 @forelse($waiting as $entry)
-                    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                        <span class="font-medium">{{ $entry->queue_number }}</span>
+                    <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50/50">
+                        <span class="font-semibold text-slate-800">{{ $entry->queue_number }}</span>
                         <span class="text-xs text-slate-400">{{ $entry->created_at->format('h:i A') }}</span>
                     </div>
                 @empty
-                    <p class="px-4 py-6 text-slate-500 text-center text-sm">No one waiting.</p>
+                    <p class="px-5 py-6 text-slate-500 text-center text-sm">No one waiting.</p>
                 @endforelse
             </div>
-        </div>
+        </section>
     </div>
 
     <div class="mt-6">
-        <a href="{{ route('queue.join', $office->slug) }}" target="_blank" class="text-emerald-600 hover:underline text-sm">
-            Open queue join page (for clients) →
+        <a href="{{ route('queue.join', $office->slug) }}" target="_blank" rel="noopener noreferrer"
+           class="lgu-btn inline-flex items-center gap-2 px-4 py-2.5 text-blue-800 bg-blue-50 rounded-xl font-medium text-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Open queue join page (for clients)
+            <span aria-hidden="true">→</span>
         </a>
     </div>
 </div>

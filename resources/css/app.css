@@ -5,7 +5,69 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* LGU theme: friendly, professional, accessible */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    /* LGU primary (government blue) */
+    --color-lgu-primary: #0f4c81;
+    --color-lgu-primary-hover: #0d3d6b;
+    --color-lgu-primary-light: #e8eef4;
+    /* LGU accent (warm gold for highlights) */
+    --color-lgu-accent: #b45309;
+    --color-lgu-accent-light: #fef3c7;
+    /* Action green (queue, success) */
+    --color-lgu-action: #047857;
+    --color-lgu-action-hover: #065f46;
+    --color-lgu-action-light: #d1fae5;
+}
+
+/* Accessible focus rings and touch targets */
+.lgu-focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-lgu-primary);
+}
+.lgu-btn {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.lgu-card {
+    background: white;
+    border-radius: 1rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+}
+.lgu-card:hover {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.06);
+}
+.lgu-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.025em;
+}
+.lgu-section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #334155;
+}
+.lgu-skip-link {
+    position: absolute;
+    top: -100px;
+    left: 1rem;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    background: var(--color-lgu-primary);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: top 0.2s;
+}
+.lgu-skip-link:focus {
+    top: 1rem;
+    outline: none;
+    box-shadow: 0 0 0 3px white, 0 0 0 5px var(--color-lgu-primary);
 }
