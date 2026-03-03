@@ -14,7 +14,11 @@
     </style>
 </head>
 <body class="bg-slate-100 text-slate-900 antialiased min-h-screen flex items-center justify-center p-4">
-    @yield('content')
+    @hasSection('content')
+        @yield('content')
+    @else
+        {{ $slot ?? '' }}
+    @endif
     @livewireScripts
 </body>
 </html>
