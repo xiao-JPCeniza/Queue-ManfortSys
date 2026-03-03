@@ -4,13 +4,7 @@
             <header class="bg-blue-800 px-5 py-4 text-white sm:px-6">
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p class="text-[11px] uppercase tracking-[0.16em] text-blue-100">Municipal Human Resource Office</p>
-                        <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">HRMO Queue Monitor</h1>
-                        <p class="mt-1 text-sm text-blue-100/90">Live public display of serving and waiting tickets</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-[11px] font-semibold sm:text-xs">
-                        <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1 text-center">Refresh: 5s</span>
-                        <span class="rounded-full border border-white/35 bg-white/10 px-3 py-1 text-center">Auto-next: 60s</span>
+                        <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Live Queue Monitor</h1>
                     </div>
                 </div>
             </header>
