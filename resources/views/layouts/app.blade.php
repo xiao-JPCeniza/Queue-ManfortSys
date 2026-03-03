@@ -48,7 +48,11 @@
         @if(session('error'))
             <div class="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-xl text-sm" role="alert">{{ session('error') }}</div>
         @endif
-        @yield('content')
+        @hasSection('content')
+            @yield('content')
+        @else
+            {{ $slot ?? '' }}
+        @endif
     </main>
     @livewireScripts
 </body>
