@@ -7,6 +7,7 @@ use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
 use App\Livewire\QueueJoin;
 use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
 use App\Livewire\QueueMaster\OfficeManage as QueueMasterOfficeManage;
+use App\Livewire\SuperAdmin\OfficesManage as SuperAdminOfficesManage;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,6 +38,10 @@ Route::middleware(['auth'])->group(function () {
         }
         return redirect()->route('queue-master.index');
     })->name('dashboard');
+
+    Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('/offices', SuperAdminOfficesManage::class)->name('offices');
+    });
 
     Route::middleware(['role:super_admin,queue_master'])->prefix('queue-master')->name('queue-master.')->group(function () {
         Route::get('/', QueueMasterDashboard::class)->name('index');

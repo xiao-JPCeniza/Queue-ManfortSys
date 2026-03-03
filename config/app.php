@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Office Admin Email Domain
+    |--------------------------------------------------------------------------
+    |
+    | Domain used to generate unique email addresses for auto-created office
+    | admin accounts (e.g. office-slug@manolofortich.gov.ph).
+    |
+    */
+
+    'office_email_domain' => env('OFFICE_EMAIL_DOMAIN', 'manolofortich.gov.ph'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

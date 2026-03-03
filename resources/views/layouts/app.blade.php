@@ -27,6 +27,9 @@
                 <div class="flex items-center gap-2">
                     @auth
                         <a href="{{ route('dashboard') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Dashboard</a>
+                        @if(auth()->user()->isSuperAdmin())
+                            <a href="{{ route('super-admin.offices') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Queueing Offices</a>
+                        @endif
                         @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
                             <a href="{{ route('queue-master.index') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Queue Master</a>
                         @endif
