@@ -2,9 +2,15 @@
     <div class="mx-auto min-h-full w-full max-w-7xl p-4 sm:p-6 lg:p-8">
         <section class="lgu-card overflow-hidden border-2 border-blue-100">
             <header class="bg-blue-800 px-5 py-4 text-white sm:px-6">
-                <div class="flex items-center justify-center text-center">
-                    <div>
+                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                    <div></div>
+                    <div class="text-center">
                         <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Live Queue Monitor</h1>
+                    </div>
+                    <div class="justify-self-end text-right">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-200">Manolo Fortich, Bukidnon</p>
+                        <p class="text-sm font-bold sm:text-base">{{ $manilaNow->format('h:i:s A') }}</p>
+                        <p class="text-[11px] text-blue-200">{{ $manilaNow->format('l, M d, Y') }}</p>
                     </div>
                 </div>
             </header>
@@ -24,15 +30,9 @@
                                 <p class="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">Queue Number</p>
                                 <p class="mt-2 text-center text-6xl font-extrabold leading-none tracking-tight text-emerald-700 sm:text-7xl" aria-live="polite">{{ $serving->queue_number }}</p>
 
-                                <div class="mt-4 grid gap-2 sm:grid-cols-2">
-                                    <div class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
-                                        Called at
-                                        <p class="font-semibold text-slate-700">{{ $serving->called_at?->format('h:i:s A') }}</p>
-                                    </div>
-                                    <div class="rounded-lg px-3 py-2 text-sm font-semibold {{ ($secondsLeft ?? 0) <= 15 ? 'bg-rose-100 text-rose-700' : 'bg-sky-100 text-sky-700' }}">
-                                        Auto-next
-                                        <p>{{ $secondsLeft ?? 0 }} second(s)</p>
-                                    </div>
+                                <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                    Called at
+                                    <p class="font-semibold text-slate-700">{{ $serving->called_at?->format('h:i:s A') }}</p>
                                 </div>
                             </div>
                         @else
@@ -73,29 +73,23 @@
                     </section>
                 </div>
 
-                <section class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-rose-50/60 p-4 sm:p-5" aria-labelledby="recently-called-heading">
-                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <h2 id="recently-called-heading" class="text-base font-semibold text-amber-900">Recently Called</h2>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">{{ $recentlyCalled->count() }} ticket(s)</span>
-                            <span class="text-xs text-slate-500">Not served after 1 minute</span>
-                        </div>
+                <section class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-rose-50/60 p-4 sm:p-5" aria-labelledby="recent-transaction-heading">
+                    <div>
+                        <h2 id="recent-transaction-heading" class="text-base font-semibold text-amber-900">Recent Transactions (Today)</h2>
                     </div>
 
                     <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                        @if($recentlyCalled->isNotEmpty())
+                        @if($recentTransactions->isNotEmpty())
                             <marquee behavior="scroll" direction="left" scrollamount="6" class="py-4">
-                                @foreach($recentlyCalled as $entry)
-                                    <span class="mx-2 inline-flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 align-middle">
+                                @foreach($recentTransactions as $entry)
+                                    <span class="mx-2 inline-flex items-center rounded-lg border border-slate-200 bg-white px-5 py-2 align-middle">
                                         <span class="text-lg font-semibold leading-tight text-slate-800">{{ $entry->queue_number }}</span>
-                                        <span class="text-xs font-semibold tracking-wide text-rose-600">NOT SERVED</span>
-                                        <span class="text-xs font-medium text-slate-500">{{ $entry->served_at?->format('h:i:s A') }}</span>
                                     </span>
                                 @endforeach
                             </marquee>
                         @else
                             <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center">
-                                <p class="text-sm text-slate-500">No recently called ticket yet.</p>
+                                <p class="text-sm text-slate-500">No recent transaction yet.</p>
                             </div>
                         @endif
                     </div>
