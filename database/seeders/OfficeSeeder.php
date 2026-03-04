@@ -55,10 +55,20 @@ class OfficeSeeder extends Seeder
         ];
 
         foreach ($offices as $office) {
-            Office::firstOrCreate(
-                ['slug' => $office['slug']],
-                array_merge($office, ['next_number' => 1, 'is_active' => true])
-            );
+            $officeModel = Office::firstOrNew(['slug' => $office['slug']]);
+
+            $officeModel->fill([
+                'name' => $office['name'],
+                'prefix' => $office['prefix'],
+                'description' => $office['description'],
+                'is_active' => true,
+            ]);
+
+            if (!$officeModel->exists) {
+                $officeModel->next_number = 1;
+            }
+
+            $officeModel->save();
         }
     }
 }

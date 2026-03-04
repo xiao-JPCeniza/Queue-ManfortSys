@@ -15,37 +15,86 @@
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
     <a href="#main-content" class="lgu-skip-link">Skip to main content</a>
-    <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-4 flex-wrap">
-                    <a href="{{ url('/') }}" class="text-xl font-bold text-white hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">LGU Queue System</a>
-                    @auth
-                        <span class="text-blue-200 text-sm py-2">{{ auth()->user()->name }} <span class="text-blue-300">({{ auth()->user()->role?->name }})</span></span>
-                    @endauth
-                </div>
-                <div class="flex items-center gap-2">
-                    @auth
-                        <a href="{{ route('dashboard') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Dashboard</a>
-                        @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
-                            <a href="{{ route('queue-master.index') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Queue Master</a>
+    @php($hideNav = trim((string) $__env->yieldContent('hide_nav')) === '1')
+    @if(!$hideNav)
+        @php($activeOffice = request()->attributes->get('office'))
+        @php($isHrmoOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice && $activeOffice->slug === 'hrmo')
+        @php($activeHrmoTab = (string) request()->query('tab', 'dashboard'))
+        <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        @if($isHrmoOfficeDashboard)
+                            <details class="relative">
+                                <summary class="lgu-btn list-none cursor-pointer px-3 py-2 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
+                                    <span class="inline-flex items-center gap-2">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                                        </svg>
+                                        Menu
+                                    </span>
+                                </summary>
+                                <div class="absolute left-0 z-30 mt-2 w-60 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+                                    <div class="border-b border-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                        Admin Panel
+                                    </div>
+                                    <nav class="py-1 text-sm" aria-label="HRMO Queue Navigation">
+                                        <a href="{{ route('office.dashboard', $activeOffice->slug) }}?tab=dashboard"
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'dashboard' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                            Dashboard
+                                        </a>
+                                        <a href="{{ route('office.dashboard', $activeOffice->slug) }}?tab=reports"
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                            Reports
+                                        </a>
+                                        <a href="{{ route('office.dashboard', $activeOffice->slug) }}?tab=queue-management"
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'queue-management' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                            Queue Management
+                                        </a>
+                                    </nav>
+                                </div>
+                            </details>
                         @endif
-                        <form action="{{ route('logout') }}" method="POST" class="inline">
-                            @csrf
-                            <button type="submit" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Logout</button>
-                        </form>
-                    @else
-                        <a href="{{ route('login') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Log in</a>
-                    @endauth
+                        <a href="{{ url('/') }}" class="text-xl font-bold text-white hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">LGU Queue System</a>
+                        @auth
+                            <span class="text-blue-200 text-sm py-2">{{ auth()->user()->name }} <span class="text-blue-300">({{ auth()->user()->role?->name }})</span></span>
+                        @endauth
+                    </div>
+                    <div class="flex items-center gap-2">
+                        @auth
+                            @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
+                                <a href="{{ route('queue-master.index') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Queue Master</a>
+                            @endif
+                            <details class="relative">
+                                <summary class="lgu-btn list-none cursor-pointer px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 [&::-webkit-details-marker]:hidden" aria-label="Open account menu">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        Account
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                                        </svg>
+                                    </span>
+                                </summary>
+                                <div class="absolute right-0 z-30 mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
+                                    <div class="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">Signed in as {{ auth()->user()->name }}</div>
+                                    <form action="{{ route('logout') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50">Logout</button>
+                                    </form>
+                                </div>
+                            </details>
+                        @else
+                            <a href="{{ route('login') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Log in</a>
+                        @endauth
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
-    <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" role="main">
-        @if(session('success'))
+        </nav>
+    @endif
+    <main id="main-content" class="{{ $hideNav ? 'h-dvh overflow-hidden p-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' }}" role="main">
+        @if(!$hideNav && session('success'))
             <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm" role="status">{{ session('success') }}</div>
         @endif
-        @if(session('error'))
+        @if(!$hideNav && session('error'))
             <div class="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-xl text-sm" role="alert">{{ session('error') }}</div>
         @endif
         @hasSection('content')

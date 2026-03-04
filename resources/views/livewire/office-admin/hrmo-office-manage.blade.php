@@ -1,110 +1,100 @@
-<div wire:poll.5s="tick">
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <h1 class="lgu-page-title">HRMO Live Queue Monitor</h1>
-            <p class="text-slate-600 text-sm mt-1">Real-time queue view with 1-minute auto-advance for currently served tickets.</p>
-        </div>
-        <a href="{{ route('office.dashboard', $office->slug) }}" class="lgu-btn inline-flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-white rounded-xl hover:bg-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
-            Back to Office Dashboard
-        </a>
-    </div>
-
-    <section class="lgu-card p-6 mb-6" aria-labelledby="summary-heading">
-        <h2 id="summary-heading" class="lgu-section-title mb-4">Overall Tickets Being Accommodated</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <p class="text-xs uppercase tracking-wide text-slate-500">Total Today</p>
-                <p class="text-3xl font-bold text-slate-800 mt-2">{{ $summary['total_today'] }}</p>
-            </div>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                <p class="text-xs uppercase tracking-wide text-emerald-700">Completed Today</p>
-                <p class="text-3xl font-bold text-emerald-700 mt-2">{{ $summary['completed_today'] }}</p>
-            </div>
-            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                <p class="text-xs uppercase tracking-wide text-blue-700">Active Now</p>
-                <p class="text-3xl font-bold text-blue-700 mt-2">{{ $summary['active_now'] }}</p>
-            </div>
-        </div>
-    </section>
-
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <section class="lgu-card p-6 xl:col-span-1" aria-labelledby="now-serving-heading">
-            <h2 id="now-serving-heading" class="lgu-section-title mb-4">Now Serving</h2>
-            @if($serving)
-                <p class="text-5xl font-bold text-emerald-600 tracking-tight">{{ $serving->queue_number }}</p>
-                <p class="text-slate-500 text-sm mt-3">
-                    Called at {{ $serving->called_at?->format('h:i:s A') }}
-                </p>
-                <p class="text-sm mt-2 {{ ($secondsLeft ?? 0) <= 15 ? 'text-red-600' : 'text-slate-600' }}">
-                    Auto-next in {{ $secondsLeft ?? 0 }} second(s)
-                </p>
-            @else
-                <p class="text-slate-500">No ticket currently being served.</p>
-            @endif
-        </section>
-
-        <section class="lgu-card p-6 xl:col-span-1" aria-labelledby="next-inline-heading">
-            <h2 id="next-inline-heading" class="lgu-section-title mb-4">Queue Next Inline</h2>
-            @if($nextInline)
-                <p class="text-5xl font-bold text-blue-700 tracking-tight">{{ $nextInline->queue_number }}</p>
-                <p class="text-slate-500 text-sm mt-3">Queued at {{ $nextInline->created_at->format('h:i:s A') }}</p>
-            @else
-                <p class="text-slate-500">No waiting ticket in line.</p>
-            @endif
-        </section>
-
-        <section class="lgu-card p-6 xl:col-span-1" aria-labelledby="recently-called-heading">
-            <h2 id="recently-called-heading" class="lgu-section-title mb-4">Recently Called</h2>
-            <div class="space-y-2 max-h-80 overflow-y-auto">
-                @forelse($recentlyCalled as $entry)
-                    <div class="rounded-lg border border-slate-200 px-3 py-2 flex items-center justify-between bg-slate-50">
-                        <span class="font-semibold text-slate-800">{{ $entry->queue_number }}</span>
-                        <span class="text-xs text-slate-500">{{ $entry->served_at?->format('h:i:s A') }}</span>
+<div wire:poll.5s="tick" class="h-full overflow-auto bg-slate-100">
+    <div class="mx-auto min-h-full w-full max-w-7xl p-4 sm:p-6 lg:p-8">
+        <section class="lgu-card overflow-hidden border-2 border-blue-100">
+            <header class="bg-blue-800 px-5 py-4 text-white sm:px-6">
+                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                    <div></div>
+                    <div class="text-center">
+                        <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Live Queue Monitor</h1>
                     </div>
-                @empty
-                    <p class="text-slate-500 text-sm">No recently called ticket yet.</p>
-                @endforelse
+                    <div class="justify-self-end text-right">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-200">Manolo Fortich, Bukidnon</p>
+                        <p class="text-sm font-bold sm:text-base">{{ $manilaNow->format('h:i:s A') }}</p>
+                        <p class="text-[11px] text-blue-200">{{ $manilaNow->format('l, M d, Y') }}</p>
+                    </div>
+                </div>
+            </header>
+
+            <div class="space-y-5 p-4 sm:p-6">
+                <div class="grid grid-cols-1 gap-5 xl:grid-cols-5">
+                    <section class="xl:col-span-3 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/50 p-4 sm:p-5" aria-labelledby="now-serving-heading">
+                        <div class="flex items-center justify-between gap-2">
+                            <h2 id="now-serving-heading" class="text-base font-semibold text-emerald-900">Serving Now</h2>
+                            <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $serving ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600' }}">
+                                {{ $serving ? 'Active' : 'Idle' }}
+                            </span>
+                        </div>
+
+                        @if($serving)
+                            <div class="mt-4 rounded-2xl border border-emerald-200 bg-white p-5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">Queue Number</p>
+                                <p class="mt-2 text-center text-6xl font-extrabold leading-none tracking-tight text-emerald-700 sm:text-7xl" aria-live="polite">{{ $serving->queue_number }}</p>
+
+                                <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                    Called at
+                                    <p class="font-semibold text-slate-700">{{ $serving->called_at?->format('h:i:s A') }}</p>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-4 flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed border-emerald-300 bg-white/70 px-6 py-8 text-center">
+                                <div>
+                                    <p class="text-xl font-semibold text-slate-700">No active ticket right now</p>
+                                    <p class="mt-2 text-sm text-slate-500">The next waiting ticket will be called automatically.</p>
+                                </div>
+                            </div>
+                        @endif
+                    </section>
+
+                    <section class="xl:col-span-2 rounded-2xl border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-100/50 p-4 sm:p-5" aria-labelledby="next-inline-heading">
+                        <div class="flex items-center justify-between gap-2">
+                            <h2 id="next-inline-heading" class="text-base font-semibold text-sky-900">Next in Line</h2>
+                            <span class="rounded-full px-2.5 py-1 text-xs font-semibold {{ $nextInline ? 'bg-sky-100 text-sky-700' : 'bg-slate-200 text-slate-600' }}">
+                                {{ $nextInline ? 'Queued' : 'Empty' }}
+                            </span>
+                        </div>
+
+                        @if($nextInline)
+                            <div class="mt-4 rounded-2xl border border-sky-200 bg-white p-5">
+                                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">Upcoming Ticket</p>
+                                <p class="mt-2 text-center text-5xl font-extrabold leading-none tracking-tight text-sky-700 sm:text-6xl" aria-live="polite">{{ $nextInline->queue_number }}</p>
+                                <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                                    Queued at
+                                    <p class="font-semibold text-slate-700">{{ $nextInline->created_at->format('h:i:s A') }}</p>
+                                </div>
+                            </div>
+                        @else
+                            <div class="mt-4 flex min-h-[200px] items-center justify-center rounded-2xl border border-dashed border-sky-300 bg-white/70 px-6 py-8 text-center">
+                                <div>
+                                    <p class="text-xl font-semibold text-slate-700">No waiting ticket in line</p>
+                                    <p class="mt-2 text-sm text-slate-500">New tickets appear here once issued.</p>
+                                </div>
+                            </div>
+                        @endif
+                    </section>
+                </div>
+
+                <section class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-rose-50/60 p-4 sm:p-5" aria-labelledby="recent-transaction-heading">
+                    <div>
+                        <h2 id="recent-transaction-heading" class="text-base font-semibold text-amber-900">Recent Transactions (Today)</h2>
+                    </div>
+
+                    <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        @if($recentTransactions->isNotEmpty())
+                            <marquee behavior="scroll" direction="left" scrollamount="6" class="py-4">
+                                @foreach($recentTransactions as $entry)
+                                    <span class="mx-2 inline-flex items-center rounded-lg border border-slate-200 bg-white px-5 py-2 align-middle">
+                                        <span class="text-lg font-semibold leading-tight text-slate-800">{{ $entry->queue_number }}</span>
+                                    </span>
+                                @endforeach
+                            </marquee>
+                        @else
+                            <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center">
+                                <p class="text-sm text-slate-500">No recent transaction yet.</p>
+                            </div>
+                        @endif
+                    </div>
+                </section>
             </div>
         </section>
     </div>
-
-    <section class="lgu-card p-6 mt-6" aria-labelledby="overall-activity-heading">
-        <h2 id="overall-activity-heading" class="lgu-section-title mb-4">Overall Ticket Activity (Today)</h2>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left border-b border-slate-200 text-slate-500">
-                        <th class="py-2 pr-4 font-medium">Ticket #</th>
-                        <th class="py-2 pr-4 font-medium">Status</th>
-                        <th class="py-2 pr-4 font-medium">Issued</th>
-                        <th class="py-2 pr-4 font-medium">Called</th>
-                        <th class="py-2 pr-4 font-medium">Completed</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($overallTickets as $entry)
-                        <tr class="border-b border-slate-100">
-                            <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
-                            <td class="py-2 pr-4">
-                                <span class="px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $entry->status === 'serving' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                    {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                    {{ $entry->status === 'completed' ? 'bg-slate-200 text-slate-700' : '' }}">
-                                    {{ strtoupper($entry->status) }}
-                                </span>
-                            </td>
-                            <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->format('h:i:s A') }}</td>
-                            <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->format('h:i:s A') ?? '-' }}</td>
-                            <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->format('h:i:s A') ?? '-' }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for HRMO today.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
 </div>
-

@@ -10,6 +10,7 @@ class QueueEntry extends Model
     public const STATUS_WAITING = 'waiting';
     public const STATUS_SERVING = 'serving';
     public const STATUS_COMPLETED = 'completed';
+    public const STATUS_NOT_SERVED = 'not_served';
     public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
@@ -49,5 +50,10 @@ class QueueEntry extends Model
     public function scopeCompleted($query)
     {
         return $query->where('status', self::STATUS_COMPLETED);
+    }
+
+    public function scopeNotServed($query)
+    {
+        return $query->where('status', self::STATUS_NOT_SERVED);
     }
 }

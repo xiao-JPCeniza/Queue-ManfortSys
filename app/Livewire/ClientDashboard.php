@@ -44,11 +44,6 @@ class ClientDashboard extends Component
         $this->dispatch('ticket-issued', queueNumber: $entry->queue_number, officeName: $office->name);
     }
 
-    public function clearTicket(): void
-    {
-        $this->ticket = null;
-    }
-
     public function render()
     {
         return view('livewire.client-dashboard', [

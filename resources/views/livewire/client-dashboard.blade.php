@@ -31,7 +31,10 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                         </span>
                         <span wire:loading wire:target="selectOffice({{ $office->id }})" class="absolute inset-0 flex items-center justify-center bg-white/90 rounded-2xl">
-                            <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            <div class="flex flex-col items-center gap-2">
+                                <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <span class="text-xs font-medium text-slate-600">Generating ticket number...</span>
+                            </div>
                         </span>
                     </button>
                 @endforeach
@@ -47,13 +50,6 @@
                     <div class="p-8">
                         <p class="text-5xl sm:text-6xl font-bold text-emerald-600 tracking-tight" id="ticket-number-display" aria-label="Your queue number is {{ $ticket['queue_number'] }}">{{ $ticket['queue_number'] }}</p>
                         <p class="text-slate-500 text-sm mt-4">Please wait for your number to be called at the office.</p>
-                        <button
-                            type="button"
-                            wire:click="clearTicket"
-                            class="lgu-btn mt-6 px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-                        >
-                            Get another ticket
-                        </button>
                     </div>
                 </div>
             </div>
@@ -61,22 +57,23 @@
     </main>
 
     {{-- Pop-up notification (modal) --}}
-    <div x-show="showPopup" x-cloak x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+    <div x-show="showPopup" x-cloak x-transition.opacity
+         class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 pointer-events-auto"
          @ticket-issued.window="onTicketIssued($event.detail)"
-         @click.self="showPopup = false"
+         @click.self="closePopup()"
+         @keydown.escape.window="closePopup()"
          role="dialog"
          aria-modal="true"
          aria-labelledby="popup-title"
     >
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border-2 border-emerald-500" @click.stop>
+        <div class="relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border-2 border-emerald-500">
             <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-4" aria-hidden="true">
                 <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <h3 id="popup-title" class="text-lg font-bold text-slate-800">Ticket issued</h3>
+            <h3 id="popup-title" class="text-lg font-bold text-slate-800">Ticket is issued</h3>
             <p class="text-3xl font-bold text-emerald-600 mt-2" x-text="popupNumber"></p>
             <p class="text-slate-500 text-sm mt-1" x-text="popupOffice"></p>
-            <button type="button" @click="showPopup = false" class="lgu-btn mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+            <button x-ref="okButton" type="button" @click.stop.prevent="closePopup()" class="lgu-btn mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                 OK
             </button>
         </div>
@@ -95,17 +92,36 @@
             popupNumber: '',
             popupOffice: '',
             speechSynth: null,
+            dismissedTicketKey: '',
 
             init() {
                 this.speechSynth = window.speechSynthesis;
             },
 
+            closePopup() {
+                this.dismissedTicketKey = `${this.popupOffice}|${this.popupNumber}`;
+                if (this.speechSynth?.speaking) {
+                    this.speechSynth.cancel();
+                }
+                this.showPopup = false;
+                this.popupNumber = '';
+                this.popupOffice = '';
+            },
+
             onTicketIssued(detail) {
-                const queueNumber = detail.queueNumber || '';
-                const officeName = detail.officeName || '';
+                const payload = Array.isArray(detail) ? (detail[0] || {}) : (detail || {});
+                const queueNumber = payload.queueNumber || payload.queue_number || '';
+                const officeName = payload.officeName || payload.office_name || '';
+                const ticketKey = `${officeName}|${queueNumber}`;
+
+                if (ticketKey === this.dismissedTicketKey) {
+                    return;
+                }
+
                 this.popupNumber = queueNumber;
                 this.popupOffice = officeName;
                 this.showPopup = true;
+                this.$nextTick(() => this.$refs.okButton?.focus());
                 this.speakTicket(queueNumber, officeName);
                 this.maybeBrowserNotify(queueNumber, officeName);
             },
