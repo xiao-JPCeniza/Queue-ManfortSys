@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'role_id',
         'office_id',
+        'window_number',
     ];
 
     /**

@@ -4,8 +4,27 @@
     @endif
     <div class="mb-6">
         <h1 class="lgu-page-title">{{ $office->name }}</h1>
-        <p class="text-slate-600 text-sm mt-1">Office queue dashboard — call numbers and manage the line.</p>
+        <p class="text-slate-600 text-sm mt-1">Office queue dashboard - call numbers and manage the line.</p>
     </div>
+
+    @if(auth()->user()?->isOfficeAdmin())
+        <section class="mb-6 lgu-card p-5 max-w-xl" aria-labelledby="window-number-heading">
+            <h2 id="window-number-heading" class="lgu-section-title mb-3">Your window number</h2>
+            <form wire:submit="saveWindowNumber" class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                <div class="flex-1 w-full">
+                    <label for="windowNumber" class="block text-sm font-medium text-slate-700 mb-1">Window number</label>
+                    <input type="text" id="windowNumber" wire:model.defer="windowNumber"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-900 shadow-sm focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                           placeholder="e.g. 1 or A1" maxlength="20" autocomplete="off">
+                    <p class="text-xs text-slate-500 mt-1">This appears in your account and must be unique within your office.</p>
+                </div>
+                <button type="submit"
+                        class="lgu-btn px-4 py-2.5 bg-blue-800 text-white rounded-xl font-medium text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Save
+                </button>
+            </form>
+        </section>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <section class="lg:col-span-2 lgu-card overflow-hidden" aria-labelledby="serving-heading">
@@ -55,7 +74,7 @@
         <a href="{{ route('queue.join', $office->slug) }}" target="_blank" rel="noopener noreferrer"
            class="lgu-btn inline-flex items-center gap-2 px-4 py-2.5 text-blue-800 bg-blue-50 rounded-xl font-medium text-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             Open queue join page (for clients)
-            <span aria-hidden="true">→</span>
+            <span aria-hidden="true">-></span>
         </a>
     </div>
 </div>

@@ -1,7 +1,15 @@
 <div>
-    <div class="mb-8">
+    <div class="mb-6">
         <h1 class="lgu-page-title mb-1">Queue Master Dashboard</h1>
         <p class="text-slate-600 text-sm">Manage offices and monitor queue activity across the LGU.</p>
+        @if(auth()->user()?->isSuperAdmin())
+            <div class="mt-4">
+                <a href="{{ route('super-admin.offices') }}"
+                   class="lgu-btn inline-flex px-4 py-2.5 bg-blue-800 text-white rounded-xl hover:bg-blue-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    Manage queueing offices
+                </a>
+            </div>
+        @endif
     </div>
 
     <section class="mb-8" aria-labelledby="offices-heading">
@@ -12,7 +20,7 @@
                     <div class="flex justify-between items-start gap-3">
                         <div class="min-w-0 flex-1">
                             <h3 class="font-semibold text-slate-800 text-lg">{{ $office->name }}</h3>
-                            <p class="text-sm text-slate-500 mt-0.5">{{ $office->prefix }} • Next #{{ $office->next_number }}</p>
+                            <p class="text-sm text-slate-500 mt-0.5">{{ $office->prefix }} - Next #{{ $office->next_number }}</p>
                             <p class="text-sm text-emerald-600 font-medium mt-2 inline-flex items-center gap-1">
                                 <span class="inline-block w-2 h-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
                                 {{ $office->waiting_count }} waiting

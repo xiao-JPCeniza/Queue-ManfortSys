@@ -53,7 +53,7 @@ class OfficesManage extends Component
 
         $officeAdminRole = Role::where('slug', 'office_admin')->first();
         if (! $officeAdminRole) {
-            throw ValidationException::withMessages(['name' => ['Office Admin role is not set up. Run role seeder.']]);
+            throw ValidationException::withMessages(['name' => ['Office Admin role is not set up. Please contact the system administrator.']]);
         }
 
         $email = OfficeAdminCredentialService::emailForOfficeSlug($this->slug);
