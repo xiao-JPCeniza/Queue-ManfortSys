@@ -2,7 +2,7 @@
     <div class="mx-auto min-h-full w-full max-w-7xl p-4 sm:p-6 lg:p-8">
         <section class="lgu-card overflow-hidden border-2 border-blue-100">
             <header class="bg-blue-800 px-5 py-4 text-white sm:px-6">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center justify-center text-center">
                     <div>
                         <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Live Queue Monitor</h1>
                     </div>
@@ -83,28 +83,21 @@
                     </div>
 
                     <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
-                        <div class="grid grid-cols-[1fr_auto] gap-2 border-b border-slate-200 bg-slate-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                            <span>Ticket / Status</span>
-                            <span>Time</span>
-                        </div>
-
-                        <div class="max-h-[340px] overflow-y-auto p-2">
-                            <div class="space-y-2">
-                                @forelse($recentlyCalled as $entry)
-                                    <div class="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3.5 py-3">
-                                        <div>
-                                            <p class="text-lg font-semibold leading-tight text-slate-800">{{ $entry->queue_number }}</p>
-                                            <p class="mt-0.5 text-xs font-semibold tracking-wide text-rose-600">NOT SERVED</p>
-                                        </div>
+                        @if($recentlyCalled->isNotEmpty())
+                            <marquee behavior="scroll" direction="left" scrollamount="6" class="py-4">
+                                @foreach($recentlyCalled as $entry)
+                                    <span class="mx-2 inline-flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 align-middle">
+                                        <span class="text-lg font-semibold leading-tight text-slate-800">{{ $entry->queue_number }}</span>
+                                        <span class="text-xs font-semibold tracking-wide text-rose-600">NOT SERVED</span>
                                         <span class="text-xs font-medium text-slate-500">{{ $entry->served_at?->format('h:i:s A') }}</span>
-                                    </div>
-                                @empty
-                                    <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center">
-                                        <p class="text-sm text-slate-500">No recently called ticket yet.</p>
-                                    </div>
-                                @endforelse
+                                    </span>
+                                @endforeach
+                            </marquee>
+                        @else
+                            <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-12 text-center">
+                                <p class="text-sm text-slate-500">No recently called ticket yet.</p>
                             </div>
-                        </div>
+                        @endif
                     </div>
                 </section>
             </div>

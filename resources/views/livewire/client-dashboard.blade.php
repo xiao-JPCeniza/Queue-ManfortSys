@@ -57,22 +57,23 @@
     </main>
 
     {{-- Pop-up notification (modal) --}}
-    <div x-show="showPopup" x-cloak x-transition
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+    <div x-show="showPopup" x-cloak x-transition.opacity
+         class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 pointer-events-auto"
          @ticket-issued.window="onTicketIssued($event.detail)"
-         @click.self="showPopup = false"
+         @click.self="closePopup()"
+         @keydown.escape.window="closePopup()"
          role="dialog"
          aria-modal="true"
          aria-labelledby="popup-title"
     >
-        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border-2 border-emerald-500" @click.stop>
+        <div class="relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border-2 border-emerald-500">
             <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 flex items-center justify-center mb-4" aria-hidden="true">
                 <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <h3 id="popup-title" class="text-lg font-bold text-slate-800">Ticket issued</h3>
+            <h3 id="popup-title" class="text-lg font-bold text-slate-800">Ticket is issued</h3>
             <p class="text-3xl font-bold text-emerald-600 mt-2" x-text="popupNumber"></p>
             <p class="text-slate-500 text-sm mt-1" x-text="popupOffice"></p>
-            <button type="button" @click="showPopup = false" class="lgu-btn mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+            <button x-ref="okButton" type="button" @click.stop.prevent="closePopup()" class="lgu-btn mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                 OK
             </button>
         </div>
@@ -91,17 +92,36 @@
             popupNumber: '',
             popupOffice: '',
             speechSynth: null,
+            dismissedTicketKey: '',
 
             init() {
                 this.speechSynth = window.speechSynthesis;
             },
 
+            closePopup() {
+                this.dismissedTicketKey = `${this.popupOffice}|${this.popupNumber}`;
+                if (this.speechSynth?.speaking) {
+                    this.speechSynth.cancel();
+                }
+                this.showPopup = false;
+                this.popupNumber = '';
+                this.popupOffice = '';
+            },
+
             onTicketIssued(detail) {
-                const queueNumber = detail.queueNumber || '';
-                const officeName = detail.officeName || '';
+                const payload = Array.isArray(detail) ? (detail[0] || {}) : (detail || {});
+                const queueNumber = payload.queueNumber || payload.queue_number || '';
+                const officeName = payload.officeName || payload.office_name || '';
+                const ticketKey = `${officeName}|${queueNumber}`;
+
+                if (ticketKey === this.dismissedTicketKey) {
+                    return;
+                }
+
                 this.popupNumber = queueNumber;
                 this.popupOffice = officeName;
                 this.showPopup = true;
+                this.$nextTick(() => this.$refs.okButton?.focus());
                 this.speakTicket(queueNumber, officeName);
                 this.maybeBrowserNotify(queueNumber, officeName);
             },
