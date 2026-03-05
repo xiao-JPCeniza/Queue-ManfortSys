@@ -24,6 +24,37 @@ class HrmoOfficeMonitor extends Component
         $this->ensureCurrentServing();
     }
 
+    public function resetTickets(): void
+    {
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+        QueueEntry::where('office_id', $this->office->id)
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->delete();
+
+        $this->office->update(['next_number' => 1]);
+        $this->office->refresh();
+
+        session()->flash('office_message', 'Tickets reset. The next generated number will start from 001.');
+    }
+
+    public function clearTransaction(): void
+    {
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+        $deletedCount = QueueEntry::where('office_id', $this->office->id)
+            ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
+            ->whereBetween('served_at', [$dayStart, $dayEnd])
+            ->delete();
+
+        session()->flash(
+            'office_message',
+            $deletedCount > 0
+                ? 'Recent transactions for today were cleared.'
+                : 'No recent transactions found for today.'
+        );
+    }
+
     private function ensureCurrentServing(): void
     {
         $serving = QueueEntry::where('office_id', $this->office->id)
@@ -52,6 +83,17 @@ class HrmoOfficeMonitor extends Component
         }
     }
 
+    private function manilaDayBounds(): array
+    {
+        $manilaNow = now('Asia/Manila');
+        $dbTimezone = (string) config('app.timezone', 'UTC');
+
+        return [
+            $manilaNow->copy()->startOfDay()->setTimezone($dbTimezone),
+            $manilaNow->copy()->endOfDay()->setTimezone($dbTimezone),
+        ];
+    }
+
     public function render()
     {
         $this->ensureCurrentServing();
@@ -69,7 +111,7 @@ class HrmoOfficeMonitor extends Component
         $recentTransactions = QueueEntry::where('office_id', $this->office->id)
             ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
             ->whereNotNull('served_at')
-            ->whereDate('served_at', today())
+            ->whereBetween('served_at', $this->manilaDayBounds())
             ->orderByDesc('served_at')
             ->limit(20)
             ->get();

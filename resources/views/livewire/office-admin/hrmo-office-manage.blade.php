@@ -16,6 +16,12 @@
             </header>
 
             <div class="space-y-5 p-4 sm:p-6">
+                @if(session('office_message'))
+                    <div class="rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800" role="status">
+                        {{ session('office_message') }}
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 gap-5 xl:grid-cols-5">
                     <section class="xl:col-span-3 rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/50 p-4 sm:p-5" aria-labelledby="now-serving-heading">
                         <div class="flex items-center justify-between gap-2">
@@ -74,8 +80,27 @@
                 </div>
 
                 <section class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-rose-50/60 p-4 sm:p-5" aria-labelledby="recent-transaction-heading">
-                    <div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
                         <h2 id="recent-transaction-heading" class="text-base font-semibold text-amber-900">Recent Transactions (Today)</h2>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button"
+                                    wire:click="resetTickets"
+                                    wire:confirm="Reset all generated tickets for today? This will also clear waiting and serving entries."
+                                    wire:loading.attr="disabled"
+                                    wire:target="resetTickets"
+                                    class="inline-flex items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60">
+                                Reset Tickets
+                            </button>
+
+                            <button type="button"
+                                    wire:click="clearTransaction"
+                                    wire:confirm="Clear all entries listed in Recent Transactions (Today)?"
+                                    wire:loading.attr="disabled"
+                                    wire:target="clearTransaction"
+                                    class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60">
+                                Clear Transaction
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
