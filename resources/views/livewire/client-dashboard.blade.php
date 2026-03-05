@@ -102,6 +102,13 @@
                         <p class="queue-ticket-label">Queue Number</p>
                         <p class="queue-ticket-number" id="ticket-number-display" aria-label="Your queue number is {{ $ticket['queue_number'] }}">{{ $ticket['queue_number'] }}</p>
                         <p class="queue-ticket-note">Please wait for your number to be called at the service desk.</p>
+                        <button
+                            type="button"
+                            class="lgu-btn queue-print-btn"
+                            onclick="try { window.print(); } finally { window.location.href='{{ route('queue.client') }}'; }"
+                        >
+                            Print Ticket
+                        </button>
                     </div>
                 </div>
             </section>
@@ -394,6 +401,21 @@
         margin: 1rem auto 0;
         max-width: 34ch;
         color: #334155;
+    }
+
+    .queue-print-btn {
+        margin-top: 1.1rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        color: #ffffff;
+        background: linear-gradient(180deg, #14539e 0%, #0c3b73 100%);
+        border: 1px solid #0a3367;
+        box-shadow: 0 8px 16px rgba(12, 59, 115, 0.25);
+    }
+
+    .queue-print-btn:hover {
+        background: linear-gradient(180deg, #0f4a8f 0%, #082a55 100%);
     }
 
     .queue-footer {
