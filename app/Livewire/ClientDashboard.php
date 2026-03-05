@@ -78,8 +78,6 @@ class ClientDashboard extends Component
             'queue_number' => $entry->queue_number,
             'prefix' => $office->prefix,
         ];
-
-        $this->dispatch('ticket-issued', queueNumber: $entry->queue_number, officeName: $office->name);
     }
 
     public function render()

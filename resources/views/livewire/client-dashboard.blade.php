@@ -1,4 +1,4 @@
-<div class="queue-page min-h-screen flex flex-col" x-data="clientQueue()">
+<div class="queue-page min-h-screen flex flex-col">
     <header class="queue-header text-white relative overflow-hidden">
         <div class="queue-header-ribbon" aria-hidden="true"></div>
         <div class="max-w-6xl mx-auto px-4 py-6 relative z-10">
@@ -108,28 +108,6 @@
         @endif
     </main>
 
-    <div x-show="showPopup" x-cloak x-transition.opacity
-         class="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm pointer-events-auto"
-         @ticket-issued.window="onTicketIssued($event.detail)"
-         @click.self="closePopup()"
-         @keydown.escape.window="closePopup()"
-         role="dialog"
-         aria-modal="true"
-         aria-labelledby="popup-title"
-    >
-        <div class="queue-modal-card relative z-10 bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border border-blue-200">
-            <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center mb-4" aria-hidden="true">
-                <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <h3 id="popup-title" class="text-lg font-bold text-slate-900">Ticket Issued</h3>
-            <p class="text-3xl font-black text-emerald-600 mt-2" x-text="popupNumber"></p>
-            <p class="text-slate-600 text-sm mt-1" x-text="popupOffice"></p>
-            <button x-ref="okButton" type="button" @click.stop.prevent="closePopup()" class="lgu-btn mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                OK
-            </button>
-        </div>
-    </div>
-
     <footer class="queue-footer py-4 text-sm">
         <div class="max-w-6xl mx-auto px-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <p class="sm:text-left">Municipality of Manolo Fortich &copy; {{ date('Y') }} - Queue Management System</p>
@@ -138,83 +116,7 @@
     </footer>
 </div>
 
-@script
-<script>
-    function clientQueue() {
-        return {
-            showPopup: false,
-            popupNumber: '',
-            popupOffice: '',
-            speechSynth: null,
-            dismissedTicketKey: '',
-
-            init() {
-                this.speechSynth = window.speechSynthesis;
-            },
-
-            closePopup() {
-                this.dismissedTicketKey = `${this.popupOffice}|${this.popupNumber}`;
-                if (this.speechSynth?.speaking) {
-                    this.speechSynth.cancel();
-                }
-                this.showPopup = false;
-                this.popupNumber = '';
-                this.popupOffice = '';
-            },
-
-            onTicketIssued(detail) {
-                const payload = Array.isArray(detail) ? (detail[0] || {}) : (detail || {});
-                const queueNumber = payload.queueNumber || payload.queue_number || '';
-                const officeName = payload.officeName || payload.office_name || '';
-                const ticketKey = `${officeName}|${queueNumber}`;
-
-                if (ticketKey === this.dismissedTicketKey) {
-                    return;
-                }
-
-                this.popupNumber = queueNumber;
-                this.popupOffice = officeName;
-                this.showPopup = true;
-                this.$nextTick(() => this.$refs.okButton?.focus());
-                this.speakTicket(queueNumber, officeName);
-                this.maybeBrowserNotify(queueNumber, officeName);
-            },
-
-            speakTicket(queueNumber, officeName) {
-                if (!this.speechSynth) return;
-                const parts = queueNumber.split('-');
-                const prefix = parts[0] || '';
-                const num = parts[1] || '';
-                const prefixLetters = prefix.split('').join(' ');
-                const text = `Your queue number for ${officeName} is ${prefixLetters} ${num}. Please wait for your number to be called.`;
-                const u = new SpeechSynthesisUtterance(text);
-                u.lang = 'en-PH';
-                u.rate = 0.9;
-                this.speechSynth.speak(u);
-            },
-
-            maybeBrowserNotify(queueNumber, officeName) {
-                if (!('Notification' in window)) return;
-                if (Notification.permission === 'granted') {
-                    new Notification('Ticket issued - ' + officeName, {
-                        body: 'Your queue number is ' + queueNumber,
-                        icon: '/favicon.ico'
-                    });
-                } else if (Notification.permission !== 'denied') {
-                    Notification.requestPermission().then(p => {
-                        if (p === 'granted')
-                            new Notification('Ticket issued - ' + officeName, { body: 'Your queue number is ' + queueNumber, icon: '/favicon.ico' });
-                    });
-                }
-            }
-        };
-    }
-</script>
-@endscript
-
 <style>
-    [x-cloak] { display: none !important; }
-
     .queue-page {
         --gov-blue-900: #cd9e38;
         --gov-blue-800: #e58b15;
@@ -492,10 +394,6 @@
         margin: 1rem auto 0;
         max-width: 34ch;
         color: #334155;
-    }
-
-    .queue-modal-card {
-        box-shadow: 0 30px 55px rgba(8, 24, 46, 0.42);
     }
 
     .queue-footer {
