@@ -114,7 +114,9 @@ class HrmoOfficeMonitor extends Component
             ->whereBetween('served_at', $this->manilaDayBounds())
             ->orderByDesc('served_at')
             ->limit(20)
-            ->get();
+            ->get()
+            ->sortBy('served_at')
+            ->values();
 
         $manilaNow = now('Asia/Manila');
 

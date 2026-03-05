@@ -6,7 +6,7 @@
                 <h1 class="text-xl font-bold">Get Your Queue Number</h1>
                 <p class="text-blue-200 text-sm">Municipality of Manolo Fortich — Select an office</p>
             </div>
-            <a href="{{ route('home') }}" class="lgu-btn px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+            <a href="{{ route('welcome') }}" class="lgu-btn px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
                 Home
             </a>
         </div>

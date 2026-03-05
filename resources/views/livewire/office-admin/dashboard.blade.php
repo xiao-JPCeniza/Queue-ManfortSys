@@ -19,23 +19,109 @@
                         @endif
 
                         @if($hrmoTab === 'reports' && $summary)
-                            <section class="lgu-card p-6" aria-labelledby="summary-heading">
-                                <h2 id="summary-heading" class="lgu-section-title mb-4">Overall Tickets Being Accommodated</h2>
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div class="rounded-xl border border-slate-200 bg-white p-4">
-                                        <p class="text-xs uppercase tracking-wide text-slate-500">Total Today</p>
-                                        <p class="text-3xl font-bold text-slate-800 mt-2">{{ $summary['total_today'] }}</p>
+                            <div class="space-y-6">
+                                <section class="lgu-card p-6" aria-labelledby="summary-heading">
+                                    <h2 id="summary-heading" class="lgu-section-title mb-4">Overall Tickets Being Accommodated</h2>
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div class="rounded-xl border border-slate-200 bg-white p-4">
+                                            <p class="text-xs uppercase tracking-wide text-slate-500">Total Today</p>
+                                            <p class="text-3xl font-bold text-slate-800 mt-2">{{ $summary['total_today'] }}</p>
+                                        </div>
+                                        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                            <p class="text-xs uppercase tracking-wide text-emerald-700">Completed Today</p>
+                                            <p class="text-3xl font-bold text-emerald-700 mt-2">{{ $summary['completed_today'] }}</p>
+                                        </div>
+                                        <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                                            <p class="text-xs uppercase tracking-wide text-blue-700">Active Now</p>
+                                            <p class="text-3xl font-bold text-blue-700 mt-2">{{ $summary['active_now'] }}</p>
+                                        </div>
                                     </div>
-                                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                                        <p class="text-xs uppercase tracking-wide text-emerald-700">Completed Today</p>
-                                        <p class="text-3xl font-bold text-emerald-700 mt-2">{{ $summary['completed_today'] }}</p>
-                                    </div>
-                                    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                        <p class="text-xs uppercase tracking-wide text-blue-700">Active Now</p>
-                                        <p class="text-3xl font-bold text-blue-700 mt-2">{{ $summary['active_now'] }}</p>
-                                    </div>
+                                </section>
+
+                                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                    <section class="lgu-card p-6" aria-labelledby="status-distribution-heading">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h2 id="status-distribution-heading" class="lgu-section-title">Ticket Status Distribution (Today)</h2>
+                                            <span class="text-xs text-slate-500">{{ $summary['total_today'] }} total</span>
+                                        </div>
+
+                                        <div class="mt-4 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5 items-center">
+                                            <div class="mx-auto">
+                                                <div class="relative h-44 w-44 rounded-full border border-slate-200"
+                                                     style="background: {{ $statusPieStyle }};"
+                                                     role="img"
+                                                     aria-label="Pie chart of ticket status distribution for today">
+                                                    <div class="absolute rounded-full border border-slate-100 bg-white" style="inset: 26%;"></div>
+                                                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                                        <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Total</span>
+                                                        <span class="text-2xl font-bold text-slate-800">{{ $summary['total_today'] }}</span>
+                                                    </div>
+                                                </div>
+                                                @if(!$statusPieHasData)
+                                                    <p class="mt-2 text-center text-xs text-slate-500">No tickets yet today.</p>
+                                                @endif
+                                            </div>
+
+                                            <div>
+                                                <div class="h-4 overflow-hidden rounded-full bg-slate-100 flex">
+                                                    @foreach($statusBreakdown as $status)
+                                                        @php($segmentWidth = $status['count'] > 0 ? max($status['percentage'], 1) : 0)
+                                                        @if($segmentWidth > 0)
+                                                            <span
+                                                                class="{{ $status['bar_class'] }}"
+                                                                style="width: {{ $segmentWidth }}%;"
+                                                                title="{{ $status['label'] }}: {{ $status['count'] }} ({{ number_format($status['percentage'], 1) }}%)"
+                                                            ></span>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+
+                                                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    @foreach($statusBreakdown as $status)
+                                                        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                                            <div class="flex items-center justify-between gap-3">
+                                                                <span class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                                                                    <span class="h-2.5 w-2.5 rounded-full {{ $status['chip_class'] }}" aria-hidden="true"></span>
+                                                                    {{ $status['label'] }}
+                                                                </span>
+                                                                <span class="text-sm font-semibold text-slate-800">{{ $status['count'] }}</span>
+                                                            </div>
+                                                            <p class="mt-0.5 text-xs text-slate-500">{{ number_format($status['percentage'], 1) }}%</p>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section class="lgu-card p-6" aria-labelledby="hourly-volume-heading">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h2 id="hourly-volume-heading" class="lgu-section-title">Hourly Ticket Volume (Today)</h2>
+                                            <span class="text-xs text-slate-500">Peak: {{ $peakHourLabel }}</span>
+                                        </div>
+
+                                        <div class="mt-4 overflow-x-auto">
+                                            <div class="min-w-[900px]">
+                                                <div class="h-56 border-l border-b border-slate-200 px-2 pt-3 flex items-end gap-2">
+                                                    @foreach($hourlyTicketSeries as $hourPoint)
+                                                        @php($barHeight = $hourPoint['count'] > 0 ? max(8, (int) round(($hourPoint['count'] / $hourlyMax) * 185)) : 8)
+                                                        <div class="flex-1 min-w-[24px] flex flex-col items-center justify-end gap-1">
+                                                            <div
+                                                                class="w-full rounded-t-md {{ $hourPoint['count'] > 0 ? 'bg-blue-500' : 'bg-slate-200' }}"
+                                                                style="height: {{ $barHeight }}px;"
+                                                                title="{{ $hourPoint['label'] }}: {{ $hourPoint['count'] }} ticket(s)"
+                                                            >
+                                                                <span class="sr-only">{{ $hourPoint['label'] }}: {{ $hourPoint['count'] }} ticket(s)</span>
+                                                            </div>
+                                                            <span class="text-[10px] text-slate-500 uppercase">{{ $hourPoint['short_label'] }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
                                 </div>
-                            </section>
+                            </div>
                         @endif
 
                         @if($hrmoTab === 'queue-management')
