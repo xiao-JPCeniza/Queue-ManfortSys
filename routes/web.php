@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HrmoOfficeController;
 use App\Http\Controllers\OfficeDashboardController;
+use App\Http\Controllers\OfficeQueueReportsPdfController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
 use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
@@ -9,11 +10,12 @@ use App\Livewire\QueueJoin;
 use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
 use App\Livewire\QueueMaster\OfficeManage as QueueMasterOfficeManage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
-    if (auth()->check()) {
+    if (Auth::check()) {
         return redirect()->route('dashboard');
     }
     return view('welcome');
@@ -24,7 +26,7 @@ Route::view('/welcome', 'welcome')->name('welcome');
 Route::get('/login', Login::class)->name('login')->middleware('guest');
 
 Route::post('/logout', function () {
-    auth()->logout();
+    Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
     return redirect()->route('home');
@@ -32,7 +34,7 @@ Route::post('/logout', function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
-        $user = auth()->user();
+        $user = Auth::user();
         $user->load('role');
         if ($user->isSuperAdmin() || $user->isQueueMaster()) {
             return redirect()->route('queue-master.index');
@@ -44,7 +46,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 
     Route::get('/profile', function () {
-        $user = auth()->user();
+        $user = Auth::user();
         $user->loadMissing(['role', 'office']);
 
         return view('profile', ['user' => $user]);
@@ -75,6 +77,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['office.access'])->group(function () {
         Route::get('/office/{office}', OfficeDashboardController::class)->name('office.dashboard');
         Route::get('/office/{office}/monitor', HrmoOfficeController::class)->name('office.hrmo.monitor');
+        Route::get('/office/{office}/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('office.queue-reports.pdf');
     });
 });
 

@@ -206,17 +206,16 @@
                                             </svg>
                                             Queue Reports
                                         </h2>
-                                        <button type="button"
-                                                onclick="window.printQueueReportsPdf()"
-                                                data-no-print="true"
-                                                class="lgu-btn inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                        <a href="{{ route('office.queue-reports.pdf', $office->slug) }}"
+                                           data-no-print="true"
+                                           class="lgu-btn inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18h12v3H6z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 14H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
                                             </svg>
                                             Print PDF
-                                        </button>
+                                        </a>
                                     </div>
 
                                     <div class="mt-5 space-y-5">
@@ -365,86 +364,6 @@
 @script
 <script>
     let voiceWarmupPromise = null;
-
-    window.printQueueReportsPdf = () => {
-        const reportNode = document.getElementById('queue-reports-printable');
-        if (!reportNode) {
-            window.print();
-            return;
-        }
-
-        const printWindow = window.open('', '_blank', 'width=1100,height=900');
-        if (!printWindow) {
-            window.print();
-            return;
-        }
-
-        const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-            .map((link) => `<link rel="stylesheet" href="${link.href}">`)
-            .join('');
-        const inlineStyles = Array.from(document.querySelectorAll('style'))
-            .map((styleTag) => `<style>${styleTag.innerHTML}</style>`)
-            .join('');
-
-        const reportClone = reportNode.cloneNode(true);
-        reportClone.querySelectorAll('[data-no-print=\"true\"]').forEach((node) => node.remove());
-
-        const printedAt = new Date().toLocaleString('en-PH', {
-            timeZone: 'Asia/Manila',
-            year: 'numeric',
-            month: 'short',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-        });
-
-        printWindow.document.open();
-        printWindow.document.write(`
-            <!doctype html>
-            <html>
-            <head>
-                <meta charset="utf-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Queue Reports PDF</title>
-                ${stylesheets}
-                ${inlineStyles}
-                <style>
-                    @page { size: A4 portrait; margin: 12mm; }
-                    body { margin: 0; background: #fff; color: #0f172a; }
-                    .pdf-shell { padding: 0; }
-                    .pdf-header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: baseline;
-                        margin-bottom: 12px;
-                        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-                    }
-                    .pdf-title { font-size: 20px; font-weight: 700; }
-                    .pdf-meta { font-size: 12px; color: #475569; }
-                    .print\\:hidden { display: none !important; }
-                </style>
-            </head>
-            <body>
-                <main class="pdf-shell">
-                    <div class="pdf-header">
-                        <h1 class="pdf-title">Queue Reports</h1>
-                        <p class="pdf-meta">Printed: ${printedAt} (Asia/Manila)</p>
-                    </div>
-                    ${reportClone.outerHTML}
-                </main>
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-
-        printWindow.focus();
-        window.setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 350);
-    };
 
     const getVoicesWithWarmup = () => {
         if (!('speechSynthesis' in window)) {
