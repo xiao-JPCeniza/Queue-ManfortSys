@@ -19,7 +19,7 @@
                     <p class="mt-2 text-5xl font-bold text-emerald-700 tracking-tight" aria-label="Current queue number {{ $serving->queue_number }}">
                         {{ $serving->queue_number }}
                     </p>
-                    <p class="mt-2 text-sm text-emerald-700/80">Called at {{ $serving->called_at?->format('h:i A') }}</p>
+                    <p class="mt-2 text-sm text-emerald-700/80">Called at {{ $serving->called_at?->timezone('Asia/Manila')?->format('h:i A') }}</p>
                 </div>
             @else
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
@@ -105,7 +105,7 @@
                     <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50/70">
                         <div>
                             <span class="font-semibold text-slate-800">{{ $entry->queue_number }}</span>
-                            <p class="text-xs text-slate-400 mt-0.5">Joined {{ $entry->created_at->format('h:i A') }}</p>
+                            <p class="text-xs text-slate-400 mt-0.5">Joined {{ $entry->created_at->timezone('Asia/Manila')->format('h:i A') }}</p>
                         </div>
                         <span class="text-xs font-medium text-slate-500">#{{ $loop->iteration }}</span>
                     </div>

@@ -220,9 +220,9 @@
                                                             {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
                                                         </span>
                                                     </td>
-                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->format('h:i:s A') }}</td>
-                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->format('h:i:s A') ?? '-' }}</td>
-                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->format('h:i:s A') ?? '-' }}</td>
+                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
+                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
                                                 </tr>
                                             @empty
                                                 <tr>
@@ -244,64 +244,137 @@
 
 @script
 <script>
-    window.callServingNumber = (queueNumber, officeName) => {
+    let voiceWarmupPromise = null;
+
+    const getVoicesWithWarmup = () => {
+        if (!('speechSynthesis' in window)) {
+            return Promise.resolve([]);
+        }
+
+        const synth = window.speechSynthesis;
+        const voices = synth.getVoices();
+
+        if (voices.length) {
+            return Promise.resolve(voices);
+        }
+
+        if (voiceWarmupPromise) {
+            return voiceWarmupPromise;
+        }
+
+        voiceWarmupPromise = new Promise((resolve) => {
+            let settled = false;
+
+            const finish = () => {
+                if (settled) {
+                    return;
+                }
+
+                settled = true;
+                synth.removeEventListener('voiceschanged', onVoicesChanged);
+                resolve(synth.getVoices());
+            };
+
+            const onVoicesChanged = () => {
+                finish();
+            };
+
+            synth.addEventListener('voiceschanged', onVoicesChanged);
+            window.setTimeout(finish, 1200);
+            synth.getVoices();
+        }).then((loadedVoices) => {
+            if (!loadedVoices.length) {
+                voiceWarmupPromise = null;
+            }
+
+            return loadedVoices;
+        });
+
+        return voiceWarmupPromise;
+    };
+
+    const getBestAnnouncementVoice = (voices) => {
+        if (!voices.length) {
+            return null;
+        }
+
+        const ukVoices = voices.filter((voice) => (voice.lang || '').toLowerCase().startsWith('en-gb'));
+        if (!ukVoices.length) {
+            return null;
+        }
+
+        const preferredNames = [
+            'microsoft sonia online (natural) - english (united kingdom)',
+            'microsoft libby online (natural) - english (united kingdom)',
+            'google uk english female',
+            'microsoft hazel desktop - english (great britain)'
+        ];
+
+        const femaleHints = ['female', 'woman', 'girl', 'libby', 'hazel', 'sonia', 'kate'];
+        const naturalHints = ['natural', 'neural', 'premium', 'enhanced', 'online', 'wavenet', 'studio'];
+
+        const exactMatch = ukVoices.find((voice) => preferredNames.includes(voice.name.toLowerCase()));
+        if (exactMatch) {
+            return exactMatch;
+        }
+
+        const scoreVoice = (voice) => {
+            const haystack = `${voice.name} ${voice.voiceURI}`.toLowerCase();
+            let score = 0;
+
+            if (haystack.includes('uk') || haystack.includes('british') || haystack.includes('england')) score += 20;
+            if (femaleHints.some((hint) => haystack.includes(hint))) score += 20;
+            if (naturalHints.some((hint) => haystack.includes(hint))) score += 25;
+            if (haystack.includes('male') || haystack.includes('man')) score -= 25;
+            if (voice.default) score += 2;
+
+            return score;
+        };
+
+        return [...ukVoices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null;
+    };
+
+    const toSpokenQueue = (value) => {
+        const [prefix, number] = value.split('-');
+
+        if (!number) {
+            return value.split('').join(' ');
+        }
+
+        const letters = prefix.split('').join(' ');
+        const digits = number.split('').join(' ');
+        return `${letters}, ${digits}`;
+    };
+
+    const toSpokenOffice = (value) => value.replace(/\b([A-Z]{2,})\b/g, (token) => token.split('').join(' '));
+
+    window.callServingNumber = async (queueNumber, officeName) => {
         if (!queueNumber || !('speechSynthesis' in window)) {
             return;
         }
 
-        window.speechSynthesis.cancel();
+        const synth = window.speechSynthesis;
+        synth.cancel();
 
-        const getBestAnnouncementVoice = () => {
-            const voices = window.speechSynthesis.getVoices();
-            if (!voices.length) {
-                return null;
-            }
-
-            const femaleHints = ['female', 'woman', 'girl', 'libby', 'hazel', 'susan', 'zira', 'samantha', 'kate', 'sonia'];
-            const naturalHints = ['natural', 'neural', 'premium', 'enhanced', 'online', 'wavenet', 'studio'];
-
-            const scoreVoice = (voice) => {
-                const haystack = `${voice.name} ${voice.voiceURI}`.toLowerCase();
-                let score = 0;
-
-                if (voice.lang.toLowerCase().startsWith('en-gb')) score += 50;
-                if (haystack.includes('uk') || haystack.includes('british') || haystack.includes('england')) score += 20;
-                if (femaleHints.some((hint) => haystack.includes(hint))) score += 20;
-                if (naturalHints.some((hint) => haystack.includes(hint))) score += 10;
-                if (haystack.includes('male') || haystack.includes('man')) score -= 20;
-                if (voice.default) score += 2;
-
-                return score;
-            };
-
-            return [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null;
-        };
-
-        const toSpokenQueue = (value) => {
-            const [prefix, number] = value.split('-');
-
-            if (!number) {
-                return value.split('').join(' ');
-            }
-
-            const letters = prefix.split('').join(' ');
-            return `${letters} ${number}`;
-        };
+        const voices = await getVoicesWithWarmup();
+        const preferredVoice = getBestAnnouncementVoice(voices);
 
         const spokenQueue = toSpokenQueue(queueNumber);
-        const message = `Now serving ${spokenQueue} at ${officeName}. Please proceed to the office.`;
+        const spokenOffice = toSpokenOffice(officeName);
+        const message = `Now serving, ${spokenQueue}, at ${spokenOffice}. Please proceed to the office.`;
         const announcement = new SpeechSynthesisUtterance(message);
-        announcement.lang = 'en-GB';
-        announcement.rate = 0.92;
-        announcement.pitch = 1.03;
 
-        const preferredVoice = getBestAnnouncementVoice();
+        announcement.lang = 'en-GB';
+        announcement.rate = 0.9;
+        announcement.pitch = 1.0;
+        announcement.volume = 1;
+
         if (preferredVoice) {
             announcement.voice = preferredVoice;
             announcement.lang = preferredVoice.lang || 'en-GB';
         }
 
-        window.speechSynthesis.speak(announcement);
+        synth.speak(announcement);
     };
 
     if ('speechSynthesis' in window) {

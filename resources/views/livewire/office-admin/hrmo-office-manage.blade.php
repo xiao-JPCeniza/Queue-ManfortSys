@@ -38,7 +38,7 @@
 
                                 <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
                                     Called at
-                                    <p class="font-semibold text-slate-700">{{ $serving->called_at?->format('h:i:s A') }}</p>
+                                    <p class="font-semibold text-slate-700">{{ $serving->called_at?->timezone('Asia/Manila')?->format('h:i:s A') }}</p>
                                 </div>
                             </div>
                         @else
@@ -65,7 +65,7 @@
                                 <p class="mt-2 text-center text-5xl font-extrabold leading-none tracking-tight text-sky-700 sm:text-6xl" aria-live="polite">{{ $nextInline->queue_number }}</p>
                                 <div class="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
                                     Queued at
-                                    <p class="font-semibold text-slate-700">{{ $nextInline->created_at->format('h:i:s A') }}</p>
+                                    <p class="font-semibold text-slate-700">{{ $nextInline->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</p>
                                 </div>
                             </div>
                         @else
