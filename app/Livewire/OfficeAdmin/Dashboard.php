@@ -163,8 +163,15 @@ class Dashboard extends Component
         $hourlyTicketSeries = [];
         $hourlyMax = 1;
         $peakHourLabel = 'No tickets yet today';
+        $monthlyVolumeSeries = [];
+        $monthlyVolumeMax = 1;
+        $monthlyPeakMonthLabel = 'No tickets in the last 12 months';
+        $monthlyStatusSeries = [];
+        $monthlyStatusLegend = [];
         if ($this->office->slug === 'hrmo') {
             [$dayStart, $dayEnd] = $this->manilaDayBounds();
+            $manilaNow = now('Asia/Manila');
+            $dbTimezone = (string) config('app.timezone', 'UTC');
 
             $todayEntries = QueueEntry::where('office_id', $this->office->id)
                 ->whereBetween('created_at', [$dayStart, $dayEnd])
@@ -189,6 +196,13 @@ class Dashboard extends Component
                 ['key' => QueueEntry::STATUS_NOT_SERVED, 'label' => 'Not Served', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500', 'hex_color' => '#f43f5e'],
                 ['key' => QueueEntry::STATUS_CANCELLED, 'label' => 'Cancelled', 'bar_class' => 'bg-slate-400', 'chip_class' => 'bg-slate-400', 'hex_color' => '#94a3b8'],
             ];
+
+            $monthlyStatusLegend = collect($statusMetadata)->map(function (array $status) {
+                return [
+                    'label' => $status['label'],
+                    'chip_class' => $status['chip_class'],
+                ];
+            })->all();
 
             $statusBreakdown = collect($statusMetadata)->map(function (array $status) use ($todayEntries, $totalToday) {
                 $count = $todayEntries->where('status', $status['key'])->count();
@@ -224,6 +238,63 @@ class Dashboard extends Component
                 if (!empty($segments)) {
                     $statusPieStyle = 'conic-gradient('.implode(', ', $segments).')';
                 }
+            }
+
+            $startMonthManila = $manilaNow->copy()->startOfMonth()->subMonths(11);
+            $endMonthManila = $manilaNow->copy()->endOfMonth();
+            $monthStartDb = $startMonthManila->copy()->setTimezone($dbTimezone);
+            $monthEndDb = $endMonthManila->copy()->setTimezone($dbTimezone);
+
+            $monthlyEntries = QueueEntry::where('office_id', $this->office->id)
+                ->whereBetween('created_at', [$monthStartDb, $monthEndDb])
+                ->get();
+
+            $entriesByMonth = $monthlyEntries->groupBy(function (QueueEntry $entry) {
+                return $entry->created_at->copy()->setTimezone('Asia/Manila')->format('Y-m');
+            });
+
+            $monthlyStatusSeries = collect(range(0, 11))->map(function (int $offset) use ($startMonthManila, $entriesByMonth, $statusMetadata) {
+                $month = $startMonthManila->copy()->addMonths($offset);
+                $monthKey = $month->format('Y-m');
+                $monthEntries = $entriesByMonth->get($monthKey, collect());
+                $total = $monthEntries->count();
+
+                $segments = collect($statusMetadata)->map(function (array $status) use ($monthEntries, $total) {
+                    $count = $monthEntries->where('status', $status['key'])->count();
+                    $percentage = $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
+
+                    return [
+                        ...$status,
+                        'count' => $count,
+                        'percentage' => $percentage,
+                    ];
+                })->all();
+
+                return [
+                    'month_key' => $monthKey,
+                    'label' => $month->format('M Y'),
+                    'short_label' => $month->format('M'),
+                    'year_short' => $month->format('y'),
+                    'total' => $total,
+                    'segments' => $segments,
+                ];
+            })->all();
+
+            $monthlyVolumeSeries = collect($monthlyStatusSeries)->map(function (array $monthRow) {
+                return [
+                    'month_key' => $monthRow['month_key'],
+                    'label' => $monthRow['label'],
+                    'short_label' => $monthRow['short_label'],
+                    'year_short' => $monthRow['year_short'],
+                    'total' => $monthRow['total'],
+                ];
+            })->all();
+
+            $monthlyVolumeMax = max(1, (int) collect($monthlyVolumeSeries)->max('total'));
+            $peakMonth = collect($monthlyVolumeSeries)->sortByDesc('total')->first();
+
+            if ($peakMonth && $peakMonth['total'] > 0) {
+                $monthlyPeakMonthLabel = $peakMonth['label'].' ('.$peakMonth['total'].' tickets)';
             }
 
             $hourlyCounts = $todayEntries
@@ -270,6 +341,11 @@ class Dashboard extends Component
             'hourlyTicketSeries' => $hourlyTicketSeries,
             'hourlyMax' => $hourlyMax,
             'peakHourLabel' => $peakHourLabel,
+            'monthlyVolumeSeries' => $monthlyVolumeSeries,
+            'monthlyVolumeMax' => $monthlyVolumeMax,
+            'monthlyPeakMonthLabel' => $monthlyPeakMonthLabel,
+            'monthlyStatusSeries' => $monthlyStatusSeries,
+            'monthlyStatusLegend' => $monthlyStatusLegend,
         ]);
     }
 }

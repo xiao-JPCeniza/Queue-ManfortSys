@@ -121,6 +121,75 @@
                                         </div>
                                     </section>
                                 </div>
+
+                                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                    <section class="lgu-card p-6" aria-labelledby="monthly-volume-heading">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h2 id="monthly-volume-heading" class="lgu-section-title">Ticket Volume Per Month (Last 12 Months)</h2>
+                                            <span class="text-xs text-slate-500">Peak: {{ $monthlyPeakMonthLabel }}</span>
+                                        </div>
+
+                                        <div class="mt-4 overflow-x-auto">
+                                            <div class="min-w-[680px]">
+                                                <div class="h-56 border-l border-b border-slate-200 px-2 pt-3 flex items-end gap-3">
+                                                    @foreach($monthlyVolumeSeries as $monthPoint)
+                                                        @php($monthBarHeight = $monthPoint['total'] > 0 ? max(8, (int) round(($monthPoint['total'] / $monthlyVolumeMax) * 185)) : 8)
+                                                        <div class="flex-1 min-w-[34px] flex flex-col items-center justify-end gap-1">
+                                                            <div
+                                                                class="w-full rounded-t-md {{ $monthPoint['total'] > 0 ? 'bg-indigo-500' : 'bg-slate-200' }}"
+                                                                style="height: {{ $monthBarHeight }}px;"
+                                                                title="{{ $monthPoint['label'] }}: {{ $monthPoint['total'] }} ticket(s)"
+                                                            >
+                                                                <span class="sr-only">{{ $monthPoint['label'] }}: {{ $monthPoint['total'] }} ticket(s)</span>
+                                                            </div>
+                                                            <span class="text-[10px] font-semibold text-slate-600 uppercase">{{ $monthPoint['short_label'] }}</span>
+                                                            <span class="text-[10px] text-slate-400">{{ $monthPoint['year_short'] }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <section class="lgu-card p-6" aria-labelledby="monthly-status-heading">
+                                        <div class="flex flex-wrap items-center justify-between gap-3">
+                                            <h2 id="monthly-status-heading" class="lgu-section-title">Status Per Month (Last 12 Months)</h2>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                @foreach($monthlyStatusLegend as $legend)
+                                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                                                        <span class="h-2 w-2 rounded-full {{ $legend['chip_class'] }}" aria-hidden="true"></span>
+                                                        {{ $legend['label'] }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-4 space-y-2.5">
+                                            @foreach($monthlyStatusSeries as $monthRow)
+                                                <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                                    <div class="flex items-center justify-between gap-3 text-xs text-slate-500">
+                                                        <span class="font-medium">{{ $monthRow['label'] }}</span>
+                                                        <span>{{ $monthRow['total'] }} total</span>
+                                                    </div>
+                                                    <div class="mt-2 h-3 overflow-hidden rounded-full bg-slate-100 flex">
+                                                        @if($monthRow['total'] > 0)
+                                                            @foreach($monthRow['segments'] as $segment)
+                                                                @php($segmentWidth = $segment['count'] > 0 ? max($segment['percentage'], 1) : 0)
+                                                                @if($segmentWidth > 0)
+                                                                    <span
+                                                                        class="{{ $segment['bar_class'] }}"
+                                                                        style="width: {{ $segmentWidth }}%;"
+                                                                        title="{{ $segment['label'] }}: {{ $segment['count'] }} ({{ number_format($segment['percentage'], 1) }}%)"
+                                                                    ></span>
+                                                                @endif
+                                                            @endforeach
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </section>
+                                </div>
                             </div>
                         @endif
 
@@ -182,6 +251,32 @@
 
         window.speechSynthesis.cancel();
 
+        const getBestAnnouncementVoice = () => {
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices.length) {
+                return null;
+            }
+
+            const femaleHints = ['female', 'woman', 'girl', 'libby', 'hazel', 'susan', 'zira', 'samantha', 'kate', 'sonia'];
+            const naturalHints = ['natural', 'neural', 'premium', 'enhanced', 'online', 'wavenet', 'studio'];
+
+            const scoreVoice = (voice) => {
+                const haystack = `${voice.name} ${voice.voiceURI}`.toLowerCase();
+                let score = 0;
+
+                if (voice.lang.toLowerCase().startsWith('en-gb')) score += 50;
+                if (haystack.includes('uk') || haystack.includes('british') || haystack.includes('england')) score += 20;
+                if (femaleHints.some((hint) => haystack.includes(hint))) score += 20;
+                if (naturalHints.some((hint) => haystack.includes(hint))) score += 10;
+                if (haystack.includes('male') || haystack.includes('man')) score -= 20;
+                if (voice.default) score += 2;
+
+                return score;
+            };
+
+            return [...voices].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null;
+        };
+
         const toSpokenQueue = (value) => {
             const [prefix, number] = value.split('-');
 
@@ -196,15 +291,14 @@
         const spokenQueue = toSpokenQueue(queueNumber);
         const message = `Now serving ${spokenQueue} at ${officeName}. Please proceed to the office.`;
         const announcement = new SpeechSynthesisUtterance(message);
-        announcement.lang = 'en-US';
-        announcement.rate = 0.95;
+        announcement.lang = 'en-GB';
+        announcement.rate = 0.92;
+        announcement.pitch = 1.03;
 
-        const voices = window.speechSynthesis.getVoices();
-        const englishVoice = voices.find((voice) => voice.lang.startsWith('en-US'))
-            || voices.find((voice) => voice.lang.startsWith('en-'));
-
-        if (englishVoice) {
-            announcement.voice = englishVoice;
+        const preferredVoice = getBestAnnouncementVoice();
+        if (preferredVoice) {
+            announcement.voice = preferredVoice;
+            announcement.lang = preferredVoice.lang || 'en-GB';
         }
 
         window.speechSynthesis.speak(announcement);
