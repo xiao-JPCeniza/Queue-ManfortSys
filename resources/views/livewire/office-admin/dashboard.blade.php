@@ -22,7 +22,7 @@
                             <div class="space-y-6">
                                 <section class="lgu-card p-6" aria-labelledby="summary-heading">
                                     <h2 id="summary-heading" class="lgu-section-title mb-4">Overall Tickets Being Accommodated</h2>
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                         <div class="rounded-xl border border-slate-200 bg-white p-4">
                                             <p class="text-xs uppercase tracking-wide text-slate-500">Total Today</p>
                                             <p class="text-3xl font-bold text-slate-800 mt-2">{{ $summary['total_today'] }}</p>
@@ -31,9 +31,9 @@
                                             <p class="text-xs uppercase tracking-wide text-emerald-700">Completed Today</p>
                                             <p class="text-3xl font-bold text-emerald-700 mt-2">{{ $summary['completed_today'] }}</p>
                                         </div>
-                                        <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
-                                            <p class="text-xs uppercase tracking-wide text-blue-700">Active Now</p>
-                                            <p class="text-3xl font-bold text-blue-700 mt-2">{{ $summary['active_now'] }}</p>
+                                        <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                                            <p class="text-xs uppercase tracking-wide text-indigo-700">Overall Tickets Accommodated</p>
+                                            <p class="text-3xl font-bold text-indigo-700 mt-2">{{ $summary['overall_accommodated'] }}</p>
                                         </div>
                                     </div>
                                 </section>
@@ -193,6 +193,126 @@
                             </div>
                         @endif
 
+                        @if($hrmoTab === 'queue-reports')
+                            <div class="space-y-6">
+                                <section id="queue-reports-printable" class="lgu-card p-6" aria-labelledby="queue-reports-heading">
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <h2 id="queue-reports-heading" class="lgu-section-title inline-flex items-center gap-2">
+                                            <svg class="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 20h16" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16v-5" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V8" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16v-9" />
+                                            </svg>
+                                            Queue Reports
+                                        </h2>
+                                        <button type="button"
+                                                onclick="window.printQueueReportsPdf()"
+                                                data-no-print="true"
+                                                class="lgu-btn inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18h12v3H6z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 14H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
+                                            </svg>
+                                            Print PDF
+                                        </button>
+                                    </div>
+
+                                    <div class="mt-5 space-y-5">
+                                        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                            <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                                <h3 class="text-sm font-semibold text-slate-700">Daily Queue Counts (Last 7 Days)</h3>
+                                            </div>
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full text-sm">
+                                                    <thead>
+                                                        <tr class="text-left text-slate-500">
+                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Date</th>
+                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Total Tickets</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($queueReportDailyCounts as $row)
+                                                            <tr class="border-b border-slate-100 last:border-b-0">
+                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['date'] }}</td>
+                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['total_tickets'] }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="2" class="px-4 py-4 text-center text-slate-500">No queue activity in the last 7 days.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </section>
+
+                                        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                            <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                                <h3 class="text-sm font-semibold text-slate-700">Weekly Queue Counts (Last 5 Weeks)</h3>
+                                            </div>
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full text-sm">
+                                                    <thead>
+                                                        <tr class="text-left text-slate-500">
+                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Week #</th>
+                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Total Tickets</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($queueReportWeeklyCounts as $row)
+                                                            <tr class="border-b border-slate-100 last:border-b-0">
+                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['week'] }}</td>
+                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['total_tickets'] }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="2" class="px-4 py-4 text-center text-slate-500">No queue activity in the last 5 weeks.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </section>
+
+                                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                                            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                                    <h3 class="text-sm font-semibold text-slate-700">Status Summary</h3>
+                                                </div>
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-sm">
+                                                        <thead>
+                                                            <tr class="text-slate-500">
+                                                                <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Served</th>
+                                                                <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Skipped</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ $queueReportStatusSummary['served'] }}</td>
+                                                                <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ $queueReportStatusSummary['skipped'] }}</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </section>
+
+                                            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                                <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
+                                                    <h3 class="text-sm font-semibold text-slate-700">Average Processing Time</h3>
+                                                </div>
+                                                <div class="flex h-[94px] items-center justify-center px-4">
+                                                    <p class="text-2xl font-bold text-slate-700">{{ $queueReportAverageProcessingTime }}</p>
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        @endif
+
                         @if($hrmoTab === 'queue-management')
                             <section class="lgu-card p-6" aria-labelledby="overall-activity-heading">
                                 <h2 id="overall-activity-heading" class="lgu-section-title mb-4">Overall Ticket Activity (Today)</h2>
@@ -245,6 +365,86 @@
 @script
 <script>
     let voiceWarmupPromise = null;
+
+    window.printQueueReportsPdf = () => {
+        const reportNode = document.getElementById('queue-reports-printable');
+        if (!reportNode) {
+            window.print();
+            return;
+        }
+
+        const printWindow = window.open('', '_blank', 'width=1100,height=900');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+            .map((link) => `<link rel="stylesheet" href="${link.href}">`)
+            .join('');
+        const inlineStyles = Array.from(document.querySelectorAll('style'))
+            .map((styleTag) => `<style>${styleTag.innerHTML}</style>`)
+            .join('');
+
+        const reportClone = reportNode.cloneNode(true);
+        reportClone.querySelectorAll('[data-no-print=\"true\"]').forEach((node) => node.remove());
+
+        const printedAt = new Date().toLocaleString('en-PH', {
+            timeZone: 'Asia/Manila',
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true,
+        });
+
+        printWindow.document.open();
+        printWindow.document.write(`
+            <!doctype html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Queue Reports PDF</title>
+                ${stylesheets}
+                ${inlineStyles}
+                <style>
+                    @page { size: A4 portrait; margin: 12mm; }
+                    body { margin: 0; background: #fff; color: #0f172a; }
+                    .pdf-shell { padding: 0; }
+                    .pdf-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: baseline;
+                        margin-bottom: 12px;
+                        font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+                    }
+                    .pdf-title { font-size: 20px; font-weight: 700; }
+                    .pdf-meta { font-size: 12px; color: #475569; }
+                    .print\\:hidden { display: none !important; }
+                </style>
+            </head>
+            <body>
+                <main class="pdf-shell">
+                    <div class="pdf-header">
+                        <h1 class="pdf-title">Queue Reports</h1>
+                        <p class="pdf-meta">Printed: ${printedAt} (Asia/Manila)</p>
+                    </div>
+                    ${reportClone.outerHTML}
+                </main>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        printWindow.focus();
+        window.setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 350);
+    };
 
     const getVoicesWithWarmup = () => {
         if (!('speechSynthesis' in window)) {

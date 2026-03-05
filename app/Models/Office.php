@@ -14,10 +14,12 @@ class Office extends Model
         'prefix',
         'description',
         'next_number',
+        'tickets_accommodated_total',
         'is_active',
     ];
 
     protected $casts = [
+        'tickets_accommodated_total' => 'integer',
         'is_active' => 'boolean',
     ];
 

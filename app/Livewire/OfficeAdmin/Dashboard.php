@@ -6,6 +6,7 @@ use App\Models\Office;
 use App\Models\QueueEntry;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Illuminate\Support\Facades\Schema;
 
 #[Layout('layouts.app')]
 class Dashboard extends Component
@@ -18,7 +19,7 @@ class Dashboard extends Component
         $this->office = $office;
 
         $requestedTab = (string) request()->query('tab', 'dashboard');
-        $allowedTabs = ['dashboard', 'reports', 'queue-management'];
+        $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
 
         if ($this->office->slug === 'hrmo' && in_array($requestedTab, $allowedTabs, true)) {
             $this->hrmoTab = $requestedTab;
@@ -31,7 +32,7 @@ class Dashboard extends Component
             return;
         }
 
-        $allowedTabs = ['dashboard', 'reports', 'queue-management'];
+        $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
         if (!in_array($tab, $allowedTabs, true)) {
             return;
         }
@@ -168,6 +169,13 @@ class Dashboard extends Component
         $monthlyPeakMonthLabel = 'No tickets in the last 12 months';
         $monthlyStatusSeries = [];
         $monthlyStatusLegend = [];
+        $queueReportDailyCounts = [];
+        $queueReportWeeklyCounts = [];
+        $queueReportStatusSummary = [
+            'served' => 0,
+            'skipped' => 0,
+        ];
+        $queueReportAverageProcessingTime = '00h 00m 00s';
         if ($this->office->slug === 'hrmo') {
             [$dayStart, $dayEnd] = $this->manilaDayBounds();
             $manilaNow = now('Asia/Manila');
@@ -178,15 +186,18 @@ class Dashboard extends Component
                 ->get();
 
             $totalToday = $todayEntries->count();
+            $overallAccommodated = Schema::hasColumn('offices', 'tickets_accommodated_total')
+                ? (int) Office::query()
+                    ->whereKey($this->office->id)
+                    ->value('tickets_accommodated_total')
+                : QueueEntry::where('office_id', $this->office->id)->count();
 
             $summary = [
                 'total_today' => $totalToday,
                 'completed_today' => $todayEntries
                     ->where('status', QueueEntry::STATUS_COMPLETED)
                     ->count(),
-                'active_now' => QueueEntry::where('office_id', $this->office->id)
-                    ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
-                    ->count(),
+                'overall_accommodated' => $overallAccommodated,
             ];
 
             $statusMetadata = [
@@ -326,6 +337,93 @@ class Dashboard extends Component
                 ->orderByDesc('created_at')
                 ->limit(20)
                 ->get();
+
+            if ($this->hrmoTab === 'queue-reports') {
+                $dailyStartManila = $manilaNow->copy()->startOfDay()->subDays(6);
+                $dailyEndManila = $manilaNow->copy()->endOfDay();
+
+                $dailyEntries = QueueEntry::where('office_id', $this->office->id)
+                    ->whereBetween('created_at', [
+                        $dailyStartManila->copy()->setTimezone($dbTimezone),
+                        $dailyEndManila->copy()->setTimezone($dbTimezone),
+                    ])
+                    ->get(['created_at']);
+
+                $dailyCountMap = $dailyEntries
+                    ->groupBy(fn (QueueEntry $entry) => $entry->created_at->copy()->setTimezone('Asia/Manila')->format('Y-m-d'))
+                    ->map(fn ($entries) => $entries->count());
+
+                $queueReportDailyCounts = collect(range(0, 6))->map(function (int $offset) use ($dailyStartManila, $dailyCountMap) {
+                    $day = $dailyStartManila->copy()->addDays($offset);
+                    $dayKey = $day->format('Y-m-d');
+
+                    return [
+                        'date' => $dayKey,
+                        'total_tickets' => (int) ($dailyCountMap->get($dayKey, 0)),
+                    ];
+                })
+                    ->filter(fn (array $row) => $row['total_tickets'] > 0)
+                    ->values()
+                    ->all();
+
+                $weeklyStartManila = $manilaNow->copy()->startOfWeek()->subWeeks(4);
+                $weeklyEndManila = $manilaNow->copy()->endOfWeek();
+
+                $weeklyEntries = QueueEntry::where('office_id', $this->office->id)
+                    ->whereBetween('created_at', [
+                        $weeklyStartManila->copy()->setTimezone($dbTimezone),
+                        $weeklyEndManila->copy()->setTimezone($dbTimezone),
+                    ])
+                    ->get(['created_at']);
+
+                $weeklyCountMap = $weeklyEntries
+                    ->groupBy(fn (QueueEntry $entry) => $entry->created_at->copy()->setTimezone('Asia/Manila')->format('oW'))
+                    ->map(fn ($entries) => $entries->count());
+
+                $queueReportWeeklyCounts = collect(range(0, 4))->map(function (int $offset) use ($weeklyStartManila, $weeklyCountMap) {
+                    $weekStart = $weeklyStartManila->copy()->addWeeks($offset);
+                    $weekKey = $weekStart->format('oW');
+
+                    return [
+                        'week' => $weekKey,
+                        'total_tickets' => (int) ($weeklyCountMap->get($weekKey, 0)),
+                    ];
+                })
+                    ->filter(fn (array $row) => $row['total_tickets'] > 0)
+                    ->values()
+                    ->all();
+
+                $queueReportStatusSummary = [
+                    'served' => QueueEntry::where('office_id', $this->office->id)
+                        ->where('status', QueueEntry::STATUS_COMPLETED)
+                        ->count(),
+                    'skipped' => QueueEntry::where('office_id', $this->office->id)
+                        ->where('status', QueueEntry::STATUS_NOT_SERVED)
+                        ->count(),
+                ];
+
+                $processedEntries = QueueEntry::where('office_id', $this->office->id)
+                    ->where('status', QueueEntry::STATUS_COMPLETED)
+                    ->whereNotNull('called_at')
+                    ->whereNotNull('served_at')
+                    ->get(['called_at', 'served_at']);
+
+                $processedCount = $processedEntries->count();
+                $averageSeconds = 0;
+
+                if ($processedCount > 0) {
+                    $totalSeconds = $processedEntries->sum(function (QueueEntry $entry) {
+                        return max(0, $entry->called_at->diffInSeconds($entry->served_at));
+                    });
+
+                    $averageSeconds = (int) round($totalSeconds / $processedCount);
+                }
+
+                $hours = intdiv($averageSeconds, 3600);
+                $minutes = intdiv($averageSeconds % 3600, 60);
+                $seconds = $averageSeconds % 60;
+                $queueReportAverageProcessingTime = sprintf('%02dh %02dm %02ds', $hours, $minutes, $seconds);
+            }
         } else {
             $this->hrmoTab = 'dashboard';
         }
@@ -346,6 +444,10 @@ class Dashboard extends Component
             'monthlyPeakMonthLabel' => $monthlyPeakMonthLabel,
             'monthlyStatusSeries' => $monthlyStatusSeries,
             'monthlyStatusLegend' => $monthlyStatusLegend,
+            'queueReportDailyCounts' => $queueReportDailyCounts,
+            'queueReportWeeklyCounts' => $queueReportWeeklyCounts,
+            'queueReportStatusSummary' => $queueReportStatusSummary,
+            'queueReportAverageProcessingTime' => $queueReportAverageProcessingTime,
         ]);
     }
 }

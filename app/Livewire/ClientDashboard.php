@@ -72,6 +72,9 @@ class ClientDashboard extends Component
             'status' => QueueEntry::STATUS_WAITING,
         ]);
 
+        $office->increment('tickets_accommodated_total');
+        $office->refresh();
+
         $this->ticket = [
             'office_id' => $office->id,
             'office_name' => $office->name,

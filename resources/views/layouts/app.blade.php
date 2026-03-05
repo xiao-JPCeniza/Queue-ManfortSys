@@ -47,6 +47,10 @@
                                            class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Reports
                                         </a>
+                                        <a href="{{ route('office.dashboard', $activeOffice->slug) }}?tab=queue-reports"
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'queue-reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                            Queue Reports
+                                        </a>
                                         <a href="{{ route('office.dashboard', $activeOffice->slug) }}?tab=queue-management"
                                            class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'queue-management' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Queue Management

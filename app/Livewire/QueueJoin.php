@@ -39,6 +39,9 @@ class QueueJoin extends Component
             'status' => QueueEntry::STATUS_WAITING,
         ]);
 
+        $this->office->increment('tickets_accommodated_total');
+        $this->office->refresh();
+
         $this->joined = true;
     }
 
