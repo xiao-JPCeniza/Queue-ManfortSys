@@ -10,17 +10,55 @@ use Livewire\Component;
 #[Layout('layouts.public')]
 class ClientDashboard extends Component
 {
+    private const ALLOWED_QUEUE_OFFICE_SLUGS = [
+        'hrmo',
+        'treasury',
+        'accounting',
+        'civil-registry',
+        'business-permits',
+        'assessors-office',
+        'mho',
+        'mswdo',
+    ];
+
     /** @var array{office_id: int, office_name: string, queue_number: string}|null */
     public ?array $ticket = null;
+    public string $selectedOfficeSlug = '';
+
+    public function getOfficeOptions()
+    {
+        $orderMap = array_flip(self::ALLOWED_QUEUE_OFFICE_SLUGS);
+
+        return Office::where('is_active', true)
+            ->whereIn('slug', self::ALLOWED_QUEUE_OFFICE_SLUGS)
+            ->get()
+            ->sortBy(fn (Office $office) => $orderMap[$office->slug] ?? PHP_INT_MAX)
+            ->values();
+    }
 
     public function getOffices()
     {
-        return Office::where('is_active', true)->orderBy('name')->get();
+        $orderMap = array_flip(self::ALLOWED_QUEUE_OFFICE_SLUGS);
+
+        $query = Office::where('is_active', true)
+            ->whereIn('slug', self::ALLOWED_QUEUE_OFFICE_SLUGS);
+
+        if ($this->selectedOfficeSlug !== '') {
+            $query->where('slug', $this->selectedOfficeSlug);
+        }
+
+        return $query
+            ->get()
+            ->sortBy(fn (Office $office) => $orderMap[$office->slug] ?? PHP_INT_MAX)
+            ->values();
     }
 
     public function selectOffice(int $officeId): void
     {
-        $office = Office::where('id', $officeId)->where('is_active', true)->first();
+        $office = Office::where('id', $officeId)
+            ->where('is_active', true)
+            ->whereIn('slug', self::ALLOWED_QUEUE_OFFICE_SLUGS)
+            ->first();
 
         if (! $office) {
             return;
@@ -48,6 +86,7 @@ class ClientDashboard extends Component
     {
         return view('livewire.client-dashboard', [
             'offices' => $this->getOffices(),
+            'officeOptions' => $this->getOfficeOptions(),
         ]);
     }
 }
