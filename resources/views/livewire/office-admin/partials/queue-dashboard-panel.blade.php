@@ -30,7 +30,7 @@
             <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button wire:click="callNext" type="button"
                         class="lgu-btn justify-center px-5 py-3 bg-emerald-600 text-white rounded-xl font-semibold text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 shadow-sm">
-                    Call next number
+                    Call Next
                 </button>
 
                 <button type="button"
@@ -42,7 +42,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 6a9 9 0 0 1 0 12" />
                     </svg>
-                    Announce ticket
+                    Annouce Ticket
                 </button>
             </div>
 
@@ -61,16 +61,12 @@
             <p class="mt-1 text-xs text-slate-500">Open related links for clients and staff.</p>
 
             <div class="mt-4 grid grid-cols-1 gap-2.5">
-                <a href="{{ route('queue.join', $office->slug) }}" target="_blank" rel="noopener noreferrer"
-                   class="lgu-btn inline-flex items-center justify-between gap-2 px-4 py-2.5 text-blue-800 bg-white rounded-xl font-medium text-sm border border-blue-100 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    <span>Open queue join page</span>
-                    <span aria-hidden="true">&rarr;</span>
-                </a>
-
                 @if($showHrmoMonitor)
                     <a href="{{ route('office.hrmo.monitor', $office->slug) }}"
+                       target="_blank" rel="noopener noreferrer"
+                       onclick="return confirm('Open HRMO Live Monitor in a new tab?');"
                        class="lgu-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-emerald-600 rounded-xl font-medium text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                        Open HRMO live monitor
+                        Open HRMO Live Monitor
                     </a>
                 @endif
 

@@ -42,6 +42,12 @@
                     <p class="queue-step-copy">Wait for your call</p>
                 </div>
             </div>
+<<<<<<< HEAD
+            <a href="{{ route('welcome') }}" class="lgu-btn px-4 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+                Home
+            </a>
+=======
+>>>>>>> 33cd61525db14823d1eaed211b9282f3f52cb1be
         </div>
     </header>
 

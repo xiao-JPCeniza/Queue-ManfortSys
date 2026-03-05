@@ -8,7 +8,9 @@ use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
 use App\Livewire\QueueJoin;
 use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
 use App\Livewire\QueueMaster\OfficeManage as QueueMasterOfficeManage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -16,6 +18,8 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('home');
+
+Route::view('/welcome', 'welcome')->name('welcome');
 
 Route::get('/login', Login::class)->name('login')->middleware('guest');
 
@@ -38,6 +42,30 @@ Route::middleware(['auth'])->group(function () {
         }
         return redirect()->route('queue-master.index');
     })->name('dashboard');
+
+    Route::get('/profile', function () {
+        $user = auth()->user();
+        $user->loadMissing(['role', 'office']);
+
+        return view('profile', ['user' => $user]);
+    })->name('profile');
+
+    Route::post('/profile/photo', function (Request $request) {
+        $validated = $request->validate([
+            'photo' => ['required', 'image', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
+            Storage::disk('public')->delete($user->profile_photo_path);
+        }
+
+        $path = $validated['photo']->store('profile-photos', 'public');
+        $user->update(['profile_photo_path' => $path]);
+
+        return back()->with('success', 'Profile photo updated.');
+    })->name('profile.photo.update');
 
     Route::middleware(['role:super_admin,queue_master'])->prefix('queue-master')->name('queue-master.')->group(function () {
         Route::get('/', QueueMasterDashboard::class)->name('index');

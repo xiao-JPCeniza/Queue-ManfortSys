@@ -157,22 +157,101 @@ class Dashboard extends Component
 
         $summary = null;
         $overallTickets = collect();
+        $statusBreakdown = [];
+        $statusPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
+        $statusPieHasData = false;
+        $hourlyTicketSeries = [];
+        $hourlyMax = 1;
+        $peakHourLabel = 'No tickets yet today';
         if ($this->office->slug === 'hrmo') {
+            [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+            $todayEntries = QueueEntry::where('office_id', $this->office->id)
+                ->whereBetween('created_at', [$dayStart, $dayEnd])
+                ->get();
+
+            $totalToday = $todayEntries->count();
+
             $summary = [
-                'total_today' => QueueEntry::where('office_id', $this->office->id)
-                    ->whereDate('created_at', today())
-                    ->count(),
-                'completed_today' => QueueEntry::where('office_id', $this->office->id)
-                    ->whereDate('created_at', today())
-                    ->completed()
+                'total_today' => $totalToday,
+                'completed_today' => $todayEntries
+                    ->where('status', QueueEntry::STATUS_COMPLETED)
                     ->count(),
                 'active_now' => QueueEntry::where('office_id', $this->office->id)
                     ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
                     ->count(),
             ];
 
+            $statusMetadata = [
+                ['key' => QueueEntry::STATUS_COMPLETED, 'label' => 'Completed', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500', 'hex_color' => '#10b981'],
+                ['key' => QueueEntry::STATUS_SERVING, 'label' => 'Serving', 'bar_class' => 'bg-sky-500', 'chip_class' => 'bg-sky-500', 'hex_color' => '#0ea5e9'],
+                ['key' => QueueEntry::STATUS_WAITING, 'label' => 'Waiting', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500', 'hex_color' => '#f59e0b'],
+                ['key' => QueueEntry::STATUS_NOT_SERVED, 'label' => 'Not Served', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500', 'hex_color' => '#f43f5e'],
+                ['key' => QueueEntry::STATUS_CANCELLED, 'label' => 'Cancelled', 'bar_class' => 'bg-slate-400', 'chip_class' => 'bg-slate-400', 'hex_color' => '#94a3b8'],
+            ];
+
+            $statusBreakdown = collect($statusMetadata)->map(function (array $status) use ($todayEntries, $totalToday) {
+                $count = $todayEntries->where('status', $status['key'])->count();
+                $percentage = $totalToday > 0 ? round(($count / $totalToday) * 100, 1) : 0.0;
+
+                return [
+                    ...$status,
+                    'count' => $count,
+                    'percentage' => $percentage,
+                ];
+            })->all();
+
+            $statusPieHasData = $totalToday > 0;
+            if ($statusPieHasData) {
+                $positiveStatuses = collect($statusBreakdown)
+                    ->filter(fn (array $status) => $status['count'] > 0)
+                    ->values();
+
+                $runningCount = 0;
+                $segments = [];
+                $lastIndex = $positiveStatuses->count() - 1;
+
+                foreach ($positiveStatuses as $index => $status) {
+                    $start = ($runningCount / $totalToday) * 100;
+                    $runningCount += $status['count'];
+                    $end = $index === $lastIndex
+                        ? 100
+                        : ($runningCount / $totalToday) * 100;
+
+                    $segments[] = $status['hex_color'].' '.number_format($start, 3, '.', '').'% '.number_format($end, 3, '.', '').'%';
+                }
+
+                if (!empty($segments)) {
+                    $statusPieStyle = 'conic-gradient('.implode(', ', $segments).')';
+                }
+            }
+
+            $hourlyCounts = $todayEntries
+                ->groupBy(function (QueueEntry $entry) {
+                    return (int) $entry->created_at->copy()->setTimezone('Asia/Manila')->format('G');
+                })
+                ->map(fn ($entries) => $entries->count());
+
+            $hourlyTicketSeries = collect(range(0, 23))->map(function (int $hour) use ($hourlyCounts) {
+                $hourStart = now('Asia/Manila')->copy()->startOfDay()->setHour($hour);
+
+                return [
+                    'hour' => $hour,
+                    'label' => $hourStart->format('g A'),
+                    'short_label' => $hourStart->format('ga'),
+                    'count' => (int) ($hourlyCounts->get($hour, 0)),
+                ];
+            })->all();
+
+            $hourlyMax = max(1, (int) collect($hourlyTicketSeries)->max('count'));
+            $peakHour = collect($hourlyTicketSeries)->sortByDesc('count')->first();
+
+            if ($peakHour && $peakHour['count'] > 0) {
+                $peakHourLabel = $peakHour['label'].' ('.$peakHour['count'].' tickets)';
+            }
+
             $overallTickets = QueueEntry::where('office_id', $this->office->id)
-                ->whereDate('created_at', today())
+                ->whereBetween('created_at', [$dayStart, $dayEnd])
                 ->orderByDesc('created_at')
                 ->limit(20)
                 ->get();
@@ -185,6 +264,12 @@ class Dashboard extends Component
             'serving' => $serving,
             'summary' => $summary,
             'overallTickets' => $overallTickets,
+            'statusBreakdown' => $statusBreakdown,
+            'statusPieStyle' => $statusPieStyle,
+            'statusPieHasData' => $statusPieHasData,
+            'hourlyTicketSeries' => $hourlyTicketSeries,
+            'hourlyMax' => $hourlyMax,
+            'peakHourLabel' => $peakHourLabel,
         ]);
     }
 }

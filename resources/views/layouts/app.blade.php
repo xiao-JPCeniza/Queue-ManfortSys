@@ -75,7 +75,25 @@
                                     </span>
                                 </summary>
                                 <div class="absolute right-0 z-30 mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-                                    <div class="border-b border-slate-100 px-4 py-2 text-xs text-slate-500">Signed in as {{ auth()->user()->name }}</div>
+                                    @php($accountUser = auth()->user())
+                                    <div class="border-b border-slate-100 px-4 py-2.5">
+                                        <div class="flex items-center gap-2">
+                                            @if($accountUser->profile_photo_url)
+                                                <img src="{{ $accountUser->profile_photo_url }}"
+                                                     alt="{{ $accountUser->name }} profile photo"
+                                                     class="h-8 w-8 rounded-full border border-slate-200 object-cover">
+                                            @else
+                                                <span class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-blue-50 text-xs font-semibold text-blue-700">
+                                                    {{ $accountUser->initials }}
+                                                </span>
+                                            @endif
+                                            <div class="min-w-0">
+                                                <p class="text-[11px] text-slate-500">Signed in as</p>
+                                                <p class="truncate text-sm font-medium text-slate-700">{{ $accountUser->name }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="{{ route('profile') }}" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Profile</a>
                                     <form action="{{ route('logout') }}" method="POST">
                                         @csrf
                                         <button type="submit" class="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50">Logout</button>
