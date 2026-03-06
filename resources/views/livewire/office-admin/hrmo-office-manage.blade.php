@@ -88,16 +88,11 @@
 
                 <div class="gov-panel-body">
                     @if($recentTransactions->isNotEmpty())
-                        <div class="gov-ticker" role="region" aria-label="Recent transaction queue numbers">
-                            <div class="gov-ticker-track">
-                                @foreach($recentTransactions as $entry)
-                                    <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
-                                @endforeach
-                                @foreach($recentTransactions as $entry)
-                                    <span class="gov-ticker-pill" aria-hidden="true">{{ $entry->queue_number }}</span>
-                                @endforeach
-                            </div>
-                        </div>
+                        <marquee behavior="scroll" direction="left" scrollamount="7" class="gov-ticker gov-marquee" aria-label="Recent transaction queue numbers">
+                            @foreach($recentTransactions as $entry)
+                                <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
+                            @endforeach
+                        </marquee>
                     @else
                         <div class="gov-ticket-empty gov-ticket-empty-soft">
                             <p class="gov-ticket-empty-title">No recent transaction yet</p>
@@ -489,6 +484,16 @@
         .gov-ticker::after {
             right: 0;
             background: linear-gradient(270deg, #f7f9fc 20%, rgb(247 249 252 / 0));
+        }
+
+        .gov-marquee {
+            padding: 1rem 0.95rem;
+            line-height: 1;
+        }
+
+        .gov-marquee .gov-ticker-pill {
+            margin-right: 0.7rem;
+            vertical-align: middle;
         }
 
         .gov-ticker-track {
