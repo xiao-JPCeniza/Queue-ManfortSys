@@ -226,6 +226,12 @@ class Dashboard extends Component
         $monthlyPeakMonthLabel = 'No tickets in the last 12 months';
         $monthlyStatusSeries = [];
         $monthlyStatusLegend = [];
+        $officeAccommodatedSummary = [];
+        $officeAccommodatedChartSeries = [];
+        $officeAccommodatedPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
+        $officeAccommodatedHasData = false;
+        $officeAccommodatedTotal = 0;
+        $officeAccommodatedMax = 1;
         $queueReportDailyCounts = [];
         $queueReportWeeklyCounts = [];
         $queueReportStatusSummary = [
@@ -239,13 +245,14 @@ class Dashboard extends Component
             $manilaNow = now('Asia/Manila');
             $dbTimezone = (string) config('app.timezone', 'UTC');
             $reportOfficeIds = $this->resolveReportOfficeIds();
+            $hasAccommodatedTotalColumn = Schema::hasColumn('offices', 'tickets_accommodated_total');
 
             $todayEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
                 ->whereBetween('created_at', [$dayStart, $dayEnd])
                 ->get();
 
             $totalToday = $todayEntries->count();
-            $overallAccommodated = Schema::hasColumn('offices', 'tickets_accommodated_total')
+            $overallAccommodated = $hasAccommodatedTotalColumn
                 ? (int) Office::query()
                     ->whereIn('id', $reportOfficeIds)
                     ->sum('tickets_accommodated_total')
@@ -258,6 +265,106 @@ class Dashboard extends Component
                     ->count(),
                 'overall_accommodated' => $overallAccommodated,
             ];
+
+            if (auth()->user()?->isSuperAdmin() && $this->hrmoTab === 'reports') {
+                if ($hasAccommodatedTotalColumn) {
+                    $officeAccommodatedSummary = Office::query()
+                        ->whereIn('id', $reportOfficeIds)
+                        ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                        ->orderBy('name')
+                        ->get(['id', 'name', 'tickets_accommodated_total'])
+                        ->map(function (Office $office) {
+                            return [
+                                'office_name' => $office->name,
+                                'accommodated_total' => (int) $office->tickets_accommodated_total,
+                            ];
+                        })
+                        ->sortByDesc('accommodated_total')
+                        ->values()
+                        ->all();
+                } else {
+                    $reportOffices = Office::query()
+                        ->whereIn('id', $reportOfficeIds)
+                        ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                        ->orderBy('name')
+                        ->get(['id', 'name']);
+
+                    $fallbackCounts = QueueEntry::query()
+                        ->selectRaw('office_id, COUNT(*) as total')
+                        ->whereIn('office_id', $reportOffices->pluck('id'))
+                        ->groupBy('office_id')
+                        ->pluck('total', 'office_id');
+
+                    $officeAccommodatedSummary = $reportOffices
+                        ->map(function (Office $office) use ($fallbackCounts) {
+                            return [
+                                'office_name' => $office->name,
+                                'accommodated_total' => (int) ($fallbackCounts->get($office->id, 0)),
+                            ];
+                        })
+                        ->sortByDesc('accommodated_total')
+                        ->values()
+                        ->all();
+                }
+
+                $officeChartPalette = [
+                    ['hex_color' => '#3b82f6', 'bar_class' => 'bg-blue-500', 'chip_class' => 'bg-blue-500'],
+                    ['hex_color' => '#10b981', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500'],
+                    ['hex_color' => '#f59e0b', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500'],
+                    ['hex_color' => '#f43f5e', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500'],
+                    ['hex_color' => '#8b5cf6', 'bar_class' => 'bg-violet-500', 'chip_class' => 'bg-violet-500'],
+                    ['hex_color' => '#06b6d4', 'bar_class' => 'bg-cyan-500', 'chip_class' => 'bg-cyan-500'],
+                    ['hex_color' => '#14b8a6', 'bar_class' => 'bg-teal-500', 'chip_class' => 'bg-teal-500'],
+                    ['hex_color' => '#6366f1', 'bar_class' => 'bg-indigo-500', 'chip_class' => 'bg-indigo-500'],
+                ];
+
+                $paletteCount = count($officeChartPalette);
+                $officeAccommodatedTotal = (int) collect($officeAccommodatedSummary)->sum('accommodated_total');
+                $officeAccommodatedMax = max(1, (int) collect($officeAccommodatedSummary)->max('accommodated_total'));
+
+                $officeAccommodatedChartSeries = collect($officeAccommodatedSummary)
+                    ->values()
+                    ->map(function (array $officeRow, int $index) use ($officeAccommodatedTotal, $officeChartPalette, $paletteCount) {
+                        $palette = $officeChartPalette[$index % $paletteCount];
+                        $percentage = $officeAccommodatedTotal > 0
+                            ? round(($officeRow['accommodated_total'] / $officeAccommodatedTotal) * 100, 1)
+                            : 0.0;
+
+                        return [
+                            ...$officeRow,
+                            'percentage' => $percentage,
+                            'hex_color' => $palette['hex_color'],
+                            'bar_class' => $palette['bar_class'],
+                            'chip_class' => $palette['chip_class'],
+                        ];
+                    })
+                    ->all();
+
+                $officeAccommodatedHasData = $officeAccommodatedTotal > 0;
+                if ($officeAccommodatedHasData) {
+                    $positiveOfficeSegments = collect($officeAccommodatedChartSeries)
+                        ->filter(fn (array $officeRow) => $officeRow['accommodated_total'] > 0)
+                        ->values();
+
+                    $runningCount = 0;
+                    $pieSegments = [];
+                    $lastIndex = $positiveOfficeSegments->count() - 1;
+
+                    foreach ($positiveOfficeSegments as $index => $officeRow) {
+                        $start = ($runningCount / $officeAccommodatedTotal) * 100;
+                        $runningCount += $officeRow['accommodated_total'];
+                        $end = $index === $lastIndex
+                            ? 100
+                            : ($runningCount / $officeAccommodatedTotal) * 100;
+
+                        $pieSegments[] = $officeRow['hex_color'].' '.number_format($start, 3, '.', '').'% '.number_format($end, 3, '.', '').'%';
+                    }
+
+                    if (!empty($pieSegments)) {
+                        $officeAccommodatedPieStyle = 'conic-gradient('.implode(', ', $pieSegments).')';
+                    }
+                }
+            }
 
             $statusMetadata = [
                 ['key' => QueueEntry::STATUS_COMPLETED, 'label' => 'Completed', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500', 'hex_color' => '#10b981'],
@@ -549,6 +656,12 @@ class Dashboard extends Component
             'monthlyPeakMonthLabel' => $monthlyPeakMonthLabel,
             'monthlyStatusSeries' => $monthlyStatusSeries,
             'monthlyStatusLegend' => $monthlyStatusLegend,
+            'officeAccommodatedSummary' => $officeAccommodatedSummary,
+            'officeAccommodatedChartSeries' => $officeAccommodatedChartSeries,
+            'officeAccommodatedPieStyle' => $officeAccommodatedPieStyle,
+            'officeAccommodatedHasData' => $officeAccommodatedHasData,
+            'officeAccommodatedTotal' => $officeAccommodatedTotal,
+            'officeAccommodatedMax' => $officeAccommodatedMax,
             'queueReportDailyCounts' => $queueReportDailyCounts,
             'queueReportWeeklyCounts' => $queueReportWeeklyCounts,
             'queueReportStatusSummary' => $queueReportStatusSummary,

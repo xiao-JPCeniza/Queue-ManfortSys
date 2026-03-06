@@ -47,6 +47,117 @@
                                     </div>
                                 </section>
 
+                                @if(auth()->user()?->isSuperAdmin())
+                                    @php($topOffice = $officeAccommodatedChartSeries[0] ?? null)
+                                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                                        <section class="lgu-card p-6" aria-labelledby="office-accommodated-pie-heading">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <h2 id="office-accommodated-pie-heading" class="lgu-section-title">Accommodated Tickets Share by Office</h2>
+                                                <span class="text-xs text-slate-500">{{ number_format($officeAccommodatedTotal) }} total</span>
+                                            </div>
+
+                                            <div class="mt-4 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-5 items-center">
+                                                <div class="mx-auto">
+                                                    <div class="relative h-44 w-44 rounded-full border border-slate-200"
+                                                         style="background: {{ $officeAccommodatedPieStyle }};"
+                                                         role="img"
+                                                         aria-label="Pie chart of accommodated tickets by office">
+                                                        <div class="absolute rounded-full border border-slate-100 bg-white" style="inset: 26%;"></div>
+                                                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                                            <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Total</span>
+                                                            <span class="text-2xl font-bold text-slate-800">{{ number_format($officeAccommodatedTotal) }}</span>
+                                                        </div>
+                                                    </div>
+                                                    @if(!$officeAccommodatedHasData)
+                                                        <p class="mt-2 text-center text-xs text-slate-500">No accommodated tickets yet.</p>
+                                                    @endif
+                                                </div>
+
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    @forelse($officeAccommodatedChartSeries as $officeRow)
+                                                        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                                            <div class="flex items-center justify-between gap-3">
+                                                                <span class="inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                                                                    <span class="h-2.5 w-2.5 rounded-full {{ $officeRow['chip_class'] }}" aria-hidden="true"></span>
+                                                                    {{ $officeRow['office_name'] }}
+                                                                </span>
+                                                                <span class="text-sm font-semibold text-slate-800">{{ number_format($officeRow['accommodated_total']) }}</span>
+                                                            </div>
+                                                            <p class="mt-0.5 text-xs text-slate-500">{{ number_format($officeRow['percentage'], 1) }}%</p>
+                                                        </div>
+                                                    @empty
+                                                        <p class="text-sm text-slate-500">No office accommodation data found.</p>
+                                                    @endforelse
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <section class="lgu-card p-6" aria-labelledby="office-accommodated-bar-heading">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <h2 id="office-accommodated-bar-heading" class="lgu-section-title">Accommodated Tickets by Office (Bar Chart)</h2>
+                                                <span class="text-xs text-slate-500">
+                                                    @if($topOffice)
+                                                        Top: {{ $topOffice['office_name'] }} ({{ number_format($topOffice['accommodated_total']) }})
+                                                    @else
+                                                        No data
+                                                    @endif
+                                                </span>
+                                            </div>
+
+                                            <div class="mt-4 space-y-3">
+                                                @forelse($officeAccommodatedChartSeries as $officeRow)
+                                                    @php($barWidth = $officeAccommodatedMax > 0 ? ($officeRow['accommodated_total'] > 0 ? max(2, round(($officeRow['accommodated_total'] / $officeAccommodatedMax) * 100, 1)) : 0) : 0)
+                                                    <div>
+                                                        <div class="flex items-center justify-between gap-2 text-xs text-slate-600">
+                                                            <span class="font-medium">{{ $officeRow['office_name'] }}</span>
+                                                            <span>{{ number_format($officeRow['accommodated_total']) }} ({{ number_format($officeRow['percentage'], 1) }}%)</span>
+                                                        </div>
+                                                        <div class="mt-1 h-3 overflow-hidden rounded-full bg-slate-100">
+                                                            @if($barWidth > 0)
+                                                                <span class="block h-full {{ $officeRow['bar_class'] }}" style="width: {{ $barWidth }}%;"></span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @empty
+                                                    <p class="text-sm text-slate-500">No office accommodation data found.</p>
+                                                @endforelse
+                                            </div>
+                                        </section>
+                                    </div>
+
+                                    <section class="lgu-card p-6" aria-labelledby="office-accommodated-summary-heading">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h2 id="office-accommodated-summary-heading" class="lgu-section-title">Accommodated Tickets by Office</h2>
+                                            <span class="text-xs text-slate-500">{{ count($officeAccommodatedChartSeries) }} offices</span>
+                                        </div>
+
+                                        <div class="mt-4 overflow-x-auto">
+                                            <table class="w-full text-sm">
+                                                <thead>
+                                                    <tr class="border-b border-slate-200 text-left text-slate-500">
+                                                        <th class="px-3 py-2.5 font-semibold">#</th>
+                                                        <th class="px-3 py-2.5 font-semibold">Office</th>
+                                                        <th class="px-3 py-2.5 font-semibold text-right">Accommodated</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @forelse($officeAccommodatedChartSeries as $index => $row)
+                                                        <tr class="border-b border-slate-100 last:border-b-0">
+                                                            <td class="px-3 py-2.5 text-slate-600">{{ $index + 1 }}</td>
+                                                            <td class="px-3 py-2.5 font-medium text-slate-800">{{ $row['office_name'] }}</td>
+                                                            <td class="px-3 py-2.5 text-right font-semibold text-indigo-700">{{ number_format($row['accommodated_total']) }}</td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="3" class="px-3 py-4 text-center text-slate-500">No office accommodation data found.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </section>
+                                @endif
+
                                 @if(!auth()->user()?->isSuperAdmin())
                                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                                         <section class="lgu-card p-6" aria-labelledby="status-distribution-heading">
