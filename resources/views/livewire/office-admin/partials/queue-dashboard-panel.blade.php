@@ -83,6 +83,7 @@
                         Clear Transaction
                     </button>
                 @endif
+
             </div>
         </section>
 

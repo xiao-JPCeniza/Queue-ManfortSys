@@ -229,17 +229,18 @@ class Dashboard extends Component
             [$dayStart, $dayEnd] = $this->manilaDayBounds();
             $manilaNow = now('Asia/Manila');
             $dbTimezone = (string) config('app.timezone', 'UTC');
+            $reportOfficeIds = $this->resolveReportOfficeIds();
 
-            $todayEntries = QueueEntry::where('office_id', $this->office->id)
+            $todayEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
                 ->whereBetween('created_at', [$dayStart, $dayEnd])
                 ->get();
 
             $totalToday = $todayEntries->count();
             $overallAccommodated = Schema::hasColumn('offices', 'tickets_accommodated_total')
                 ? (int) Office::query()
-                    ->whereKey($this->office->id)
-                    ->value('tickets_accommodated_total')
-                : QueueEntry::where('office_id', $this->office->id)->count();
+                    ->whereIn('id', $reportOfficeIds)
+                    ->sum('tickets_accommodated_total')
+                : QueueEntry::whereIn('office_id', $reportOfficeIds)->count();
 
             $summary = [
                 'total_today' => $totalToday,
@@ -305,7 +306,7 @@ class Dashboard extends Component
             $monthStartDb = $startMonthManila->copy()->setTimezone($dbTimezone);
             $monthEndDb = $endMonthManila->copy()->setTimezone($dbTimezone);
 
-            $monthlyEntries = QueueEntry::where('office_id', $this->office->id)
+            $monthlyEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
                 ->whereBetween('created_at', [$monthStartDb, $monthEndDb])
                 ->get();
 
@@ -545,6 +546,20 @@ class Dashboard extends Component
             'queueReportAverageProcessingTime' => $queueReportAverageProcessingTime,
             'queueReportScopeLabel' => $queueReportScopeLabel,
         ]);
+    }
+
+    private function resolveReportOfficeIds()
+    {
+        if ($this->shouldUseAllOfficesReportScope()) {
+            return Office::query()->pluck('id');
+        }
+
+        return collect([$this->office->id]);
+    }
+
+    private function shouldUseAllOfficesReportScope(): bool
+    {
+        return auth()->user()?->isSuperAdmin() && $this->office->slug === 'hrmo';
     }
 
     private function supportsAdvancedQueueDashboard(): bool

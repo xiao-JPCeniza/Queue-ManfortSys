@@ -41,7 +41,7 @@
                                             <p class="text-3xl font-bold text-emerald-700 mt-2">{{ $summary['completed_today'] }}</p>
                                         </div>
                                         <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-                                            <p class="text-xs uppercase tracking-wide text-indigo-700">Overall Tickets Accommodated</p>
+                                            <p class="text-xs uppercase tracking-wide text-indigo-700">Overall Tickets Being Accommodated</p>
                                             <p class="text-3xl font-bold text-indigo-700 mt-2">{{ $summary['overall_accommodated'] }}</p>
                                         </div>
                                     </div>

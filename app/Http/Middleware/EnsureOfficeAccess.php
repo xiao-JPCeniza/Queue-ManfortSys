@@ -22,6 +22,10 @@ class EnsureOfficeAccess
             abort(404, 'Office not found.');
         }
 
+        if ($office->slug === 'hrmo' && !$request->user()->isSuperAdmin()) {
+            abort(403, 'The HRMO dashboard is only accessible to Super Admin.');
+        }
+
         if (!$request->user()->canAccessOffice($office)) {
             abort(403, 'You do not have access to this office.');
         }

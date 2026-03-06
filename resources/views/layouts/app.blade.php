@@ -21,6 +21,8 @@
         @php($authUser = auth()->user())
         @php($isSuperAdmin = $authUser?->isSuperAdmin() ?? false)
         @php($specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo'])
+        @php($dashboardShortcutOfficeSlug = $authUser?->isOfficeAdmin() ? $authUser?->office?->slug : null)
+        @php($showDashboardShortcut = $dashboardShortcutOfficeSlug && in_array($dashboardShortcutOfficeSlug, $specialOfficeSlugs, true))
         @php($isAdvancedOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice && in_array($activeOffice->slug, $specialOfficeSlugs, true))
         @php($showAdminSidebarMenu = $isAdvancedOfficeDashboard || $isSuperAdmin)
         @php($sidebarOfficeSlug = $isAdvancedOfficeDashboard ? $activeOffice->slug : 'hrmo')
@@ -78,6 +80,12 @@
                         @auth
                             @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
                                 <a href="{{ route('queue-master.index') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Queue Master</a>
+                            @endif
+                            @if($showDashboardShortcut)
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
+                                   class="lgu-btn px-4 py-2.5 rounded-lg {{ request()->routeIs('office.dashboard') && request()->route('office') === $dashboardShortcutOfficeSlug ? 'bg-blue-700' : 'hover:bg-blue-700' }} text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+                                    Dashboard
+                                </a>
                             @endif
                             <details class="relative">
                                 <summary class="lgu-btn list-none cursor-pointer px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 [&::-webkit-details-marker]:hidden" aria-label="Open account menu">
