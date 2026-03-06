@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
         $queueMasterRole = Role::where('slug', 'queue_master')->first();
         $officeAdminRole = Role::where('slug', 'office_admin')->first();
 
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'admin@manolofortich.gov.ph'],
             [
                 'name' => 'Super Admin',
@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
             ]
         );
 
-        User::firstOrCreate(
+        User::updateOrCreate(
             ['email' => 'queuemaster@manolofortich.gov.ph'],
             [
                 'name' => 'Queue Master',
@@ -38,7 +38,7 @@ class UserSeeder extends Seeder
 
         $acct = Office::whereIn('slug', ['accounting', 'acct'])->first();
         if ($acct && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'acct@manolofortich.gov.ph'],
                 [
                     'name' => 'Accounting Office Admin',
@@ -51,7 +51,7 @@ class UserSeeder extends Seeder
 
         $assr = Office::whereIn('slug', ['assessors-office', 'assr'])->first();
         if ($assr && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'assr@manolofortich.gov.ph'],
                 [
                     'name' => 'Assessors Office Admin',
@@ -64,7 +64,7 @@ class UserSeeder extends Seeder
 
         $bplo = Office::whereIn('slug', ['business-permits', 'bplo'])->first();
         if ($bplo && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'bplo@manolofortich.gov.ph'],
                 [
                     'name' => 'BPLO Office Admin',
@@ -77,7 +77,7 @@ class UserSeeder extends Seeder
 
         $cr = Office::whereIn('slug', ['civil-registry', 'cr'])->first();
         if ($cr && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'cr@manolofortich.gov.ph'],
                 [
                     'name' => 'Civil Registry Office Admin',
@@ -90,7 +90,7 @@ class UserSeeder extends Seeder
 
         $hrmo = Office::where('slug', 'hrmo')->first();
         if ($hrmo && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'hrmo@manolofortich.gov.ph'],
                 [
                     'name' => 'HRMO Office Admin',
@@ -103,7 +103,7 @@ class UserSeeder extends Seeder
 
         $mho = Office::where('slug', 'mho')->first();
         if ($mho && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'mho@manolofortich.gov.ph'],
                 [
                     'name' => 'MHO Office Admin',
@@ -116,7 +116,7 @@ class UserSeeder extends Seeder
 
         $mswdo = Office::where('slug', 'mswdo')->first();
         if ($mswdo && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'mswdo@manolofortich.gov.ph'],
                 [
                     'name' => 'MSWDO Office Admin',
@@ -129,7 +129,7 @@ class UserSeeder extends Seeder
 
         $trsy = Office::whereIn('slug', ['treasury', 'trsy'])->first();
         if ($trsy && $officeAdminRole) {
-            User::firstOrCreate(
+            User::updateOrCreate(
                 ['email' => 'trsy@manolofortich.gov.ph'],
                 [
                     'name' => 'Treasury Office Admin',
@@ -141,3 +141,4 @@ class UserSeeder extends Seeder
         }
     }
 }
+
