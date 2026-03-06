@@ -13,10 +13,6 @@ class HrmoOfficeMonitor extends Component
 
     public function mount(Office $office): void
     {
-        if ($office->slug !== 'hrmo') {
-            abort(404, 'HRMO monitor is only available for the HRMO office.');
-        }
-
         $this->office = $office;
     }
 
@@ -129,7 +125,13 @@ class HrmoOfficeMonitor extends Component
 
         $manilaNow = now('Asia/Manila');
 
-        return view('livewire.office-admin.hrmo-office-manage', [
+        $view = match (true) {
+            $this->office->slug === 'hrmo' => 'livewire.office-admin.hrmo-office-manage',
+            in_array($this->office->slug, ['business-permits', 'bplo'], true) => 'livewire.office-admin.bplo-office-manage',
+            default => 'livewire.office-admin.general-office-live-monitor',
+        };
+
+        return view($view, [
             'serving' => $serving,
             'nextInline' => $nextInline,
             'recentTransactions' => $recentTransactions,

@@ -11,11 +11,6 @@ class HrmoOfficeController extends Controller
     {
         $officeModel = $request->attributes->get('office') ?? Office::where('slug', $office)->firstOrFail();
 
-        if ($officeModel->slug !== 'hrmo') {
-            abort(404, 'HRMO monitor is only available for the HRMO office.');
-        }
-
         return view('office.hrmo-monitor', ['office' => $officeModel]);
     }
 }
-

@@ -48,6 +48,10 @@
                     <a href="{{ route('office.bplo.monitor', $office->slug) }}" class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                         Open BPLO live monitor
                     </a>
+                @else
+                    <a href="{{ route('office.hrmo.monitor', $office->slug) }}" class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Open live monitor
+                    </a>
                 @endif
             </div>
         </section>

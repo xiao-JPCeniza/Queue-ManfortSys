@@ -1,7 +1,7 @@
 <div wire:poll.5s>
     @php($isBploOffice = in_array($office->slug, ['business-permits', 'bplo'], true))
     @php($usesAdvancedQueueDashboard = $office->slug === 'hrmo' || $isBploOffice)
-    @php($liveMonitorRoute = $office->slug === 'hrmo' ? 'office.hrmo.monitor' : ($isBploOffice ? 'office.bplo.monitor' : ''))
+    @php($liveMonitorRoute = $office->slug === 'hrmo' ? 'office.hrmo.monitor' : ($isBploOffice ? 'office.bplo.monitor' : 'office.hrmo.monitor'))
     @php($liveMonitorLabel = $office->slug === 'hrmo' ? 'Open HRMO Live Monitor' : ($isBploOffice ? 'Open BPLO Live Monitor' : 'Open Live Monitor'))
 
     @if(session('office_message'))
@@ -536,7 +536,10 @@
             </div>
         </div>
     @else
-        @include('livewire.office-admin.partials.queue-dashboard-panel')
+        @include('livewire.office-admin.general-office-queue-operations-desk', [
+            'liveMonitorRoute' => $liveMonitorRoute,
+            'liveMonitorLabel' => $liveMonitorLabel,
+        ])
     @endif
 </div>
 

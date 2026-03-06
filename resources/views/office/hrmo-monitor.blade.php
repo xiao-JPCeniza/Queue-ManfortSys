@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'HRMO Live Queue Monitor')
+@section('title', $office->name . ' Live Queue Monitor')
 @section('hide_nav', '1')
 
 @section('content')
