@@ -72,15 +72,6 @@
 
                 @if($office->slug === 'hrmo')
                     <button type="button"
-                            wire:click="resetTickets"
-                            wire:confirm="Reset all generated tickets for today? This will also clear waiting and serving entries."
-                            wire:loading.attr="disabled"
-                            wire:target="resetTickets"
-                            class="lgu-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-amber-800 bg-amber-50 rounded-xl font-medium text-sm border border-amber-200 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed">
-                        Reset Tickets
-                    </button>
-
-                    <button type="button"
                             wire:click="clearTransaction"
                             wire:confirm="Clear all entries listed in Recent Transactions (Today)?"
                             wire:loading.attr="disabled"

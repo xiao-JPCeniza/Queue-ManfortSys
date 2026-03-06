@@ -22,7 +22,7 @@
                         </select>
                     @endif
 
-                    <a href="{{ route('home') }}" class="lgu-btn queue-home-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+                    <a href="{{ route('queue.client') }}" class="lgu-btn queue-home-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
                         Home
                     </a>
                 </div>

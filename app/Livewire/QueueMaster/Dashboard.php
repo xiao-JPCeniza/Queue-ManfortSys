@@ -14,9 +14,28 @@ class Dashboard extends Component
     {
         $office = Office::find($officeId);
         if ($office) {
+            [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+            QueueEntry::where('office_id', $office->id)
+                ->whereBetween('created_at', [$dayStart, $dayEnd])
+                ->delete();
+
             $office->update(['next_number' => 1]);
-            $this->dispatch('numbering-reset');
+            $office->refresh();
+
+            session()->flash('success', "Queue numbering reset for {$office->name}. The next generated number will start from 001.");
         }
+    }
+
+    private function manilaDayBounds(): array
+    {
+        $manilaNow = now('Asia/Manila');
+        $dbTimezone = (string) config('app.timezone', 'UTC');
+
+        return [
+            $manilaNow->copy()->startOfDay()->setTimezone($dbTimezone),
+            $manilaNow->copy()->endOfDay()->setTimezone($dbTimezone),
+        ];
     }
 
     public function render()

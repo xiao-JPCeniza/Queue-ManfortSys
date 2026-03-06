@@ -24,7 +24,7 @@
                                 Manage
                             </a>
                             <button wire:click="resetNumbering({{ $office->id }})"
-                                    wire:confirm="Reset queue numbering for {{ $office->name }} to 1?"
+                                    wire:confirm="Reset queue numbering for {{ $office->name }} to 1? This will clear this office's generated tickets for today."
                                     class="lgu-btn px-3 py-2 text-amber-700 bg-amber-50 text-sm font-medium rounded-lg hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2">
                                 Reset #
                             </button>
