@@ -40,13 +40,26 @@ class Dashboard extends Component
 
     public function render()
     {
-        $offices = Office::withCount(['queueEntries as waiting_count' => function ($q) {
+        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+
+        $officeQuery = Office::query();
+        if ($isSuperAdmin) {
+            $officeQuery->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
+        }
+
+        $offices = $officeQuery->withCount(['queueEntries as waiting_count' => function ($q) {
             $q->where('status', QueueEntry::STATUS_WAITING);
         }])->orderBy('name')->get();
 
-        $recentEntries = QueueEntry::with('office')
+        $recentEntriesQuery = QueueEntry::with('office')
             ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
-            ->orderByDesc('created_at')
+            ->orderByDesc('created_at');
+
+        if ($isSuperAdmin) {
+            $recentEntriesQuery->whereIn('office_id', $offices->pluck('id'));
+        }
+
+        $recentEntries = $recentEntriesQuery
             ->limit(20)
             ->get();
 

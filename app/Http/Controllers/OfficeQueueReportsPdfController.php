@@ -25,7 +25,7 @@ class OfficeQueueReportsPdfController extends Controller
                 ->where('is_active', true)
                 ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
                 ->pluck('id');
-            $reportScopeLabel = 'Municipality Queue Services';
+            $reportScopeLabel = 'All Offices';
         }
 
         $manilaNow = now('Asia/Manila');

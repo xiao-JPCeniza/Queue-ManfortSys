@@ -411,7 +411,7 @@ class Dashboard extends Component
                         ->where('is_active', true)
                         ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
                         ->pluck('id');
-                    $queueReportScopeLabel = 'Municipality Queue Services';
+                    $queueReportScopeLabel = 'All Offices';
                 }
 
                 $dailyStartManila = $manilaNow->copy()->startOfDay()->subDays(6);
