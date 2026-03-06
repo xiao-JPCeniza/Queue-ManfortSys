@@ -4,6 +4,7 @@ namespace App\Livewire\OfficeAdmin;
 
 use App\Models\Office;
 use App\Models\QueueEntry;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class HrmoOfficeMonitor extends Component
@@ -70,11 +71,17 @@ class HrmoOfficeMonitor extends Component
                 ->first();
 
             if ($next) {
-                $next->update([
+                $updatePayload = [
                     'status' => QueueEntry::STATUS_SERVING,
                     'called_at' => now(),
-                    'served_by' => auth()->id(),
-                ]);
+                ];
+
+                $servedBy = Auth::id();
+                if ($servedBy !== null) {
+                    $updatePayload['served_by'] = $servedBy;
+                }
+
+                $next->update($updatePayload);
             }
             return;
         }

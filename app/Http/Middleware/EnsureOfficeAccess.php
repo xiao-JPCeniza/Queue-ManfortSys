@@ -9,14 +9,31 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureOfficeAccess
 {
+    /**
+     * Support legacy/short office slugs in URLs.
+     *
+     * @var array<string, string>
+     */
+    private const OFFICE_SLUG_ALIASES = [
+        'acct' => 'accounting',
+        'assr' => 'assessors-office',
+        'bplo' => 'business-permits',
+        'cr' => 'civil-registry',
+        'trsy' => 'treasury',
+    ];
+
     public function handle(Request $request, Closure $next): Response
     {
         if (!$request->user()) {
             return redirect()->route('login');
         }
 
-        $officeSlug = $request->route('office');
+        $officeSlug = (string) $request->route('office');
         $office = Office::where('slug', $officeSlug)->first();
+
+        if (!$office && isset(self::OFFICE_SLUG_ALIASES[$officeSlug])) {
+            $office = Office::where('slug', self::OFFICE_SLUG_ALIASES[$officeSlug])->first();
+        }
 
         if (!$office) {
             abort(404, 'Office not found.');
