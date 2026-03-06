@@ -11,6 +11,7 @@ use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
 use App\Livewire\QueueJoin;
 use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
 use App\Livewire\QueueMaster\OfficeManage as QueueMasterOfficeManage;
+use App\Models\Office;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -34,18 +35,22 @@ Route::post('/logout', function () {
     return redirect()->route('login');
 })->name('logout')->middleware('auth');
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        $user = Auth::user();
-        $user->load('role');
-        if ($user->isSuperAdmin() || $user->isQueueMaster()) {
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/dashboard', function () {
+            $user = Auth::user();
+            $user->load('role');
+            if ($user->isSuperAdmin()) {
+                return redirect()->route('super-admin.index');
+            }
+            if ($user->isQueueMaster()) {
+                return redirect()->route('queue-master.index');
+            }
+            if ($user->isOfficeAdmin() && $user->office_id) {
+                return redirect()->route('office.dashboard', $user->office->slug);
+            }
+
             return redirect()->route('queue-master.index');
-        }
-        if ($user->isOfficeAdmin() && $user->office_id) {
-            return redirect()->route('office.dashboard', $user->office->slug);
-        }
-        return redirect()->route('queue-master.index');
-    })->name('dashboard');
+        })->name('dashboard');
 
     Route::get('/profile', function () {
         $user = Auth::user();
@@ -77,6 +82,17 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('/', QueueMasterDashboard::class)->name('index');
+        Route::get('/reports', function () {
+            $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
+
+            return view('office.dashboard', ['office' => $officeModel]);
+        })->name('reports');
+        Route::get('/queue-management', function () {
+            $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
+
+            return view('office.dashboard', ['office' => $officeModel]);
+        })->name('queue-management');
         Route::get('/queue-reports', SuperAdminQueueReportsController::class)->name('queue-reports');
         Route::get('/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('queue-reports.pdf');
     });

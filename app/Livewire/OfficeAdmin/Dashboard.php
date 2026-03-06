@@ -59,9 +59,18 @@ class Dashboard extends Component
     {
         $this->office = $office;
 
-        if (request()->routeIs('super-admin.queue-reports')) {
-            $this->hrmoTab = 'queue-reports';
-            return;
+        $superAdminTabByRoute = [
+            'super-admin.reports' => 'reports',
+            'super-admin.queue-reports' => 'queue-reports',
+            'super-admin.queue-management' => 'queue-management',
+        ];
+
+        foreach ($superAdminTabByRoute as $routeName => $tab) {
+            if (request()->routeIs($routeName)) {
+                $this->hrmoTab = $tab;
+
+                return;
+            }
         }
 
         $requestedTab = (string) request()->query('tab', 'dashboard');

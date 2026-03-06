@@ -1,7 +1,8 @@
 <div>
     <div class="mb-6">
-        <a href="{{ route('queue-master.index') }}" class="lgu-btn inline-flex items-center gap-1 text-blue-800 font-medium text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1">
-            &larr; Queue Master
+        @php($mainDashboardRoute = auth()->user()?->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
+        <a href="{{ $mainDashboardRoute }}" class="lgu-btn inline-flex items-center gap-1 text-blue-800 font-medium text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1">
+            &larr; Dashboard
         </a>
         <h1 class="lgu-page-title mt-1">{{ $office->name }}</h1>
         <p class="text-slate-600 text-sm mt-0.5">{{ $office->description }}</p>
@@ -14,7 +15,7 @@
             <li>Open the office queue dashboard to start serving people in line.</li>
             <li>Use <strong>Call next number</strong> to call the next waiting client.</li>
             <li>Use <strong>Mark completed</strong> after the transaction is finished.</li>
-            <li>Reset numbering from Queue Master only when starting a new queue cycle.</li>
+            <li>Reset numbering from Dashboard only when starting a new queue cycle.</li>
         </ol>
     </section>
 

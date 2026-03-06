@@ -1,6 +1,6 @@
 <div>
     <div class="mb-8">
-        <h1 class="lgu-page-title mb-1">Queue Master Dashboard</h1>
+        <h1 class="lgu-page-title mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Super Admin Dashboard' : 'Dashboard' }}</h1>
         <p class="text-slate-600 text-sm">Manage offices and monitor queue activity across the LGU.</p>
     </div>
 

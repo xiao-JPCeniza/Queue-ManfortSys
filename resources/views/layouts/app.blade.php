@@ -28,7 +28,11 @@
         @php($sidebarOfficeSlug = $isAdvancedOfficeDashboard ? $activeOffice->slug : 'hrmo')
         @php($isSidebarOfficeDashboard = request()->routeIs('office.dashboard') && request()->route('office') === $sidebarOfficeSlug)
         @php($activeOfficeTab = (string) request()->query('tab', 'dashboard'))
+        @php($isSuperAdminReports = request()->routeIs('super-admin.reports'))
         @php($isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports'))
+        @php($isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management'))
+        @php($isReportsActive = $isSuperAdmin ? $isSuperAdminReports : ($isSidebarOfficeDashboard && $activeOfficeTab === 'reports'))
+        @php($isQueueManagementActive = $isSuperAdmin ? $isSuperAdminQueueManagement : ($isSidebarOfficeDashboard && $activeOfficeTab === 'queue-management'))
         <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16 items-center">
@@ -48,8 +52,8 @@
                                         {{ $isSuperAdmin ? 'Super Admin Panel' : 'Admin Panel' }}
                                     </div>
                                     <nav class="py-1 text-sm" aria-label="Office Queue Navigation">
-                                        <a href="{{ route('office.dashboard', $sidebarOfficeSlug) }}?tab=reports"
-                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeOfficeTab === 'reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                        <a href="{{ $isSuperAdmin ? route('super-admin.reports') : route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports' }}"
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isReportsActive ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Reports
                                         </a>
                                         @if($isSuperAdmin)
@@ -63,8 +67,8 @@
                                                 Queue Reports
                                             </a>
                                         @endif
-                                        <a href="{{ route('office.dashboard', $sidebarOfficeSlug) }}?tab=queue-management"
-                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeOfficeTab === 'queue-management' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                        <a href="{{ $isSuperAdmin ? route('super-admin.queue-management') : route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management' }}"
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isQueueManagementActive ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Queue Management
                                         </a>
                                     </nav>
@@ -79,7 +83,8 @@
                     <div class="flex items-center gap-2">
                         @auth
                             @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
-                                <a href="{{ route('queue-master.index') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Queue Master</a>
+                                @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
+                                <a href="{{ $mainDashboardRoute }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Dashboard</a>
                             @endif
                             @if($showDashboardShortcut)
                                 <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
