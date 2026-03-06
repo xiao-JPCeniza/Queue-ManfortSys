@@ -7,13 +7,30 @@
     <title>@yield('title', 'Queue System') - {{ config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet" />
+    <script>
+        (() => {
+            try {
+                const storageKey = 'lgu-theme-preference';
+                const stored = window.localStorage.getItem(storageKey);
+                const theme = stored === 'dark' || stored === 'light'
+                    ? stored
+                    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+                document.documentElement.style.colorScheme = theme;
+            } catch (error) {
+                // Ignore theme boot errors and use default styling.
+            }
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+<body data-theme-scope="app" class="bg-slate-50 text-slate-900 antialiased min-h-screen">
     <a href="#main-content" class="lgu-skip-link">Skip to main content</a>
     @php($hideNav = trim((string) $__env->yieldContent('hide_nav')) === '1')
     @if(!$hideNav)
@@ -55,6 +72,24 @@
                                            class="flex items-center gap-2 px-4 py-2.5 {{ $activeHrmoTab === 'queue-management' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Queue Management
                                         </a>
+
+                                        <div class="mt-1 border-t border-slate-100 px-4 pt-3 pb-2">
+                                            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Settings</p>
+                                            <div class="mt-2 grid grid-cols-2 gap-2">
+                                                <button type="button"
+                                                        data-theme-choice="light"
+                                                        aria-pressed="false"
+                                                        class="theme-choice-btn rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                                    Light
+                                                </button>
+                                                <button type="button"
+                                                        data-theme-choice="dark"
+                                                        aria-pressed="false"
+                                                        class="theme-choice-btn rounded-md border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                                    Dark
+                                                </button>
+                                            </div>
+                                        </div>
                                     </nav>
                                 </div>
                             </details>
@@ -126,5 +161,64 @@
         @endif
     </main>
     @livewireScripts
+    <script>
+        (() => {
+            const storageKey = 'lgu-theme-preference';
+            const isThemeValue = (value) => value === 'light' || value === 'dark';
+
+            const getStoredTheme = () => {
+                const stored = window.localStorage.getItem(storageKey);
+                if (isThemeValue(stored)) {
+                    return stored;
+                }
+
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            };
+
+            const updateThemeButtons = (theme) => {
+                document.querySelectorAll('[data-theme-choice]').forEach((button) => {
+                    const isActive = button.getAttribute('data-theme-choice') === theme;
+                    button.setAttribute('aria-pressed', String(isActive));
+                    button.dataset.active = isActive ? 'true' : 'false';
+                });
+            };
+
+            const applyTheme = (theme) => {
+                if (!isThemeValue(theme)) {
+                    return;
+                }
+
+                document.documentElement.dataset.theme = theme;
+                document.documentElement.classList.toggle('dark', theme === 'dark');
+                document.documentElement.style.colorScheme = theme;
+                updateThemeButtons(theme);
+            };
+
+            const persistTheme = (theme) => {
+                if (!isThemeValue(theme)) {
+                    return;
+                }
+
+                window.localStorage.setItem(storageKey, theme);
+                applyTheme(theme);
+            };
+
+            applyTheme(getStoredTheme());
+            window.setAppTheme = persistTheme;
+
+            document.addEventListener('click', (event) => {
+                const themeButton = event.target.closest('[data-theme-choice]');
+                if (!themeButton) {
+                    return;
+                }
+
+                persistTheme(themeButton.getAttribute('data-theme-choice'));
+            });
+
+            document.addEventListener('livewire:navigated', () => {
+                applyTheme(getStoredTheme());
+            });
+        })();
+    </script>
 </body>
 </html>
