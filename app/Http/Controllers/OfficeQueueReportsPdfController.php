@@ -14,8 +14,8 @@ class OfficeQueueReportsPdfController extends Controller
         $officeSlug = $office ?? 'hrmo';
         $officeModel = $request->attributes->get('office') ?? Office::where('slug', $officeSlug)->firstOrFail();
 
-        if ($officeModel->slug !== 'hrmo') {
-            abort(404, 'Queue reports PDF is only available for HRMO.');
+        if (!in_array($officeModel->slug, ['hrmo', 'business-permits', 'bplo'], true)) {
+            abort(404, 'Queue reports PDF is only available for HRMO and BPLO.');
         }
 
         $reportOfficeIds = collect([$officeModel->id]);

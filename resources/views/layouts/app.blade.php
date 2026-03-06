@@ -20,11 +20,12 @@
         @php($activeOffice = request()->attributes->get('office'))
         @php($authUser = auth()->user())
         @php($isSuperAdmin = $authUser?->isSuperAdmin() ?? false)
-        @php($isHrmoOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice && $activeOffice->slug === 'hrmo')
-        @php($showAdminSidebarMenu = $isHrmoOfficeDashboard || $isSuperAdmin)
-        @php($sidebarOfficeSlug = $isHrmoOfficeDashboard ? $activeOffice->slug : 'hrmo')
+        @php($specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo'])
+        @php($isAdvancedOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice && in_array($activeOffice->slug, $specialOfficeSlugs, true))
+        @php($showAdminSidebarMenu = $isAdvancedOfficeDashboard || $isSuperAdmin)
+        @php($sidebarOfficeSlug = $isAdvancedOfficeDashboard ? $activeOffice->slug : 'hrmo')
         @php($isSidebarOfficeDashboard = request()->routeIs('office.dashboard') && request()->route('office') === $sidebarOfficeSlug)
-        @php($activeHrmoTab = (string) request()->query('tab', 'dashboard'))
+        @php($activeOfficeTab = (string) request()->query('tab', 'dashboard'))
         @php($isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports'))
         <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -44,9 +45,9 @@
                                     <div class="border-b border-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                         {{ $isSuperAdmin ? 'Super Admin Panel' : 'Admin Panel' }}
                                     </div>
-                                    <nav class="py-1 text-sm" aria-label="HRMO Queue Navigation">
+                                    <nav class="py-1 text-sm" aria-label="Office Queue Navigation">
                                         <a href="{{ route('office.dashboard', $sidebarOfficeSlug) }}?tab=reports"
-                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeHrmoTab === 'reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeOfficeTab === 'reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Reports
                                         </a>
                                         @if($isSuperAdmin)
@@ -56,12 +57,12 @@
                                             </a>
                                         @else
                                             <a href="{{ route('office.dashboard', $sidebarOfficeSlug) }}?tab=queue-reports"
-                                               class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeHrmoTab === 'queue-reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                               class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeOfficeTab === 'queue-reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                                 Queue Reports
                                             </a>
                                         @endif
                                         <a href="{{ route('office.dashboard', $sidebarOfficeSlug) }}?tab=queue-management"
-                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeHrmoTab === 'queue-management' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeOfficeTab === 'queue-management' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Queue Management
                                         </a>
                                     </nav>

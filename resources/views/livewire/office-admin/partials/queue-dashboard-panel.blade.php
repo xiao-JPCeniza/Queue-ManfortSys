@@ -1,4 +1,7 @@
-@php($showHrmoMonitor = $showHrmoMonitor ?? false)
+@php($showLiveMonitor = $showLiveMonitor ?? false)
+@php($liveMonitorRoute = $liveMonitorRoute ?? '')
+@php($liveMonitorLabel = $liveMonitorLabel ?? 'Open Live Monitor')
+@php($isAdvancedQueueOffice = in_array($office->slug, ['hrmo', 'business-permits', 'bplo'], true))
 
 <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start">
     <section class="xl:col-span-3 lgu-card overflow-hidden" aria-labelledby="serving-heading">
@@ -61,16 +64,16 @@
             <p class="mt-1 text-xs text-slate-500">Open related links for clients and staff                     .</p>
 
             <div class="mt-4 grid grid-cols-1 gap-2.5">
-                @if($showHrmoMonitor)
-                    <a href="{{ route('office.hrmo.monitor', $office->slug) }}"
+                @if($showLiveMonitor && $liveMonitorRoute !== '')
+                    <a href="{{ route($liveMonitorRoute, $office->slug) }}"
                        target="_blank" rel="noopener noreferrer"
-                       onclick="return confirm('Open HRMO Live Monitor in a new tab?');"
+                       onclick="return confirm('{{ $liveMonitorLabel }} in a new tab?');"
                        class="lgu-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 text-white bg-emerald-600 rounded-xl font-medium text-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                        Open HRMO Live Monitor
+                        {{ $liveMonitorLabel }}
                     </a>
                 @endif
 
-                @if($office->slug === 'hrmo')
+                @if($isAdvancedQueueOffice)
                     <button type="button"
                             wire:click="clearTransaction"
                             wire:confirm="Clear all entries listed in Recent Transactions (Today)?"

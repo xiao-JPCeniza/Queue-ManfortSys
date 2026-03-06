@@ -6,14 +6,14 @@ use App\Models\Office;
 use App\Models\QueueEntry;
 use Livewire\Component;
 
-class HrmoOfficeMonitor extends Component
+class BploOfficeMonitor extends Component
 {
     public Office $office;
 
     public function mount(Office $office): void
     {
-        if ($office->slug !== 'hrmo') {
-            abort(404, 'HRMO monitor is only available for the HRMO office.');
+        if (!in_array($office->slug, ['business-permits', 'bplo'], true)) {
+            abort(404, 'BPLO monitor is only available for the Business Permits office.');
         }
 
         $this->office = $office;
@@ -122,7 +122,7 @@ class HrmoOfficeMonitor extends Component
 
         $manilaNow = now('Asia/Manila');
 
-        return view('livewire.office-admin.hrmo-office-manage', [
+        return view('livewire.office-admin.bplo-office-manage', [
             'serving' => $serving,
             'nextInline' => $nextInline,
             'recentTransactions' => $recentTransactions,

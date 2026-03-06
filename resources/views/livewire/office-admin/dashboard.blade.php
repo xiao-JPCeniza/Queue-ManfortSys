@@ -1,21 +1,30 @@
 <div wire:poll.5s>
+    @php($isBploOffice = in_array($office->slug, ['business-permits', 'bplo'], true))
+    @php($usesAdvancedQueueDashboard = $office->slug === 'hrmo' || $isBploOffice)
+    @php($liveMonitorRoute = $office->slug === 'hrmo' ? 'office.hrmo.monitor' : ($isBploOffice ? 'office.bplo.monitor' : ''))
+    @php($liveMonitorLabel = $office->slug === 'hrmo' ? 'Open HRMO Live Monitor' : ($isBploOffice ? 'Open BPLO Live Monitor' : 'Open Live Monitor'))
+
     @if(session('office_message'))
         <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm" role="status">{{ session('office_message') }}</div>
     @endif
 
-    @if($office->slug !== 'hrmo')
+    @if(!$usesAdvancedQueueDashboard)
         <div class="mb-6">
             <h1 class="lgu-page-title">{{ $office->name }}</h1>
             <p class="text-slate-600 text-sm mt-1">Office queue dashboard - call numbers and manage the line.</p>
         </div>
     @endif
 
-    @if($office->slug === 'hrmo')
+    @if($usesAdvancedQueueDashboard)
         <div class="overflow-hidden rounded-lg border border-slate-300 bg-white shadow-sm">
             <div class="min-w-0 bg-white">
                     <div class="p-4 sm:p-6">
                         @if($hrmoTab === 'dashboard')
-                            @include('livewire.office-admin.partials.queue-dashboard-panel', ['showHrmoMonitor' => true])
+                            @include('livewire.office-admin.partials.queue-dashboard-panel', [
+                                'showLiveMonitor' => true,
+                                'liveMonitorRoute' => $liveMonitorRoute,
+                                'liveMonitorLabel' => $liveMonitorLabel,
+                            ])
                         @endif
 
                         @if($hrmoTab === 'reports' && $summary)
@@ -401,7 +410,7 @@
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for HRMO today.</td>
+                                                        <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for {{ $office->name }} today.</td>
                                                     </tr>
                                                 @endforelse
                                             </tbody>

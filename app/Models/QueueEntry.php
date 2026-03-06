@@ -20,11 +20,13 @@ class QueueEntry extends Model
         'served_by',
         'served_at',
         'called_at',
+        'recent_transaction_cleared_at',
     ];
 
     protected $casts = [
         'served_at' => 'datetime',
         'called_at' => 'datetime',
+        'recent_transaction_cleared_at' => 'datetime',
     ];
 
     public function office(): BelongsTo

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BploOfficeController;
 use App\Http\Controllers\HrmoOfficeController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\OfficeQueueReportsPdfController;
@@ -83,6 +84,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['office.access'])->group(function () {
         Route::get('/office/{office}', OfficeDashboardController::class)->name('office.dashboard');
         Route::get('/office/{office}/monitor', HrmoOfficeController::class)->name('office.hrmo.monitor');
+        Route::get('/office/{office}/bplo-monitor', BploOfficeController::class)->name('office.bplo.monitor');
         Route::get('/office/{office}/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('office.queue-reports.pdf');
     });
 });

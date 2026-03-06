@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Schema;
 #[Layout('layouts.app')]
 class Dashboard extends Component
 {
+    private const ADVANCED_QUEUE_DASHBOARD_SLUGS = [
+        'hrmo',
+        'business-permits',
+        'bplo',
+    ];
+
     private const HIDDEN_OVERALL_ACTIVITY_OFFICES = [
         'BFP Liaison',
         'Budget',
@@ -61,14 +67,14 @@ class Dashboard extends Component
         $requestedTab = (string) request()->query('tab', 'dashboard');
         $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
 
-        if ($this->office->slug === 'hrmo' && in_array($requestedTab, $allowedTabs, true)) {
+        if ($this->supportsAdvancedQueueDashboard() && in_array($requestedTab, $allowedTabs, true)) {
             $this->hrmoTab = $requestedTab;
         }
     }
 
     public function setHrmoTab(string $tab): void
     {
-        if ($this->office->slug !== 'hrmo') {
+        if (!$this->supportsAdvancedQueueDashboard()) {
             return;
         }
 
@@ -133,14 +139,15 @@ class Dashboard extends Component
     {
         [$dayStart, $dayEnd] = $this->manilaDayBounds();
 
-        $deletedCount = QueueEntry::where('office_id', $this->office->id)
+        $updatedCount = QueueEntry::where('office_id', $this->office->id)
             ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
             ->whereBetween('served_at', [$dayStart, $dayEnd])
-            ->delete();
+            ->whereNull('recent_transaction_cleared_at')
+            ->update(['recent_transaction_cleared_at' => now()]);
 
         session()->flash(
             'office_message',
-            $deletedCount > 0
+            $updatedCount > 0
                 ? 'Recent transactions for today were cleared.'
                 : 'No recent transactions found for today.'
         );
@@ -218,7 +225,7 @@ class Dashboard extends Component
         ];
         $queueReportAverageProcessingTime = '00h 00m 00s';
         $queueReportScopeLabel = $this->office->name;
-        if ($this->office->slug === 'hrmo') {
+        if ($this->supportsAdvancedQueueDashboard()) {
             [$dayStart, $dayEnd] = $this->manilaDayBounds();
             $manilaNow = now('Asia/Manila');
             $dbTimezone = (string) config('app.timezone', 'UTC');
@@ -374,8 +381,18 @@ class Dashboard extends Component
                 $peakHourLabel = $peakHour['label'].' ('.$peakHour['count'].' tickets)';
             }
 
+            $activityWithinDay = function ($query) use ($dayStart, $dayEnd) {
+                $query->where(function ($activityQuery) use ($dayStart, $dayEnd) {
+                    $activityQuery->whereBetween('created_at', [$dayStart, $dayEnd])
+                        ->orWhereBetween('called_at', [$dayStart, $dayEnd])
+                        ->orWhereBetween('served_at', [$dayStart, $dayEnd]);
+                });
+            };
+
             $overallTickets = QueueEntry::where('office_id', $this->office->id)
-                ->whereBetween('created_at', [$dayStart, $dayEnd])
+                ->where($activityWithinDay)
+                ->orderByDesc('served_at')
+                ->orderByDesc('called_at')
                 ->orderByDesc('created_at')
                 ->limit(20)
                 ->get();
@@ -390,7 +407,9 @@ class Dashboard extends Component
                 $entriesByOffice = QueueEntry::query()
                     ->with('office:id,name,slug')
                     ->whereIn('office_id', $officeList->pluck('id'))
-                    ->whereBetween('created_at', [$dayStart, $dayEnd])
+                    ->where($activityWithinDay)
+                    ->orderByDesc('served_at')
+                    ->orderByDesc('called_at')
                     ->orderByDesc('created_at')
                     ->get()
                     ->groupBy('office_id');
@@ -526,5 +545,10 @@ class Dashboard extends Component
             'queueReportAverageProcessingTime' => $queueReportAverageProcessingTime,
             'queueReportScopeLabel' => $queueReportScopeLabel,
         ]);
+    }
+
+    private function supportsAdvancedQueueDashboard(): bool
+    {
+        return in_array($this->office->slug, self::ADVANCED_QUEUE_DASHBOARD_SLUGS, true);
     }
 }
