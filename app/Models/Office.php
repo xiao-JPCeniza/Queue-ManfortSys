@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\DB;
 
 class Office extends Model
 {
+    public const MUNICIPALITY_QUEUE_SERVICE_SLUGS = [
+        'hrmo',
+        'treasury',
+        'accounting',
+        'civil-registry',
+        'business-permits',
+        'assessors-office',
+        'mho',
+        'mswdo',
+    ];
+
     protected $fillable = [
         'name',
         'slug',

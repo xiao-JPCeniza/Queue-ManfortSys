@@ -197,16 +197,20 @@
                             <div class="space-y-6">
                                 <section id="queue-reports-printable" class="lgu-card p-6" aria-labelledby="queue-reports-heading">
                                     <div class="flex flex-wrap items-center justify-between gap-3">
-                                        <h2 id="queue-reports-heading" class="lgu-section-title inline-flex items-center gap-2">
-                                            <svg class="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 20h16" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16v-5" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V8" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16v-9" />
-                                            </svg>
-                                            Queue Reports
-                                        </h2>
-                                        <a href="{{ route('office.queue-reports.pdf', $office->slug) }}"
+                                        <div>
+                                            <h2 id="queue-reports-heading" class="lgu-section-title inline-flex items-center gap-2">
+                                                <svg class="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 20h16" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16v-5" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V8" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16v-9" />
+                                                </svg>
+                                                Queue Reports
+                                            </h2>
+                                            <p class="mt-1 text-xs text-slate-500">Scope: {{ $queueReportScopeLabel }}</p>
+                                        </div>
+                                        @php($queueReportsPdfUrl = auth()->user()?->isSuperAdmin() ? route('super-admin.queue-reports.pdf') : route('office.queue-reports.pdf', $office->slug))
+                                        <a href="{{ $queueReportsPdfUrl }}"
                                            data-no-print="true"
                                            class="lgu-btn inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -313,45 +317,98 @@
                         @endif
 
                         @if($hrmoTab === 'queue-management')
-                            <section class="lgu-card p-6" aria-labelledby="overall-activity-heading">
-                                <h2 id="overall-activity-heading" class="lgu-section-title mb-4">Overall Ticket Activity (Today)</h2>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-sm">
-                                        <thead>
-                                            <tr class="text-left border-b border-slate-200 text-slate-500">
-                                                <th class="py-2 pr-4 font-medium">Ticket #</th>
-                                                <th class="py-2 pr-4 font-medium">Status</th>
-                                                <th class="py-2 pr-4 font-medium">Issued</th>
-                                                <th class="py-2 pr-4 font-medium">Called</th>
-                                                <th class="py-2 pr-4 font-medium">Completed</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @forelse($overallTickets as $entry)
-                                                <tr class="border-b border-slate-100">
-                                                    <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
-                                                    <td class="py-2 pr-4">
-                                                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                                                            {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                            {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                                            {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                                            {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
-                                                            {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
-                                                        </span>
-                                                    </td>
-                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
-                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for HRMO today.</td>
-                                                </tr>
-                                            @endforelse
-                                        </tbody>
-                                    </table>
+                            @if(auth()->user()?->isSuperAdmin())
+                                <div class="space-y-6">
+                                    @foreach($overallTicketsByOffice as $officeActivity)
+                                        <section class="lgu-card p-6" aria-labelledby="overall-activity-{{ $officeActivity['office']->slug }}">
+                                            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                                <h2 id="overall-activity-{{ $officeActivity['office']->slug }}" class="lgu-section-title">
+                                                    Overall Ticket Activity (Today) - {{ $officeActivity['office']->name }}
+                                                </h2>
+                                                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                                                    {{ $officeActivity['entries']->count() }} ticket(s)
+                                                </span>
+                                            </div>
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full text-sm">
+                                                    <thead>
+                                                        <tr class="text-left border-b border-slate-200 text-slate-500">
+                                                            <th class="py-2 pr-4 font-medium">Ticket #</th>
+                                                            <th class="py-2 pr-4 font-medium">Status</th>
+                                                            <th class="py-2 pr-4 font-medium">Issued</th>
+                                                            <th class="py-2 pr-4 font-medium">Called</th>
+                                                            <th class="py-2 pr-4 font-medium">Completed</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($officeActivity['entries'] as $entry)
+                                                            <tr class="border-b border-slate-100">
+                                                                <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
+                                                                <td class="py-2 pr-4">
+                                                                    <span class="px-2 py-1 rounded-full text-xs font-medium
+                                                                        {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                        {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
+                                                                        {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                                                        {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
+                                                                        {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
+                                                                    </span>
+                                                                </td>
+                                                                <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
+                                                                <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                                <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for {{ $officeActivity['office']->name }} today.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </section>
+                                    @endforeach
                                 </div>
-                            </section>
+                            @else
+                                <section class="lgu-card p-6" aria-labelledby="overall-activity-heading">
+                                    <h2 id="overall-activity-heading" class="lgu-section-title mb-4">Overall Ticket Activity (Today)</h2>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="text-left border-b border-slate-200 text-slate-500">
+                                                    <th class="py-2 pr-4 font-medium">Ticket #</th>
+                                                    <th class="py-2 pr-4 font-medium">Status</th>
+                                                    <th class="py-2 pr-4 font-medium">Issued</th>
+                                                    <th class="py-2 pr-4 font-medium">Called</th>
+                                                    <th class="py-2 pr-4 font-medium">Completed</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($overallTickets as $entry)
+                                                    <tr class="border-b border-slate-100">
+                                                        <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
+                                                        <td class="py-2 pr-4">
+                                                            <span class="px-2 py-1 rounded-full text-xs font-medium
+                                                                {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
+                                                                {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                                                {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
+                                                                {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
+                                                        <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                        <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for HRMO today.</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+                            @endif
                         @endif
                     </div>
             </div>

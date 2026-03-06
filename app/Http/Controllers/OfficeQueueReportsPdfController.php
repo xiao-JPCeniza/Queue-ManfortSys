@@ -9,12 +9,23 @@ use Illuminate\Http\Request;
 
 class OfficeQueueReportsPdfController extends Controller
 {
-    public function __invoke(Request $request, string $office)
+    public function __invoke(Request $request, ?string $office = null)
     {
-        $officeModel = $request->attributes->get('office') ?? Office::where('slug', $office)->firstOrFail();
+        $officeSlug = $office ?? 'hrmo';
+        $officeModel = $request->attributes->get('office') ?? Office::where('slug', $officeSlug)->firstOrFail();
 
         if ($officeModel->slug !== 'hrmo') {
             abort(404, 'Queue reports PDF is only available for HRMO.');
+        }
+
+        $reportOfficeIds = collect([$officeModel->id]);
+        $reportScopeLabel = $officeModel->name;
+        if ($request->user()?->isSuperAdmin()) {
+            $reportOfficeIds = Office::query()
+                ->where('is_active', true)
+                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                ->pluck('id');
+            $reportScopeLabel = 'Municipality Queue Services';
         }
 
         $manilaNow = now('Asia/Manila');
@@ -23,7 +34,7 @@ class OfficeQueueReportsPdfController extends Controller
         $dailyStartManila = $manilaNow->copy()->startOfDay()->subDays(6);
         $dailyEndManila = $manilaNow->copy()->endOfDay();
 
-        $dailyEntries = QueueEntry::where('office_id', $officeModel->id)
+        $dailyEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->whereBetween('created_at', [
                 $dailyStartManila->copy()->setTimezone($dbTimezone),
                 $dailyEndManila->copy()->setTimezone($dbTimezone),
@@ -50,7 +61,7 @@ class OfficeQueueReportsPdfController extends Controller
         $weeklyStartManila = $manilaNow->copy()->startOfWeek()->subWeeks(4);
         $weeklyEndManila = $manilaNow->copy()->endOfWeek();
 
-        $weeklyEntries = QueueEntry::where('office_id', $officeModel->id)
+        $weeklyEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->whereBetween('created_at', [
                 $weeklyStartManila->copy()->setTimezone($dbTimezone),
                 $weeklyEndManila->copy()->setTimezone($dbTimezone),
@@ -74,15 +85,15 @@ class OfficeQueueReportsPdfController extends Controller
             ->values()
             ->all();
 
-        $servedCount = QueueEntry::where('office_id', $officeModel->id)
+        $servedCount = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->where('status', QueueEntry::STATUS_COMPLETED)
             ->count();
 
-        $skippedCount = QueueEntry::where('office_id', $officeModel->id)
+        $skippedCount = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->where('status', QueueEntry::STATUS_NOT_SERVED)
             ->count();
 
-        $processedEntries = QueueEntry::where('office_id', $officeModel->id)
+        $processedEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->where('status', QueueEntry::STATUS_COMPLETED)
             ->whereNotNull('called_at')
             ->whereNotNull('served_at')
@@ -106,12 +117,13 @@ class OfficeQueueReportsPdfController extends Controller
 
         $filename = sprintf(
             'queue-reports-%s-%s.pdf',
-            $officeModel->slug,
+            $request->user()?->isSuperAdmin() ? 'municipality-services' : $officeModel->slug,
             $manilaNow->format('Ymd-His')
         );
 
         $pdf = Pdf::loadView('office.queue-reports-pdf', [
             'office' => $officeModel,
+            'reportScopeLabel' => $reportScopeLabel,
             'generatedAt' => $manilaNow,
             'dailyCounts' => $dailyCounts,
             'weeklyCounts' => $weeklyCounts,

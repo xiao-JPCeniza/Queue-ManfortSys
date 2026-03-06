@@ -3,6 +3,7 @@
 use App\Http\Controllers\HrmoOfficeController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\OfficeQueueReportsPdfController;
+use App\Http\Controllers\SuperAdminQueueReportsController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
 use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
@@ -29,7 +30,7 @@ Route::post('/logout', function () {
     Auth::logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    return redirect()->route('home');
+    return redirect()->route('login');
 })->name('logout')->middleware('auth');
 
 Route::middleware(['auth'])->group(function () {
@@ -72,6 +73,11 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:super_admin,queue_master'])->prefix('queue-master')->name('queue-master.')->group(function () {
         Route::get('/', QueueMasterDashboard::class)->name('index');
         Route::get('/office/{office}', QueueMasterOfficeManage::class)->name('office');
+    });
+
+    Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
+        Route::get('/queue-reports', SuperAdminQueueReportsController::class)->name('queue-reports');
+        Route::get('/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('queue-reports.pdf');
     });
 
     Route::middleware(['office.access'])->group(function () {

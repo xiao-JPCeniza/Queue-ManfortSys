@@ -10,27 +10,16 @@ use Livewire\Component;
 #[Layout('layouts.public')]
 class ClientDashboard extends Component
 {
-    private const ALLOWED_QUEUE_OFFICE_SLUGS = [
-        'hrmo',
-        'treasury',
-        'accounting',
-        'civil-registry',
-        'business-permits',
-        'assessors-office',
-        'mho',
-        'mswdo',
-    ];
-
     /** @var array{office_id: int, office_name: string, queue_number: string}|null */
     public ?array $ticket = null;
     public string $selectedOfficeSlug = '';
 
     public function getOfficeOptions()
     {
-        $orderMap = array_flip(self::ALLOWED_QUEUE_OFFICE_SLUGS);
+        $orderMap = array_flip(Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
 
         return Office::where('is_active', true)
-            ->whereIn('slug', self::ALLOWED_QUEUE_OFFICE_SLUGS)
+            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
             ->get()
             ->sortBy(fn (Office $office) => $orderMap[$office->slug] ?? PHP_INT_MAX)
             ->values();
@@ -38,10 +27,10 @@ class ClientDashboard extends Component
 
     public function getOffices()
     {
-        $orderMap = array_flip(self::ALLOWED_QUEUE_OFFICE_SLUGS);
+        $orderMap = array_flip(Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
 
         $query = Office::where('is_active', true)
-            ->whereIn('slug', self::ALLOWED_QUEUE_OFFICE_SLUGS);
+            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
 
         if ($this->selectedOfficeSlug !== '') {
             $query->where('slug', $this->selectedOfficeSlug);
@@ -57,7 +46,7 @@ class ClientDashboard extends Component
     {
         $office = Office::where('id', $officeId)
             ->where('is_active', true)
-            ->whereIn('slug', self::ALLOWED_QUEUE_OFFICE_SLUGS)
+            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
             ->first();
 
         if (! $office) {

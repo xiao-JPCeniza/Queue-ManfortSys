@@ -58,7 +58,7 @@
     <div class="xl:col-span-2 space-y-4">
         <section class="lgu-card p-5 border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-emerald-50" aria-labelledby="quick-actions-heading">
             <h2 id="quick-actions-heading" class="lgu-section-title text-slate-800">Quick Actions</h2>
-            <p class="mt-1 text-xs text-slate-500">Open related links for clients and staff.</p>
+            <p class="mt-1 text-xs text-slate-500">Open related links for clients and staff                     .</p>
 
             <div class="mt-4 grid grid-cols-1 gap-2.5">
                 @if($showHrmoMonitor)

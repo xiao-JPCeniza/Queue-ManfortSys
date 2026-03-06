@@ -90,7 +90,7 @@
 <body>
     <main class="page">
         <header class="header">
-            <h1 class="title">Queue Reports - {{ $office->name }}</h1>
+            <h1 class="title">Queue Reports - {{ $reportScopeLabel ?? $office->name }}</h1>
             <p class="meta">Generated: {{ $generatedAt->format('M d, Y h:i:s A') }} (Asia/Manila)</p>
         </header>
 

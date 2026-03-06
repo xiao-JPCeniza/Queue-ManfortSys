@@ -11,12 +11,52 @@ use Illuminate\Support\Facades\Schema;
 #[Layout('layouts.app')]
 class Dashboard extends Component
 {
+    private const HIDDEN_OVERALL_ACTIVITY_OFFICES = [
+        'BFP Liaison',
+        'Budget',
+        'DILG',
+        'Engineering',
+        'GSO',
+        'ICT Unit',
+        'Internal Audit',
+        'LDRRMO',
+        'Legal Office',
+        'MAO',
+        "Mayor's Office",
+        'MENRO',
+        'MISO',
+        'Motorpool Division',
+        'MPDO',
+        "Municipal Administrator's Office",
+        'Municipal Library',
+        'NCIP',
+        'Negosyo Center',
+        'OBO',
+        'OSCA',
+        'PDAO',
+        'PESO',
+        'PNP Liaison',
+        'Procurement Division',
+        'Public Market Office',
+        'Sangguniang Bayan',
+        'Slaughter Division',
+        'Special Education Fund',
+        'Sports Development',
+        'Tourism Office',
+        "Vice Mayor's Office",
+    ];
+
     public Office $office;
     public string $hrmoTab = 'dashboard';
 
     public function mount(Office $office): void
     {
         $this->office = $office;
+
+        if (request()->routeIs('super-admin.queue-reports')) {
+            $this->hrmoTab = 'queue-reports';
+            return;
+        }
 
         $requestedTab = (string) request()->query('tab', 'dashboard');
         $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
@@ -158,6 +198,7 @@ class Dashboard extends Component
 
         $summary = null;
         $overallTickets = collect();
+        $overallTicketsByOffice = collect();
         $statusBreakdown = [];
         $statusPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
         $statusPieHasData = false;
@@ -176,6 +217,7 @@ class Dashboard extends Component
             'skipped' => 0,
         ];
         $queueReportAverageProcessingTime = '00h 00m 00s';
+        $queueReportScopeLabel = $this->office->name;
         if ($this->office->slug === 'hrmo') {
             [$dayStart, $dayEnd] = $this->manilaDayBounds();
             $manilaNow = now('Asia/Manila');
@@ -338,11 +380,44 @@ class Dashboard extends Component
                 ->limit(20)
                 ->get();
 
+            if (auth()->user()?->isSuperAdmin() && $this->hrmoTab === 'queue-management') {
+                $officeList = Office::query()
+                    ->where('is_active', true)
+                    ->whereNotIn('name', self::HIDDEN_OVERALL_ACTIVITY_OFFICES)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'slug']);
+
+                $entriesByOffice = QueueEntry::query()
+                    ->with('office:id,name,slug')
+                    ->whereIn('office_id', $officeList->pluck('id'))
+                    ->whereBetween('created_at', [$dayStart, $dayEnd])
+                    ->orderByDesc('created_at')
+                    ->get()
+                    ->groupBy('office_id');
+
+                $overallTicketsByOffice = $officeList->map(function (Office $office) use ($entriesByOffice) {
+                    return [
+                        'office' => $office,
+                        'entries' => $entriesByOffice->get($office->id, collect()),
+                    ];
+                })->values();
+            }
+
             if ($this->hrmoTab === 'queue-reports') {
+                $queueReportOfficeIds = collect([$this->office->id]);
+
+                if (auth()->user()?->isSuperAdmin()) {
+                    $queueReportOfficeIds = Office::query()
+                        ->where('is_active', true)
+                        ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                        ->pluck('id');
+                    $queueReportScopeLabel = 'Municipality Queue Services';
+                }
+
                 $dailyStartManila = $manilaNow->copy()->startOfDay()->subDays(6);
                 $dailyEndManila = $manilaNow->copy()->endOfDay();
 
-                $dailyEntries = QueueEntry::where('office_id', $this->office->id)
+                $dailyEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
                     ->whereBetween('created_at', [
                         $dailyStartManila->copy()->setTimezone($dbTimezone),
                         $dailyEndManila->copy()->setTimezone($dbTimezone),
@@ -369,7 +444,7 @@ class Dashboard extends Component
                 $weeklyStartManila = $manilaNow->copy()->startOfWeek()->subWeeks(4);
                 $weeklyEndManila = $manilaNow->copy()->endOfWeek();
 
-                $weeklyEntries = QueueEntry::where('office_id', $this->office->id)
+                $weeklyEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
                     ->whereBetween('created_at', [
                         $weeklyStartManila->copy()->setTimezone($dbTimezone),
                         $weeklyEndManila->copy()->setTimezone($dbTimezone),
@@ -394,15 +469,15 @@ class Dashboard extends Component
                     ->all();
 
                 $queueReportStatusSummary = [
-                    'served' => QueueEntry::where('office_id', $this->office->id)
+                    'served' => QueueEntry::whereIn('office_id', $queueReportOfficeIds)
                         ->where('status', QueueEntry::STATUS_COMPLETED)
                         ->count(),
-                    'skipped' => QueueEntry::where('office_id', $this->office->id)
+                    'skipped' => QueueEntry::whereIn('office_id', $queueReportOfficeIds)
                         ->where('status', QueueEntry::STATUS_NOT_SERVED)
                         ->count(),
                 ];
 
-                $processedEntries = QueueEntry::where('office_id', $this->office->id)
+                $processedEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
                     ->where('status', QueueEntry::STATUS_COMPLETED)
                     ->whereNotNull('called_at')
                     ->whereNotNull('served_at')
@@ -433,6 +508,7 @@ class Dashboard extends Component
             'serving' => $serving,
             'summary' => $summary,
             'overallTickets' => $overallTickets,
+            'overallTicketsByOffice' => $overallTicketsByOffice,
             'statusBreakdown' => $statusBreakdown,
             'statusPieStyle' => $statusPieStyle,
             'statusPieHasData' => $statusPieHasData,
@@ -448,6 +524,7 @@ class Dashboard extends Component
             'queueReportWeeklyCounts' => $queueReportWeeklyCounts,
             'queueReportStatusSummary' => $queueReportStatusSummary,
             'queueReportAverageProcessingTime' => $queueReportAverageProcessingTime,
+            'queueReportScopeLabel' => $queueReportScopeLabel,
         ]);
     }
 }
