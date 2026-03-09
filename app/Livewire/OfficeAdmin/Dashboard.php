@@ -4,6 +4,7 @@ namespace App\Livewire\OfficeAdmin;
 
 use App\Models\Office;
 use App\Models\QueueEntry;
+use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Illuminate\Support\Facades\Schema;
@@ -15,6 +16,12 @@ class Dashboard extends Component
         'hrmo',
         'business-permits',
         'bplo',
+        'mho',
+        'mswdo',
+        'treasury',
+        'accounting',
+        'civil-registry',
+        'assessors-office',
     ];
 
     private const HIDDEN_OVERALL_ACTIVITY_OFFICES = [
@@ -63,6 +70,7 @@ class Dashboard extends Component
             'super-admin.reports' => 'reports',
             'super-admin.queue-reports' => 'queue-reports',
             'super-admin.queue-management' => 'queue-management',
+            'super-admin.user-management' => 'user-management',
         ];
 
         foreach ($superAdminTabByRoute as $routeName => $tab) {
@@ -75,6 +83,9 @@ class Dashboard extends Component
 
         $requestedTab = (string) request()->query('tab', 'dashboard');
         $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
+        if (auth()->user()?->isSuperAdmin()) {
+            $allowedTabs[] = 'user-management';
+        }
 
         if ($this->supportsAdvancedQueueDashboard() && in_array($requestedTab, $allowedTabs, true)) {
             $this->hrmoTab = $requestedTab;
@@ -88,6 +99,10 @@ class Dashboard extends Component
         }
 
         $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
+        if (auth()->user()?->isSuperAdmin()) {
+            $allowedTabs[] = 'user-management';
+        }
+
         if (!in_array($tab, $allowedTabs, true)) {
             return;
         }
@@ -240,6 +255,11 @@ class Dashboard extends Component
         ];
         $queueReportAverageProcessingTime = '00h 00m 00s';
         $queueReportScopeLabel = $this->office->name;
+        $userManagementRows = [];
+        $userManagementStatusSummary = [
+            'active' => 0,
+            'inactive' => 0,
+        ];
         if ($this->supportsAdvancedQueueDashboard()) {
             [$dayStart, $dayEnd] = $this->manilaDayBounds();
             $manilaNow = now('Asia/Manila');
@@ -539,6 +559,60 @@ class Dashboard extends Component
                 })->values();
             }
 
+            if (auth()->user()?->isSuperAdmin() && $this->hrmoTab === 'user-management') {
+                $managedOffices = Office::query()
+                    ->where('is_active', true)
+                    ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'slug']);
+
+                $activeOfficeIds = QueueEntry::query()
+                    ->whereIn('office_id', $managedOffices->pluck('id'))
+                    ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
+                    ->where(function ($query) use ($dayStart, $dayEnd) {
+                        $query->whereBetween('created_at', [$dayStart, $dayEnd])
+                            ->orWhereBetween('called_at', [$dayStart, $dayEnd]);
+                    })
+                    ->pluck('office_id')
+                    ->unique();
+
+                $userManagementRows = User::query()
+                    ->with([
+                        'role:id,name,slug',
+                        'office:id,name,slug',
+                    ])
+                    ->whereIn('office_id', $managedOffices->pluck('id'))
+                    ->get()
+                    ->sortBy(function (User $user) {
+                        return sprintf(
+                            '%s|%s|%s',
+                            strtolower((string) $user->office?->name),
+                            strtolower((string) $user->role?->name),
+                            strtolower($user->name)
+                        );
+                    })
+                    ->values()
+                    ->map(function (User $user) use ($activeOfficeIds) {
+                        $isQueueActive = $user->office_id !== null && $activeOfficeIds->contains($user->office_id);
+
+                        return [
+                            'name' => $user->name,
+                            'role' => $user->role?->name ?? 'Unassigned',
+                            'office' => $user->office?->name ?? 'Unassigned',
+                            'status_label' => $isQueueActive ? 'Active' : 'Not Active',
+                            'status_badge_class' => $isQueueActive
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-slate-200 text-slate-600',
+                        ];
+                    })
+                    ->all();
+
+                $userManagementStatusSummary = [
+                    'active' => collect($userManagementRows)->where('status_label', 'Active')->count(),
+                    'inactive' => collect($userManagementRows)->where('status_label', 'Not Active')->count(),
+                ];
+            }
+
             if ($this->hrmoTab === 'queue-reports') {
                 $queueReportOfficeIds = collect([$this->office->id]);
 
@@ -667,6 +741,8 @@ class Dashboard extends Component
             'queueReportStatusSummary' => $queueReportStatusSummary,
             'queueReportAverageProcessingTime' => $queueReportAverageProcessingTime,
             'queueReportScopeLabel' => $queueReportScopeLabel,
+            'userManagementRows' => $userManagementRows,
+            'userManagementStatusSummary' => $userManagementStatusSummary,
         ]);
     }
 

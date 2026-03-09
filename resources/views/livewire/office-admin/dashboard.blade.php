@@ -1,8 +1,24 @@
 <div wire:poll.5s>
     @php($isBploOffice = in_array($office->slug, ['business-permits', 'bplo'], true))
-    @php($usesAdvancedQueueDashboard = $office->slug === 'hrmo' || $isBploOffice)
+    @php($isAccountingOffice = $office->slug === 'accounting')
+    @php($isMhoOffice = $office->slug === 'mho')
+    @php($isMswdoOffice = $office->slug === 'mswdo')
+    @php($usesAdvancedQueueDashboard = in_array($office->slug, ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
+    @php($reportOfficeLabels = [
+        'hrmo' => 'HRMO',
+        'business-permits' => 'BPLO',
+        'bplo' => 'BPLO',
+        'accounting' => 'Accounting Office',
+        'treasury' => 'Treasury Office',
+        'assessors-office' => 'Assessor\'s Office',
+        'civil-registry' => 'Civil Registry',
+        'mho' => 'MHO',
+        'mswdo' => 'MSWDO',
+    ])
+    @php($reportOfficeLabel = $reportOfficeLabels[$office->slug] ?? $office->name)
+    @php($isAllOfficesReportScope = auth()->user()?->isSuperAdmin() && $office->slug === 'hrmo')
     @php($liveMonitorRoute = $office->slug === 'hrmo' ? 'office.hrmo.monitor' : ($isBploOffice ? 'office.bplo.monitor' : 'office.hrmo.monitor'))
-    @php($liveMonitorLabel = $office->slug === 'hrmo' ? 'Open HRMO Live Monitor' : ($isBploOffice ? 'Open BPLO Live Monitor' : 'Open Live Monitor'))
+    @php($liveMonitorLabel = $office->slug === 'hrmo' ? 'Open HRMO Live Monitor' : ($isBploOffice ? 'Open BPLO Live Monitor' : ($isMhoOffice ? 'Open MHO Live Queue Monitor' : ($isMswdoOffice ? 'Open MSWDO Live Queue Monitor' : ($isAccountingOffice ? 'Open Accounting Live Queue Monitor' : ($office->slug === 'treasury' ? 'Open Treasury Live Queue Monitor' : ($office->slug === 'civil-registry' ? 'Open Civil Registry Live Queue Monitor' : ($office->slug === 'assessors-office' ? 'Open Assessor\'s Live Queue Monitor' : 'Open Live Monitor'))))))))
 
     @if(session('office_message'))
         <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm" role="status">{{ session('office_message') }}</div>
@@ -30,7 +46,9 @@
                         @if($hrmoTab === 'reports' && $summary)
                             <div class="space-y-6">
                                 <section class="lgu-card p-6" aria-labelledby="summary-heading">
-                                    <h2 id="summary-heading" class="lgu-section-title mb-4">Total Tickets Accommodated Across All Offices</h2>
+                                    <h2 id="summary-heading" class="lgu-section-title mb-4">
+                                        {{ $isAllOfficesReportScope ? 'Total Tickets Accommodated Across All Offices' : 'Total Tickets Accommodated (' . $reportOfficeLabel . ')' }}
+                                    </h2>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                                         <div class="rounded-xl border border-slate-200 bg-white p-4">
                                             <p class="text-xs uppercase tracking-wide text-slate-500">Total Today</p>
@@ -41,7 +59,9 @@
                                             <p class="text-3xl font-bold text-emerald-700 mt-2">{{ $summary['completed_today'] }}</p>
                                         </div>
                                         <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-                                            <p class="text-xs uppercase tracking-wide text-indigo-700">Total Accommodated (All Offices)</p>
+                                            <p class="text-xs uppercase tracking-wide text-indigo-700">
+                                                {{ $isAllOfficesReportScope ? 'Total Accommodated (All Offices)' : 'Total Accommodated (' . $reportOfficeLabel . ')' }}
+                                            </p>
                                             <p class="text-3xl font-bold text-indigo-700 mt-2">{{ $summary['overall_accommodated'] }}</p>
                                         </div>
                                     </div>
@@ -531,6 +551,58 @@
                                     </div>
                                 </section>
                             @endif
+                        @endif
+
+                        @if($hrmoTab === 'user-management' && auth()->user()?->isSuperAdmin())
+                            <div class="space-y-6">
+                                <section class="lgu-card p-6" aria-labelledby="user-management-heading">
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <h2 id="user-management-heading" class="lgu-section-title">User Management</h2>
+                                            <p class="mt-1 text-sm text-slate-500">Super Admin view of office-assigned users and queue activity status by office.</p>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2 text-xs font-medium">
+                                            <span class="rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700">
+                                                Active: {{ $userManagementStatusSummary['active'] }}
+                                            </span>
+                                            <span class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-700">
+                                                Not Active: {{ $userManagementStatusSummary['inactive'] }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-5 overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead>
+                                                <tr class="border-b border-slate-200 text-left text-slate-500">
+                                                    <th class="px-3 py-2.5 font-semibold">Name</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Role</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Office</th>
+                                                    <th class="px-3 py-2.5 font-semibold">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($userManagementRows as $userRow)
+                                                    <tr class="border-b border-slate-100 last:border-b-0">
+                                                        <td class="px-3 py-3 font-medium text-slate-800">{{ $userRow['name'] }}</td>
+                                                        <td class="px-3 py-3 text-slate-600">{{ $userRow['role'] }}</td>
+                                                        <td class="px-3 py-3 text-slate-600">{{ $userRow['office'] }}</td>
+                                                        <td class="px-3 py-3">
+                                                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $userRow['status_badge_class'] }}">
+                                                                {{ $userRow['status_label'] }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="4" class="px-3 py-6 text-center text-slate-500">No office-assigned users found.</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </section>
+                            </div>
                         @endif
                     </div>
             </div>

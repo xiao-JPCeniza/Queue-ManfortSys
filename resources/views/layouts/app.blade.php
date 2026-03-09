@@ -24,17 +24,20 @@
         @php($activeOffice = request()->attributes->get('office'))
         @php($authUser = auth()->user())
         @php($isSuperAdmin = $authUser?->isSuperAdmin() ?? false)
-        @php($specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo'])
+        @php($specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'])
+        @php($dashboardShortcutSlugs = $specialOfficeSlugs)
         @php($dashboardShortcutOfficeSlug = $authUser?->isOfficeAdmin() ? $authUser?->office?->slug : null)
-        @php($showDashboardShortcut = $dashboardShortcutOfficeSlug && in_array($dashboardShortcutOfficeSlug, $specialOfficeSlugs, true))
+        @php($showDashboardShortcut = $dashboardShortcutOfficeSlug && in_array($dashboardShortcutOfficeSlug, $dashboardShortcutSlugs, true))
         @php($isAdvancedOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice && in_array($activeOffice->slug, $specialOfficeSlugs, true))
         @php($showAdminSidebarMenu = $isAdvancedOfficeDashboard || $isSuperAdmin)
         @php($sidebarOfficeSlug = $isAdvancedOfficeDashboard ? $activeOffice->slug : 'hrmo')
         @php($isSidebarOfficeDashboard = request()->routeIs('office.dashboard') && request()->route('office') === $sidebarOfficeSlug)
+        @php($currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office'))
         @php($activeOfficeTab = (string) request()->query('tab', 'dashboard'))
         @php($isSuperAdminReports = request()->routeIs('super-admin.reports'))
         @php($isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports'))
         @php($isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management'))
+        @php($isSuperAdminUserManagement = request()->routeIs('super-admin.user-management'))
         @php($isReportsActive = $isSuperAdmin ? $isSuperAdminReports : ($isSidebarOfficeDashboard && $activeOfficeTab === 'reports'))
         @php($isQueueManagementActive = $isSuperAdmin ? $isSuperAdminQueueManagement : ($isSidebarOfficeDashboard && $activeOfficeTab === 'queue-management'))
         <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
@@ -75,6 +78,12 @@
                                            class="flex items-center gap-2 px-4 py-2.5 {{ $isQueueManagementActive ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
                                             Queue Management
                                         </a>
+                                        @if($isSuperAdmin)
+                                            <a href="{{ route('super-admin.user-management') }}"
+                                               class="flex items-center gap-2 px-4 py-2.5 {{ $isSuperAdminUserManagement ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                                User Management
+                                            </a>
+                                        @endif
                                     </nav>
                                 </div>
                             </details>
@@ -92,7 +101,7 @@
                             @endif
                             @if($showDashboardShortcut)
                                 <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
-                                   class="lgu-btn px-4 py-2.5 rounded-lg {{ request()->routeIs('office.dashboard') && request()->route('office') === $dashboardShortcutOfficeSlug ? 'bg-blue-700' : 'hover:bg-blue-700' }} text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+                                   class="lgu-btn px-4 py-2.5 rounded-lg {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'bg-blue-700' : 'hover:bg-blue-700' }} text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
                                     Dashboard
                                 </a>
                             @endif

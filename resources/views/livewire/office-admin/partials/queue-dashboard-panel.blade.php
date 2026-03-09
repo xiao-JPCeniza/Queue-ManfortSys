@@ -1,7 +1,7 @@
 @php($showLiveMonitor = $showLiveMonitor ?? false)
 @php($liveMonitorRoute = $liveMonitorRoute ?? '')
 @php($liveMonitorLabel = $liveMonitorLabel ?? 'Open Live Monitor')
-@php($isAdvancedQueueOffice = in_array($office->slug, ['hrmo', 'business-permits', 'bplo'], true))
+@php($isAdvancedQueueOffice = in_array($office->slug, ['hrmo', 'mho', 'mswdo', 'business-permits', 'bplo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
 @php($manilaNow = now('Asia/Manila'))
 
 <div class="gov-queue-shell">
@@ -12,9 +12,9 @@
             <p class="gov-masthead-meta">Official live transaction console for public service processing.</p>
         </div>
 
-        <div class="gov-masthead-meta-wrap" aria-label="Current date and time">
-            <span class="gov-masthead-chip gov-masthead-chip-date">{{ $manilaNow->format('F j, Y') }}</span>
-            <span class="gov-masthead-chip gov-masthead-chip-time">{{ $manilaNow->format('h:i A') }} PHT</span>
+        <div class="gov-masthead-meta-wrap" data-manila-clock data-manila-clock-style="desk" data-manila-clock-suffix=" PHT" data-manila-now="{{ $manilaNow->toIso8601String() }}" aria-label="Current date and time">
+            <span class="gov-masthead-chip gov-masthead-chip-date" data-manila-clock-date>{{ $manilaNow->format('F j, Y') }}</span>
+            <span class="gov-masthead-chip gov-masthead-chip-time" data-manila-clock-time>{{ $manilaNow->format('h:i:s A') }} PHT</span>
         </div>
     </section>
 
@@ -143,6 +143,8 @@
         </div>
     </div>
 </div>
+
+@include('livewire.office-admin.partials.live-monitor-clock-script')
 
 @once
     <style>
