@@ -10,10 +10,10 @@
                 </div>
             </div>
 
-            <div class="gov-monitor-clock" aria-live="polite" aria-label="Current Philippine time">
+            <div class="gov-monitor-clock" data-manila-clock data-manila-now="{{ $manilaNow->toIso8601String() }}" aria-live="polite" aria-label="Current Philippine time">
                 <p class="gov-monitor-location">Manolo Fortich, Bukidnon</p>
-                <p class="gov-monitor-time">{{ $manilaNow->format('h:i:s A') }}</p>
-                <p class="gov-monitor-date">{{ $manilaNow->format('l, M d, Y') }}</p>
+                <p class="gov-monitor-time" data-manila-clock-time>{{ $manilaNow->format('h:i:s A') }}</p>
+                <p class="gov-monitor-date" data-manila-clock-date>{{ $manilaNow->format('l, M d, Y') }}</p>
             </div>
         </header>
 
@@ -107,6 +107,8 @@
         'announcementPayload' => $announcementPayload ?? null,
     ])
 </div>
+
+@include('livewire.office-admin.partials.live-monitor-clock-script')
 
 @once
     <style>

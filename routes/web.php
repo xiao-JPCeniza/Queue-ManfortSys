@@ -93,6 +93,11 @@ Route::post('/logout', function () {
 
             return view('office.dashboard', ['office' => $officeModel]);
         })->name('queue-management');
+        Route::get('/user-management', function () {
+            $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
+
+            return view('office.dashboard', ['office' => $officeModel]);
+        })->name('user-management');
         Route::get('/queue-reports', SuperAdminQueueReportsController::class)->name('queue-reports');
         Route::get('/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('queue-reports.pdf');
     });

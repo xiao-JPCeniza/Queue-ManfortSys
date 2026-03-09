@@ -7,10 +7,10 @@
                     <div class="text-center">
                         <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Live Queue Monitor</h1>
                     </div>
-                    <div class="justify-self-end text-right">
+                    <div class="justify-self-end text-right" data-manila-clock data-manila-now="{{ $manilaNow->toIso8601String() }}">
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-200">Manolo Fortich, Bukidnon</p>
-                        <p class="text-sm font-bold sm:text-base">{{ $manilaNow->format('h:i:s A') }}</p>
-                        <p class="text-[11px] text-blue-200">{{ $manilaNow->format('l, M d, Y') }}</p>
+                        <p class="text-sm font-bold sm:text-base" data-manila-clock-time>{{ $manilaNow->format('h:i:s A') }}</p>
+                        <p class="text-[11px] text-blue-200" data-manila-clock-date>{{ $manilaNow->format('l, M d, Y') }}</p>
                     </div>
                 </div>
             </header>
@@ -107,3 +107,5 @@
         'announcementPayload' => $announcementPayload ?? null,
     ])
 </div>
+
+@include('livewire.office-admin.partials.live-monitor-clock-script')
