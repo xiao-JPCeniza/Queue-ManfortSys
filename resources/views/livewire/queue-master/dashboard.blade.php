@@ -1,7 +1,16 @@
-<div>
-    <div class="mb-8">
-        <h1 class="lgu-page-title mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Super Admin Dashboard' : 'Dashboard' }}</h1>
-        <p class="text-slate-600 text-sm">Manage offices and monitor queue activity across the LGU.</p>
+<div wire:poll.2s>
+    <div class="mb-8 flex flex-wrap items-start justify-between gap-4">
+        <div>
+            <h1 class="lgu-page-title mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Super Admin Dashboard' : 'Dashboard' }}</h1>
+            <p class="text-slate-600 text-sm">Manage offices and monitor queue activity across the LGU.</p>
+        </div>
+
+        <a href="{{ route('live-monitor.public') }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="lgu-btn inline-flex items-center px-4 py-2.5 bg-blue-800 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Open All Offices Live Monitor
+        </a>
     </div>
 
     <section class="mb-8" aria-labelledby="offices-heading">

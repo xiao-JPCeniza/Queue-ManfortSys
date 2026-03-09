@@ -1,4 +1,4 @@
-<div wire:poll.5s="tick" class="gov-monitor-root">
+<div wire:poll.2s="tick" class="gov-monitor-root">
     <section class="gov-monitor-shell" aria-label="{{ $office->name }} live queue monitor">
         <header class="gov-monitor-header">
             <div class="gov-monitor-brand">

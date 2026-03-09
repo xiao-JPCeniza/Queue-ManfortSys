@@ -1,4 +1,4 @@
-<div wire:poll.5s="tick" class="h-full overflow-auto bg-slate-100">
+<div wire:poll.2s="tick" class="h-full overflow-auto bg-slate-100">
     <div class="mx-auto min-h-full w-full max-w-7xl p-4 sm:p-6 lg:p-8">
         <section class="lgu-card overflow-hidden border-2 border-blue-100">
             <header class="bg-blue-800 px-5 py-4 text-white sm:px-6">

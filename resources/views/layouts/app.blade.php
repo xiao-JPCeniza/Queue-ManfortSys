@@ -19,27 +19,81 @@
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
     <a href="#main-content" class="lgu-skip-link">Skip to main content</a>
-    @php($hideNav = trim((string) $__env->yieldContent('hide_nav')) === '1')
+    @php
+        $hideNav = trim((string) $__env->yieldContent('hide_nav')) === '1';
+    @endphp
     @if(!$hideNav)
-        @php($activeOffice = request()->attributes->get('office'))
-        @php($authUser = auth()->user())
-        @php($isSuperAdmin = $authUser?->isSuperAdmin() ?? false)
-        @php($specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'])
-        @php($dashboardShortcutSlugs = $specialOfficeSlugs)
-        @php($dashboardShortcutOfficeSlug = $authUser?->isOfficeAdmin() ? $authUser?->office?->slug : null)
-        @php($showDashboardShortcut = $dashboardShortcutOfficeSlug && in_array($dashboardShortcutOfficeSlug, $dashboardShortcutSlugs, true))
-        @php($isAdvancedOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice && in_array($activeOffice->slug, $specialOfficeSlugs, true))
-        @php($showAdminSidebarMenu = $isAdvancedOfficeDashboard || $isSuperAdmin)
-        @php($sidebarOfficeSlug = $isAdvancedOfficeDashboard ? $activeOffice->slug : 'hrmo')
-        @php($isSidebarOfficeDashboard = request()->routeIs('office.dashboard') && request()->route('office') === $sidebarOfficeSlug)
-        @php($currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office'))
-        @php($activeOfficeTab = (string) request()->query('tab', 'dashboard'))
-        @php($isSuperAdminReports = request()->routeIs('super-admin.reports'))
-        @php($isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports'))
-        @php($isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management'))
-        @php($isSuperAdminUserManagement = request()->routeIs('super-admin.user-management'))
-        @php($isReportsActive = $isSuperAdmin ? $isSuperAdminReports : ($isSidebarOfficeDashboard && $activeOfficeTab === 'reports'))
-        @php($isQueueManagementActive = $isSuperAdmin ? $isSuperAdminQueueManagement : ($isSidebarOfficeDashboard && $activeOfficeTab === 'queue-management'))
+        @php
+            $activeOffice = request()->attributes->get('office');
+            $authUser = auth()->user();
+            $isSuperAdmin = $authUser?->isSuperAdmin() ?? false;
+            $specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'];
+            $dashboardShortcutSlugs = $specialOfficeSlugs;
+            $dashboardShortcutOfficeSlug = $authUser?->isOfficeAdmin() ? $authUser?->office?->slug : null;
+            $showDashboardShortcut = $dashboardShortcutOfficeSlug && in_array($dashboardShortcutOfficeSlug, $dashboardShortcutSlugs, true);
+            $isOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice;
+            $supportsAdvancedOfficeMenu = $isOfficeDashboard && in_array($activeOffice->slug, $specialOfficeSlugs, true);
+            $sidebarOfficeSlug = $activeOffice?->slug ?? 'hrmo';
+            $currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office');
+            $activeOfficeTab = (string) request()->query('tab', 'dashboard');
+            $isSuperAdminReports = request()->routeIs('super-admin.reports');
+            $isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports');
+            $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
+            $isSuperAdminUserManagement = request()->routeIs('super-admin.user-management');
+            $sidebarMenuLabel = $isSuperAdmin ? 'Super Admin Panel' : 'Office Menu';
+            $sidebarMenuItems = [];
+
+            if ($isSuperAdmin) {
+                $sidebarMenuItems = [
+                    [
+                        'label' => 'Reports',
+                        'href' => route('super-admin.reports'),
+                        'active' => $isSuperAdminReports,
+                    ],
+                    [
+                        'label' => 'Queue Reports',
+                        'href' => route('super-admin.queue-reports'),
+                        'active' => $isSuperAdminQueueReports,
+                    ],
+                    [
+                        'label' => 'Queue Management',
+                        'href' => route('super-admin.queue-management'),
+                        'active' => $isSuperAdminQueueManagement,
+                    ],
+                    [
+                        'label' => 'User Management',
+                        'href' => route('super-admin.user-management'),
+                        'active' => $isSuperAdminUserManagement,
+                    ],
+                ];
+            } elseif ($isOfficeDashboard) {
+                $sidebarMenuItems[] = [
+                    'label' => 'Dashboard',
+                    'href' => route('office.dashboard', $sidebarOfficeSlug),
+                    'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'dashboard',
+                ];
+
+                if ($supportsAdvancedOfficeMenu) {
+                    $sidebarMenuItems[] = [
+                        'label' => 'Reports',
+                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports',
+                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'reports',
+                    ];
+                    $sidebarMenuItems[] = [
+                        'label' => 'Queue Reports',
+                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-reports',
+                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'queue-reports',
+                    ];
+                    $sidebarMenuItems[] = [
+                        'label' => 'Queue Management',
+                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management',
+                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'queue-management',
+                    ];
+                }
+            }
+
+            $showAdminSidebarMenu = ! empty($sidebarMenuItems);
+        @endphp
         <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16 items-center">
@@ -56,34 +110,15 @@
                                 </summary>
                                 <div class="absolute left-0 z-30 mt-2 w-60 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
                                     <div class="border-b border-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                        {{ $isSuperAdmin ? 'Super Admin Panel' : 'Admin Panel' }}
+                                        {{ $sidebarMenuLabel }}
                                     </div>
                                     <nav class="py-1 text-sm" aria-label="Office Queue Navigation">
-                                        <a href="{{ $isSuperAdmin ? route('super-admin.reports') : route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports' }}"
-                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isReportsActive ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
-                                            Reports
-                                        </a>
-                                        @if($isSuperAdmin)
-                                            <a href="{{ route('super-admin.queue-reports') }}"
-                                               class="flex items-center gap-2 px-4 py-2.5 {{ $isSuperAdminQueueReports ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
-                                                Queue Reports
+                                        @foreach($sidebarMenuItems as $menuItem)
+                                            <a href="{{ $menuItem['href'] }}"
+                                               class="flex items-center gap-2 px-4 py-2.5 {{ $menuItem['active'] ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                                {{ $menuItem['label'] }}
                                             </a>
-                                        @else
-                                            <a href="{{ route('office.dashboard', $sidebarOfficeSlug) }}?tab=queue-reports"
-                                               class="flex items-center gap-2 px-4 py-2.5 {{ $isSidebarOfficeDashboard && $activeOfficeTab === 'queue-reports' ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
-                                                Queue Reports
-                                            </a>
-                                        @endif
-                                        <a href="{{ $isSuperAdmin ? route('super-admin.queue-management') : route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management' }}"
-                                           class="flex items-center gap-2 px-4 py-2.5 {{ $isQueueManagementActive ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
-                                            Queue Management
-                                        </a>
-                                        @if($isSuperAdmin)
-                                            <a href="{{ route('super-admin.user-management') }}"
-                                               class="flex items-center gap-2 px-4 py-2.5 {{ $isSuperAdminUserManagement ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
-                                                User Management
-                                            </a>
-                                        @endif
+                                        @endforeach
                                     </nav>
                                 </div>
                             </details>

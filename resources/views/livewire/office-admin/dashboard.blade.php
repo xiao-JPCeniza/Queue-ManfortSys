@@ -1,4 +1,4 @@
-<div wire:poll.5s>
+<div wire:poll.2s>
     @php($isBploOffice = in_array($office->slug, ['business-permits', 'bplo'], true))
     @php($isAccountingOffice = $office->slug === 'accounting')
     @php($isMhoOffice = $office->slug === 'mho')

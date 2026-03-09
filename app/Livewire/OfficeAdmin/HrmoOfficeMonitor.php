@@ -38,19 +38,24 @@ class HrmoOfficeMonitor extends Component
 
     public function clearTransaction(): void
     {
+        $deletedCount = $this->todayOfficeQueueEntries()
+            ->waiting()
+            ->delete();
+
         [$dayStart, $dayEnd] = $this->manilaDayBounds();
 
-        $updatedCount = QueueEntry::where('office_id', $this->office->id)
+        $clearedRecentCount = QueueEntry::where('office_id', $this->office->id)
             ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
+            ->whereNotNull('served_at')
             ->whereBetween('served_at', [$dayStart, $dayEnd])
             ->whereNull('recent_transaction_cleared_at')
             ->update(['recent_transaction_cleared_at' => now()]);
 
         session()->flash(
             'office_message',
-            $updatedCount > 0
-                ? 'Recent transactions for today were cleared.'
-                : 'No recent transactions found for today.'
+            ($deletedCount + $clearedRecentCount) > 0
+                ? 'Waiting line and recent transactions were cleared.'
+                : 'No waiting tickets or recent transactions found for today.'
         );
     }
 
@@ -65,16 +70,25 @@ class HrmoOfficeMonitor extends Component
         ];
     }
 
+    private function todayOfficeQueueEntries()
+    {
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+        return QueueEntry::where('office_id', $this->office->id)
+            ->whereBetween('created_at', [$dayStart, $dayEnd]);
+    }
+
     public function render()
     {
-        $serving = QueueEntry::where('office_id', $this->office->id)
+        $serving = $this->todayOfficeQueueEntries()
             ->serving()
             ->orderBy('called_at')
             ->first();
 
-        $nextInline = QueueEntry::where('office_id', $this->office->id)
+        $nextInline = $this->todayOfficeQueueEntries()
             ->waiting()
             ->orderBy('created_at')
+            ->orderBy('id')
             ->first();
 
         $recentTransactions = QueueEntry::where('office_id', $this->office->id)

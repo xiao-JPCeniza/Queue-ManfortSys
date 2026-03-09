@@ -1,12 +1,12 @@
 <div wire:poll.2s="tick" class="gov-monitor-root">
-    <section class="gov-monitor-shell" aria-label="{{ $office->name }} live queue monitor">
+    <section class="gov-monitor-shell" aria-label="All offices live queue monitor">
         <header class="gov-monitor-header">
             <div class="gov-monitor-brand">
                 <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich official seal" class="gov-monitor-seal">
                 <div class="gov-monitor-brand-copy">
                     <p class="gov-monitor-kicker">Republic of the Philippines</p>
                     <h1 class="gov-font-heading gov-monitor-title">Live Queue Monitor</h1>
-                    <p class="gov-monitor-subtitle">{{ $office->name }} Office | Municipality of Manolo Fortich</p>
+                    <p class="gov-monitor-subtitle">All Offices | Municipality of Manolo Fortich</p>
                 </div>
             </div>
 
@@ -18,94 +18,122 @@
         </header>
 
         <main class="gov-monitor-main">
-            @if(session('office_message'))
-                <div class="gov-monitor-alert" role="status">
-                    {{ session('office_message') }}
-                </div>
+            @if($featuredOfficeRow)
+                <article class="gov-office-monitor-card gov-office-monitor-card-featured" aria-label="Featured office queue">
+                    <div class="gov-office-monitor-head">
+                        <div>
+                            <p class="gov-office-monitor-kicker">Office Queue</p>
+                            <h2 class="gov-font-heading gov-office-monitor-title">{{ $featuredOfficeRow['office']->name }}</h2>
+                        </div>
+
+                        <span class="gov-office-monitor-chip">
+                            {{ $featuredOfficeRow['waiting_count'] }} waiting
+                        </span>
+                    </div>
+
+                    <div class="gov-monitor-grid">
+                        <section class="gov-monitor-panel gov-panel-serving" aria-labelledby="serving-{{ $featuredOfficeRow['office']->slug }}">
+                            <div class="gov-panel-head">
+                                <h3 id="serving-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Serving Now</h3>
+                                <span class="gov-status-badge {{ $featuredOfficeRow['serving'] ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
+                                    {{ $featuredOfficeRow['serving'] ? 'Active' : 'Idle' }}
+                                </span>
+                            </div>
+
+                            <div class="gov-panel-body">
+                                @if($featuredOfficeRow['serving'])
+                                    <div class="gov-ticket-card gov-ticket-card-serving">
+                                        <p class="gov-ticket-label">Queue Number</p>
+                                        <p class="gov-ticket-number gov-ticket-number-serving" aria-live="polite">{{ $featuredOfficeRow['serving']->queue_number }}</p>
+                                        <div class="gov-ticket-meta-block">
+                                            <p class="gov-ticket-meta-label">Called at</p>
+                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['serving']->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? 'Just now' }}</p>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="gov-ticket-empty">
+                                        <p class="gov-ticket-empty-title">No active ticket right now</p>
+                                        <p class="gov-ticket-empty-text">The next waiting ticket will be called automatically.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </section>
+
+                        <section class="gov-monitor-panel gov-panel-next" aria-labelledby="next-{{ $featuredOfficeRow['office']->slug }}">
+                            <div class="gov-panel-head">
+                                <h3 id="next-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Next in Line</h3>
+                                <span class="gov-status-badge {{ $featuredOfficeRow['nextInline'] ? 'gov-status-badge-queue' : 'gov-status-badge-idle' }}">
+                                    {{ $featuredOfficeRow['nextInline'] ? 'Queued' : 'Empty' }}
+                                </span>
+                            </div>
+
+                            <div class="gov-panel-body">
+                                @if($featuredOfficeRow['nextInline'])
+                                    <div class="gov-ticket-card gov-ticket-card-next">
+                                        <p class="gov-ticket-label">Upcoming Ticket</p>
+                                        <p class="gov-ticket-number gov-ticket-number-next" aria-live="polite">{{ $featuredOfficeRow['nextInline']->queue_number }}</p>
+                                        <div class="gov-ticket-meta-block">
+                                            <p class="gov-ticket-meta-label">Queued at</p>
+                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['nextInline']->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</p>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="gov-ticket-empty">
+                                        <p class="gov-ticket-empty-title">No waiting ticket in line</p>
+                                        <p class="gov-ticket-empty-text">Newly issued tickets will appear here.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="gov-monitor-panel gov-panel-recent" aria-labelledby="recent-{{ $featuredOfficeRow['office']->slug }}">
+                        <div class="gov-panel-head">
+                            <h3 id="recent-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Recent Transactions Today</h3>
+                            <span class="gov-recent-count">{{ $featuredOfficeRow['recentTransactions']->count() }} records</span>
+                        </div>
+
+                        <div class="gov-panel-body">
+                            @if($featuredOfficeRow['recentTransactions']->isNotEmpty())
+                                <marquee behavior="scroll" direction="left" scrollamount="7" class="gov-ticker gov-marquee" aria-label="Recent transaction queue numbers for {{ $featuredOfficeRow['office']->name }}">
+                                    @foreach($featuredOfficeRow['recentTransactions'] as $entry)
+                                        <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
+                                    @endforeach
+                                </marquee>
+                            @else
+                                <div class="gov-ticket-empty gov-ticket-empty-soft">
+                                    <p class="gov-ticket-empty-title">No recent transaction yet</p>
+                                    <p class="gov-ticket-empty-text">Completed and not served transactions will show here.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </section>
+                </article>
+            @else
+                <section class="gov-monitor-panel gov-panel-empty-state" aria-label="No active queues">
+                    <div class="gov-panel-head">
+                        <h2 class="gov-font-heading gov-panel-title">No Active Queues</h2>
+                        <span class="gov-status-badge gov-status-badge-idle">Idle</span>
+                    </div>
+
+                    <div class="gov-panel-body">
+                        <div class="gov-ticket-empty">
+                            <p class="gov-ticket-empty-title">No active queues across all offices</p>
+                            <p class="gov-ticket-empty-text">Newly issued tickets will appear here once offices begin serving clients.</p>
+                        </div>
+                    </div>
+                </section>
             @endif
 
-            <div class="gov-monitor-grid">
-                <section class="gov-monitor-panel gov-panel-serving" aria-labelledby="now-serving-heading">
-                    <div class="gov-panel-head">
-                        <h2 id="now-serving-heading" class="gov-font-heading gov-panel-title">Serving Now</h2>
-                        <span class="gov-status-badge {{ $serving ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
-                            {{ $serving ? 'Active' : 'Idle' }}
-                        </span>
-                    </div>
-
-                    <div class="gov-panel-body">
-                        @if($serving)
-                            <div class="gov-ticket-card gov-ticket-card-serving">
-                                <p class="gov-ticket-label">Queue Number</p>
-                                <p class="gov-ticket-number gov-ticket-number-serving" aria-live="polite">{{ $serving->queue_number }}</p>
-                                <div class="gov-ticket-meta-block">
-                                    <p class="gov-ticket-meta-label">Called at</p>
-                                    <p class="gov-ticket-meta-value">{{ $serving->called_at?->timezone('Asia/Manila')?->format('h:i:s A') }}</p>
-                                </div>
-                            </div>
-                        @else
-                            <div class="gov-ticket-empty">
-                                <p class="gov-ticket-empty-title">No active ticket right now</p>
-                                <p class="gov-ticket-empty-text">The next waiting ticket will be called automatically.</p>
-                            </div>
-                        @endif
-                    </div>
-                </section>
-
-                <section class="gov-monitor-panel gov-panel-next" aria-labelledby="next-inline-heading">
-                    <div class="gov-panel-head">
-                        <h2 id="next-inline-heading" class="gov-font-heading gov-panel-title">Next in Line</h2>
-                        <span class="gov-status-badge {{ $nextInline ? 'gov-status-badge-queue' : 'gov-status-badge-idle' }}">
-                            {{ $nextInline ? 'Queued' : 'Empty' }}
-                        </span>
-                    </div>
-
-                    <div class="gov-panel-body">
-                        @if($nextInline)
-                            <div class="gov-ticket-card gov-ticket-card-next">
-                                <p class="gov-ticket-label">Upcoming Ticket</p>
-                                <p class="gov-ticket-number gov-ticket-number-next" aria-live="polite">{{ $nextInline->queue_number }}</p>
-                                <div class="gov-ticket-meta-block">
-                                    <p class="gov-ticket-meta-label">Queued at</p>
-                                    <p class="gov-ticket-meta-value">{{ $nextInline->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</p>
-                                </div>
-                            </div>
-                        @else
-                            <div class="gov-ticket-empty">
-                                <p class="gov-ticket-empty-title">No waiting ticket in line</p>
-                                <p class="gov-ticket-empty-text">Newly issued tickets will appear here.</p>
-                            </div>
-                        @endif
-                    </div>
-                </section>
-            </div>
-
-            <section class="gov-monitor-panel gov-panel-recent" aria-labelledby="recent-transaction-heading">
-                <div class="gov-panel-head">
-                    <h2 id="recent-transaction-heading" class="gov-font-heading gov-panel-title">Recent Transactions Today</h2>
-                    <span class="gov-recent-count">{{ $recentTransactions->count() }} records</span>
-                </div>
-
-                <div class="gov-panel-body">
-                    @if($recentTransactions->isNotEmpty())
-                        <marquee behavior="scroll" direction="left" scrollamount="7" class="gov-ticker gov-marquee" aria-label="Recent transaction queue numbers">
-                            @foreach($recentTransactions as $entry)
-                                <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
-                            @endforeach
-                        </marquee>
-                    @else
-                        <div class="gov-ticket-empty gov-ticket-empty-soft">
-                            <p class="gov-ticket-empty-title">No recent transaction yet</p>
-                            <p class="gov-ticket-empty-text">Completed and not served transactions will show here.</p>
-                        </div>
-                    @endif
-                </div>
-            </section>
         </main>
     </section>
-    @include('livewire.office-admin.partials.live-monitor-announcer', [
-        'announcementPayload' => $announcementPayload ?? null,
-    ])
+
+    @foreach($announcementOfficeRows as $officeRow)
+        @include('livewire.office-admin.partials.live-monitor-announcer', [
+            'office' => $officeRow['office'],
+            'announcementPayload' => $officeRow['announcementPayload'],
+        ])
+    @endforeach
 </div>
 
 @include('livewire.office-admin.partials.live-monitor-clock-script')
@@ -113,14 +141,14 @@
 @once
     <style>
         .gov-monitor-root {
-            --gov-blue-950: #cb7300;
-            --gov-blue-900: #406689;
+            --gov-blue-950: #0b2f57;
+            --gov-blue-900: #785416;
             --gov-blue-800: #2c5f97;
             --gov-blue-100: #d9e7f7;
             --gov-gold-500: #b88a2c;
             --gov-emerald-700: #0c7a58;
             --gov-emerald-100: #ddf8ec;
-            --gov-sky-700: #1269ad;
+            --gov-sky-700: #ad5f12;
             --gov-sky-100: #e1f1ff;
             --gov-surface: #f4f7fb;
             --gov-ink-900: #152742;
@@ -130,7 +158,7 @@
             width: 100%;
             height: 100%;
             min-height: 100dvh;
-            overflow: auto;
+            overflow: hidden;
             background:
                 radial-gradient(circle at 10% 5%, rgb(255 255 255 / 0.66), transparent 34%),
                 linear-gradient(180deg, #e6edf5 0%, #dce5f1 100%);
@@ -138,10 +166,11 @@
 
         .gov-monitor-shell {
             width: 100%;
-            min-height: 100%;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             color: var(--gov-ink-900);
+            overflow: hidden;
         }
 
         .gov-monitor-header {
@@ -248,21 +277,70 @@
             flex-direction: column;
             gap: 0.95rem;
             padding: clamp(0.75rem, 1.8vw, 1.4rem);
+            overflow: hidden;
         }
 
-        .gov-monitor-alert {
-            border-radius: 0.78rem;
-            border: 1px solid #86efac;
-            background: #ecfdf5;
-            color: #14532d;
-            padding: 0.75rem 0.9rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            animation: gov-monitor-rise 300ms ease-out both;
+        .gov-office-monitor-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.95rem;
+        }
+
+        .gov-office-monitor-card {
+            border-radius: 1rem;
+            border: 1px solid var(--gov-border);
+            background: rgb(255 255 255 / 0.74);
+            box-shadow: 0 20px 34px -34px rgb(15 63 115 / 0.75);
+            padding: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.95rem;
+            animation: gov-monitor-rise 380ms ease-out both;
+        }
+
+        .gov-office-monitor-card-featured {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .gov-office-monitor-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .gov-office-monitor-kicker {
+            margin: 0;
+            font-size: 0.68rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--gov-ink-500);
+        }
+
+        .gov-office-monitor-title {
+            margin: 0.24rem 0 0;
+            color: var(--gov-ink-900);
+            font-size: clamp(1.2rem, 1.6vw, 1.65rem);
+            line-height: 1.08;
+        }
+
+        .gov-office-monitor-chip {
+            border-radius: 999px;
+            background: #eef4fb;
+            border: 1px solid #c8d8eb;
+            color: #1d4ed8;
+            padding: 0.34rem 0.72rem;
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            font-weight: 700;
+            flex-shrink: 0;
         }
 
         .gov-monitor-grid {
-            flex: 1;
             min-height: 0;
             display: grid;
             grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
@@ -278,7 +356,6 @@
             display: flex;
             flex-direction: column;
             min-height: 0;
-            animation: gov-monitor-rise 380ms ease-out both;
         }
 
         .gov-panel-head {
@@ -378,12 +455,12 @@
 
         .gov-ticket-number-serving {
             color: #067a55;
-            font-size: clamp(3.3rem, 8vw, 8.7rem);
+            font-size: clamp(3rem, 7vw, 6rem);
         }
 
         .gov-ticket-number-next {
             color: #1066a9;
-            font-size: clamp(2.6rem, 6.2vw, 6.8rem);
+            font-size: clamp(2.25rem, 5vw, 4.6rem);
         }
 
         .gov-ticket-meta-block {
@@ -501,16 +578,6 @@
             vertical-align: middle;
         }
 
-        .gov-ticker-track {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.7rem;
-            white-space: nowrap;
-            padding: 0 0.95rem;
-            min-width: max-content;
-            animation: gov-ticker-scroll 28s linear infinite;
-        }
-
         .gov-ticker-pill {
             display: inline-flex;
             align-items: center;
@@ -534,11 +601,11 @@
             }
 
             .gov-ticket-number-serving {
-                font-size: clamp(3rem, 11vw, 6.7rem);
+                font-size: clamp(2.8rem, 10vw, 5.4rem);
             }
 
             .gov-ticket-number-next {
-                font-size: clamp(2.3rem, 8.5vw, 5.4rem);
+                font-size: clamp(2.2rem, 8vw, 4.4rem);
             }
         }
 
@@ -555,23 +622,30 @@
             .gov-monitor-main {
                 padding: 0.75rem;
             }
+
+            .gov-office-monitor-head {
+                align-items: flex-start;
+                flex-direction: column;
+            }
         }
 
         @media (max-width: 640px) {
             .gov-panel-head,
-            .gov-panel-body {
-                padding: 0.78rem;
+            .gov-panel-body,
+            .gov-office-monitor-card {
+                padding-left: 0.78rem;
+                padding-right: 0.78rem;
+            }
+
+            .gov-office-monitor-card {
+                padding-top: 0.78rem;
+                padding-bottom: 0.78rem;
             }
 
             .gov-ticker-pill {
                 min-width: 9rem;
                 height: 2.8rem;
                 font-size: 1.1rem;
-            }
-
-            .gov-ticker-track {
-                gap: 0.55rem;
-                animation-duration: 22s;
             }
         }
 
@@ -586,26 +660,11 @@
             }
         }
 
-        @keyframes gov-ticker-scroll {
-            from {
-                transform: translateX(0);
-            }
-            to {
-                transform: translateX(-50%);
-            }
-        }
-
         @media (prefers-reduced-motion: reduce) {
             .gov-monitor-header,
-            .gov-monitor-panel,
-            .gov-monitor-alert {
+            .gov-office-monitor-card,
+            .gov-monitor-panel {
                 animation: none;
-            }
-
-            .gov-ticker-track {
-                animation: none;
-                overflow-x: auto;
-                padding-bottom: 0.2rem;
             }
         }
     </style>

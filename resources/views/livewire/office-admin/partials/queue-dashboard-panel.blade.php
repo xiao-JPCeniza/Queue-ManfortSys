@@ -27,7 +27,7 @@
                         {{ $serving ? 'Active ticket' : 'No active ticket' }}
                     </span>
                 </div>
-                <p class="gov-card-subtitle">Call the next number, send announcements to the live monitor, and complete each transaction properly.</p>
+                <p class="gov-card-subtitle">Call the next number to update the live monitor and announce the ticket automatically.</p>
             </div>
 
             <div class="gov-card-body">
@@ -45,31 +45,20 @@
                     </div>
                 @endif
 
-                <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="mt-5">
                     <button
                         wire:click="callNext"
                         wire:loading.attr="disabled"
                         wire:target="callNext"
                         type="button"
-                        class="gov-btn gov-btn-primary"
-                    >
-                        Call Next
-                    </button>
-
-                    <button
-                        wire:click="announceServing"
-                        wire:loading.attr="disabled"
-                        wire:target="announceServing"
-                        type="button"
-                        @disabled(!$serving)
-                        class="gov-btn gov-btn-warning"
+                        class="gov-btn gov-btn-warning w-full"
                     >
                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5Z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 6a9 9 0 0 1 0 12" />
                         </svg>
-                        Announce Ticket
+                        Call Next
                     </button>
                 </div>
 
@@ -110,12 +99,11 @@
                             <button
                                 type="button"
                                 wire:click="clearTransaction"
-                                wire:confirm="Clear all entries listed in Recent Transactions (Today)?"
                                 wire:loading.attr="disabled"
                                 wire:target="clearTransaction"
                                 class="gov-btn gov-btn-danger"
                             >
-                                Clear Transaction
+                                Clear Waiting Line
                             </button>
                         @endif
                     </div>
