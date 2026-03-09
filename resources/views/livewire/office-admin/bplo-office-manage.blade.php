@@ -103,4 +103,7 @@
             </div>
         </section>
     </div>
+    @include('livewire.office-admin.partials.live-monitor-announcer', [
+        'announcementPayload' => $announcementPayload ?? null,
+    ])
 </div>

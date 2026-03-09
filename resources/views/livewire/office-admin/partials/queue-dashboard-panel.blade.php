@@ -27,7 +27,7 @@
                         {{ $serving ? 'Active ticket' : 'No active ticket' }}
                     </span>
                 </div>
-                <p class="gov-card-subtitle">Call the next number, announce by voice, and complete each transaction properly.</p>
+                <p class="gov-card-subtitle">Call the next number, send announcements to the live monitor, and complete each transaction properly.</p>
             </div>
 
             <div class="gov-card-body">
@@ -48,6 +48,8 @@
                 <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
                         wire:click="callNext"
+                        wire:loading.attr="disabled"
+                        wire:target="callNext"
                         type="button"
                         class="gov-btn gov-btn-primary"
                     >
@@ -55,8 +57,10 @@
                     </button>
 
                     <button
+                        wire:click="announceServing"
+                        wire:loading.attr="disabled"
+                        wire:target="announceServing"
                         type="button"
-                        onclick="window.callServingNumber(@js($serving?->queue_number), @js($office->name))"
                         @disabled(!$serving)
                         class="gov-btn gov-btn-warning"
                     >

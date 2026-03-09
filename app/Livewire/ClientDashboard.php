@@ -10,7 +10,7 @@ use Livewire\Component;
 #[Layout('layouts.public')]
 class ClientDashboard extends Component
 {
-    /** @var array{office_id: int, office_name: string, queue_number: string}|null */
+    /** @var array{entry_id: int, office_id: int, office_name: string, queue_number: string, prefix: string|null, issued_date: string, issued_time: string}|null */
     public ?array $ticket = null;
     public string $selectedOfficeSlug = '';
 
@@ -64,11 +64,16 @@ class ClientDashboard extends Component
         $office->increment('tickets_accommodated_total');
         $office->refresh();
 
+        $issuedAt = ($entry->created_at ?? now())->copy()->timezone('Asia/Manila');
+
         $this->ticket = [
+            'entry_id' => $entry->id,
             'office_id' => $office->id,
             'office_name' => $office->name,
             'queue_number' => $entry->queue_number,
             'prefix' => $office->prefix,
+            'issued_date' => $issuedAt->format('F j, Y'),
+            'issued_time' => $issuedAt->format('g:i A'),
         ];
     }
 

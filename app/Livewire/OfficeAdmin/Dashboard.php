@@ -2,6 +2,7 @@
 
 namespace App\Livewire\OfficeAdmin;
 
+use App\Livewire\OfficeAdmin\Concerns\HandlesOfficeQueueAnnouncements;
 use App\Models\Office;
 use App\Models\QueueEntry;
 use Livewire\Attributes\Layout;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Schema;
 #[Layout('layouts.app')]
 class Dashboard extends Component
 {
+    use HandlesOfficeQueueAnnouncements;
+
     private const ADVANCED_QUEUE_DASHBOARD_SLUGS = [
         'hrmo',
         'business-permits',
@@ -115,7 +118,24 @@ class Dashboard extends Component
             'served_by' => auth()->id(),
         ]);
 
+        $this->storeOfficeAnnouncement($this->office, 'prepare', $next->queue_number);
         session()->flash('office_message', "Now serving {$next->queue_number}");
+    }
+
+    public function announceServing(): void
+    {
+        $serving = $this->office->queueEntries()
+            ->serving()
+            ->first();
+
+        if (!$serving) {
+            session()->flash('office_message', 'No active ticket to announce.');
+
+            return;
+        }
+
+        $this->storeOfficeAnnouncement($this->office, 'serving', $serving->queue_number);
+        session()->flash('office_message', "Announcement sent to the live monitor for {$serving->queue_number}");
     }
 
     public function complete(int $entryId)
@@ -162,32 +182,6 @@ class Dashboard extends Component
         );
     }
 
-    private function ensureCurrentServing(): void
-    {
-        $servingExists = QueueEntry::where('office_id', $this->office->id)
-            ->serving()
-            ->exists();
-
-        if ($servingExists) {
-            return;
-        }
-
-        $next = QueueEntry::where('office_id', $this->office->id)
-            ->waiting()
-            ->orderBy('created_at')
-            ->first();
-
-        if (!$next) {
-            return;
-        }
-
-        $next->update([
-            'status' => QueueEntry::STATUS_SERVING,
-            'called_at' => now(),
-            'served_by' => auth()->id(),
-        ]);
-    }
-
     private function manilaDayBounds(): array
     {
         $manilaNow = now('Asia/Manila');
@@ -201,8 +195,6 @@ class Dashboard extends Component
 
     public function render()
     {
-        $this->ensureCurrentServing();
-
         $waiting = $this->office->queueEntries()
             ->waiting()
             ->orderBy('created_at')

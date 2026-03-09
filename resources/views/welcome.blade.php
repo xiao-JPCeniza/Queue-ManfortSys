@@ -5,217 +5,591 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Queue System - Municipality of Manolo Fortich</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800|merriweather:700,900" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
-        body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+            background: linear-gradient(180deg, #edf3f9 0%, #e6edf6 100%);
+        }
 
-        .lgu-brand {
+        .gov-page {
+            min-height: 100vh;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            justify-content: center;
+            flex-direction: column;
         }
 
-        .lgu-logo {
-            height: 54px;
-            width: auto;
-            flex-shrink: 0;
+        .gov-ribbon {
+            height: 0.6rem;
+            background: linear-gradient(90deg, #0038a8 0 34%, #fcd116 34% 66%, #ce1126 66% 100%);
         }
 
-        .header-content {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 12px 28px;
-            text-align: center;
-        }
-
-        .header-info-grid {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 10px 20px;
-        }
-
-        .header-info-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-align: left;
-        }
-
-        .header-info-item svg {
-            width: 28px;
-            height: 28px;
-            flex-shrink: 0;
-        }
-
-        .header-info-item p {
-            margin: 0;
-            color: #0f172a;
-            text-shadow: none;
-        }
-
-        @media (max-width: 640px) {
-            .lgu-logo {
-                height: 46px;
-            }
-
-            .header-info-item {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        .main-background {
+        .gov-topbar {
             position: relative;
-            overflow: hidden;
-            --municipal-bg-image: none;
-            background:
-                linear-gradient(
-                    132deg,
-                    #c92509 0%,
-                    #e0490d 24%,
-                    #f36910 39%,
-                    #f6a11b 49.5%,
-                    #0d5f9e 50.5%,
-                    #0a4a7f 72%,
-                    #07365d 100%
-                );
+            background: linear-gradient(180deg, #ffffff 0%, #f7fafd 100%);
+            border-bottom: 1px solid #d5deea;
+            box-shadow: 0 24px 42px -36px rgba(9, 29, 52, 0.85);
         }
 
-        .main-background::before {
+        .gov-topbar::after {
             content: "";
             position: absolute;
-            inset: -2%;
-            background:
-                linear-gradient(135deg, rgba(255, 255, 255, 0.14) 0 26%, rgba(255, 255, 255, 0) 26%) 0 0 / 300px 300px,
-                linear-gradient(315deg, rgba(0, 0, 0, 0.18) 0 28%, rgba(0, 0, 0, 0) 28%) 160px 24px / 340px 340px,
-                linear-gradient(123deg, rgba(255, 255, 255, 0.11) 0 24%, rgba(255, 255, 255, 0) 24%) 18px 170px / 285px 285px,
-                linear-gradient(304deg, rgba(0, 0, 0, 0.2) 0 25%, rgba(0, 0, 0, 0) 25%) 390px 105px / 320px 320px,
-                linear-gradient(145deg, rgba(255, 255, 255, 0.09) 0 22%, rgba(255, 255, 255, 0) 22%) 62% 14% / 300px 300px,
-                linear-gradient(326deg, rgba(0, 0, 0, 0.2) 0 23%, rgba(0, 0, 0, 0) 23%) 82% 56% / 360px 360px,
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.12)),
-                var(--municipal-bg-image);
-            background-size: auto, auto, auto, auto, auto, auto, auto, cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            filter: blur(0.2px);
-            pointer-events: none;
-            z-index: 0;
+            inset: auto 0 0;
+            height: 3px;
+            background: linear-gradient(90deg, #0f5c95 0%, #b8892e 55%, #be123c 100%);
         }
 
-        .main-background::after {
+        .gov-topbar-inner {
+            width: min(100%, 1600px);
+            margin: 0 auto;
+            padding: clamp(0.85rem, 1.45vw, 1.2rem) clamp(1rem, 1.7vw, 1.7rem);
+            display: grid;
+            grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
+            gap: 0.85rem 1.15rem;
+            align-items: center;
+        }
+
+        .gov-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            min-width: 0;
+        }
+
+        .gov-logo-shell {
+            width: 88px;
+            height: 88px;
+            flex-shrink: 0;
+            display: grid;
+            place-items: center;
+            padding: 0.35rem;
+            border-radius: 999px;
+            border: 1px solid #d6e0ec;
+            background: linear-gradient(180deg, #ffffff 0%, #eef4fb 100%);
+            box-shadow: 0 18px 32px -28px rgba(11, 33, 64, 0.9);
+        }
+
+        .gov-logo-shell img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .gov-brand-copy {
+            min-width: 0;
+        }
+
+        .gov-brand-kicker {
+            margin: 0;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #5a708b;
+        }
+
+        .gov-brand-title {
+            margin: 0.28rem 0 0;
+            font-family: 'Merriweather', Georgia, serif;
+            font-size: clamp(1.85rem, 2.6vw, 2.85rem);
+            line-height: 0.98;
+            letter-spacing: -0.03em;
+            color: #0b2140;
+        }
+
+        .gov-contact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(170px, 1fr));
+            gap: 0.65rem;
+        }
+
+        .gov-contact-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            min-width: 0;
+            min-height: 100%;
+            padding: 0.8rem 0.85rem 0.85rem;
+            border-radius: 1rem;
+            border: 1px solid #d9e2ef;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 14px 28px -26px rgba(11, 33, 64, 0.9);
+        }
+
+        .gov-contact-icon {
+            width: 1.8rem;
+            height: 1.8rem;
+            color: #0f5c95;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .gov-contact-card p {
+            margin: 0;
+        }
+
+        .gov-contact-label {
+            font-size: 0.92rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #0f2039;
+        }
+
+        .gov-contact-value {
+            margin-top: 0.22rem;
+            font-size: 0.92rem;
+            line-height: 1.38;
+            color: #4a5d76;
+            overflow-wrap: anywhere;
+        }
+
+        .gov-main {
+            position: relative;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: clamp(1rem, 2vw, 2rem);
+            overflow: hidden;
+            --municipal-bg-image: none;
+        }
+
+        .gov-main::before {
             content: "";
             position: absolute;
             inset: 0;
             background:
-                radial-gradient(900px 420px at 50% 50%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(0, 0, 0, 0.24) 100%),
-                linear-gradient(to bottom, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.18));
-            pointer-events: none;
-            z-index: 0;
+                radial-gradient(circle at 16% 14%, rgba(255, 255, 255, 0.42), transparent 34%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0 24%, rgba(255, 255, 255, 0) 24%) 0 0 / 340px 340px,
+                linear-gradient(315deg, rgba(0, 0, 0, 0.12) 0 28%, rgba(0, 0, 0, 0) 28%) 170px 24px / 360px 360px,
+                linear-gradient(128deg, #b55a35 0%, #ca6028 24%, #e07b2a 43%, #efaa31 54%, #215c95 55%, #133f6b 77%, #082744 100%),
+                var(--municipal-bg-image);
+            background-repeat: no-repeat;
+            background-size: auto, auto, auto, cover, cover;
+            background-position: center;
         }
 
-        .main-background .text-center {
+        .gov-main::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(140deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 26%) 0 0 / 40% 55% no-repeat,
+                linear-gradient(315deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0) 32%) 100% 0 / 44% 56% no-repeat,
+                linear-gradient(180deg, rgba(8, 39, 68, 0.06), rgba(8, 39, 68, 0.28));
+            pointer-events: none;
+        }
+
+        .gov-main-inner {
             position: relative;
             z-index: 1;
+            width: min(100%, 1440px);
+            margin: 0 auto;
+            flex: 1;
+            display: flex;
+            align-items: center;
         }
 
-        .main-background h2 {
+        .gov-hero-panel {
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+            gap: clamp(1rem, 2vw, 2rem);
+            align-items: center;
+            padding: clamp(1.5rem, 2.5vw, 2.3rem);
+            border-radius: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(145deg, rgba(9, 31, 56, 0.76), rgba(15, 63, 115, 0.58));
+            box-shadow: 0 36px 72px -40px rgba(3, 16, 33, 0.92);
+            backdrop-filter: blur(5px);
+        }
+
+        .gov-hero-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        .gov-hero-title {
+            margin: 0;
+            font-family: 'Merriweather', Georgia, serif;
+            font-size: clamp(2.5rem, 4vw, 4.7rem);
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+            color: #ffffff;
+            text-shadow: 0 10px 32px rgba(2, 12, 24, 0.36);
+        }
+
+        .gov-hero-text {
+            margin: 1.25rem 0 0;
+            max-width: 40rem;
+            font-size: clamp(1.08rem, 1.55vw, 1.42rem);
+            line-height: 1.72;
+            color: #eef4ff;
+            text-shadow: 0 4px 18px rgba(2, 12, 24, 0.25);
+        }
+
+        .gov-hero-actions {
+            margin-top: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .gov-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20rem;
+            min-height: 4.4rem;
+            padding: 0 1.9rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(180deg, #10a56c 0%, #0a865a 100%);
+            color: #ffffff;
+            font-size: 1.22rem;
+            font-weight: 800;
+            box-shadow: 0 20px 38px -24px rgba(5, 20, 43, 0.94);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .gov-cta:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(180deg, #12b275 0%, #0b9061 100%);
+            box-shadow: 0 24px 42px -26px rgba(5, 20, 43, 0.98);
+        }
+
+        .gov-media-stage {
+            position: relative;
+            width: 100%;
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(0.7rem, 1.2vw, 1rem);
+            border-radius: 1.6rem;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+            overflow: hidden;
+        }
+
+        .gov-media-stage::before {
+            content: "";
+            position: absolute;
+            inset: 8% 18%;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .gov-media-stage::after {
+            content: "";
+            position: absolute;
+            inset: 22%;
+            border-radius: 999px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 70%);
+        }
+
+        .gov-slider {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 100%;
+            aspect-ratio: 1320 / 749;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            background: rgba(5, 20, 43, 0.32);
+            box-shadow: 0 28px 46px -26px rgba(4, 18, 36, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+        }
+
+        .gov-slider-track {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .gov-slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 600ms ease;
+        }
+
+        .gov-slide.is-active {
+            opacity: 1;
+        }
+
+        .gov-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gov-slider-dots {
+            position: absolute;
+            inset: auto 0 0;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.8rem;
+            background: linear-gradient(180deg, rgba(7, 21, 40, 0), rgba(7, 21, 40, 0.58));
+        }
+
+        .gov-slider-dot {
+            width: 0.55rem;
+            height: 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.42);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .gov-slider-dot.is-active {
+            background: #ffffff;
+        }
+
+        .gov-seal-mark {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 280px);
+            aspect-ratio: 1;
+            border-radius: 999px;
+            padding: 1rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(228, 238, 248, 0.86));
+            box-shadow: 0 28px 46px -26px rgba(4, 18, 36, 0.96);
+        }
+
+        .gov-seal-mark img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .gov-footer {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 1440px);
+            margin: 0 auto;
+            padding: 0 0 0.25rem;
+        }
+
+        .gov-footer-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.7rem 1rem;
+            padding: 1rem 1.15rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(8, 29, 53, 0.6);
             color: #f8fbff;
-            text-shadow: 0 2px 14px rgba(0, 0, 0, 0.24);
+            font-size: 0.95rem;
+            box-shadow: 0 20px 42px -36px rgba(3, 16, 33, 0.95);
         }
 
-        .main-background p {
-            color: #e7eefc;
-            text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+        .gov-footer-bar p {
+            margin: 0;
+        }
+
+        @media (max-width: 1180px) {
+            .gov-topbar-inner,
+            .gov-hero-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .gov-contact-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 820px) {
+            .gov-contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gov-contact-card {
+                justify-content: flex-start;
+            }
+
+            .gov-hero-panel {
+                padding: 1.25rem;
+            }
+
+            .gov-cta {
+                width: 100%;
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .gov-ribbon {
+                height: 0.45rem;
+            }
+
+            .gov-logo-shell {
+                width: 70px;
+                height: 70px;
+            }
+
+            .gov-brand-title {
+                font-size: 1.7rem;
+            }
+
+            .gov-main {
+                padding: 0.75rem;
+            }
+
+            .gov-main-inner {
+                align-items: stretch;
+            }
+
+            .gov-hero-title {
+                font-size: 2rem;
+            }
+
+            .gov-hero-text {
+                font-size: 1rem;
+            }
+
+            .gov-slider {
+                width: 100%;
+            }
+
+            .gov-footer-bar {
+                font-size: 0.84rem;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
+<body class="text-slate-900 antialiased min-h-screen">
     @php
         $municipalBgPath = public_path('images/municipal-building.jpg');
         $municipalBgAsset = file_exists($municipalBgPath) ? asset('images/municipal-building.jpg') : null;
+        $slideAssets = collect(['slide1', 'slide2', 'slide3'])
+            ->map(function (string $name) {
+                foreach (['png', 'jpg', 'jpeg', 'webp'] as $extension) {
+                    $path = public_path("images/{$name}.{$extension}");
+                    if (file_exists($path)) {
+                        return asset("images/{$name}.{$extension}");
+                    }
+                }
+
+                return null;
+            })
+            ->filter()
+            ->values();
     @endphp
-    <div class="min-h-screen flex flex-col">
-        <header class="bg-white text-slate-900 shadow-md border-b border-slate-200">
-            <div class="max-w-screen-2xl mx-auto px-4 py-2.5">
-                <div class="header-content">
-                    <div class="lgu-brand">
-                        <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich logo" class="lgu-logo">
-                        <div class="leading-tight text-left">
-                            <p class="text-xs sm:text-sm text-slate-700">Local Government Unit of</p>
-                            <h1 class="text-3xl lg:text-4xl leading-[0.95] font-extrabold">Manolo Fortich</h1>
-                        </div>
+    <div class="gov-page">
+        <div class="gov-ribbon" aria-hidden="true"></div>
+
+        <header class="gov-topbar">
+            <div class="gov-topbar-inner">
+                <div class="gov-brand">
+                    <div class="gov-logo-shell">
+                        <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich logo">
                     </div>
 
-                    <div class="header-info-grid">
-                        <div class="header-info-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                <path d="M8 2v3M16 2v3M4 8h16M5 4h14a1 1 0 0 1 1 1v14a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V5a1 1 0 0 1 1-1Z" />
-                                <circle cx="16.5" cy="16.5" r="4.5" />
-                                <path d="M16.5 14v2.5l1.5 1" />
-                            </svg>
-                            <div>
-                                <p class="font-extrabold text-lg leading-tight">PH Standard Time</p>
-                                <p id="ph-time" class="text-base leading-tight">--/--/---- | --:--:-- --</p>
-                            </div>
-                        </div>
-
-                        <div class="header-info-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                <path d="M21 15.5v2a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-7.2-2.6 16 16 0 0 1-5-5A16.5 16.5 0 0 1 4 4.7 2 2 0 0 1 6 2.5h2a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.9a2 2 0 0 1-.5 2.1l-.9.9a13 13 0 0 0 5 5l.9-.9a2 2 0 0 1 2.1-.5c.9.4 1.9.7 2.9.8a2 2 0 0 1 1.7 2Z" />
-                            </svg>
-                            <div>
-                                <p class="font-extrabold text-lg leading-tight">Contact Us</p>
-                                <p class="text-base leading-tight">+63 917 724 3823</p>
-                            </div>
-                        </div>
-
-                        <div class="header-info-item">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                <rect x="2.5" y="4" width="19" height="16" rx="2" />
-                                <path d="m3.5 6 8.5 6 8.5-6M14 13l7 7M3 20l6-6" />
-                            </svg>
-                            <div>
-                                <p class="font-extrabold text-lg leading-tight">Email Us</p>
-                                <p class="text-base leading-tight">mmo@manolofortich.gov.ph</p>
-                            </div>
-                        </div>
+                    <div class="gov-brand-copy">
+                        <p class="gov-brand-kicker">Local Government Unit of</p>
+                        <h1 class="gov-brand-title">Manolo Fortich</h1>
                     </div>
-                    </a>
+                </div>
+
+                <div class="gov-contact-grid">
+                    <article class="gov-contact-card" aria-label="Philippine standard time">
+                        <svg class="gov-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M8 2v3M16 2v3M4 8h16M5 4h14a1 1 0 0 1 1 1v14a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V5a1 1 0 0 1 1-1Z" />
+                            <circle cx="16.5" cy="16.5" r="4.5" />
+                            <path d="M16.5 14v2.5l1.5 1" />
+                        </svg>
+
+                        <div>
+                            <p class="gov-contact-label">PH Standard Time</p>
+                            <p id="ph-time" class="gov-contact-value">--/--/---- | --:--:-- --</p>
+                        </div>
+                    </article>
+
+                    <article class="gov-contact-card" aria-label="Contact number">
+                        <svg class="gov-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <path d="M21 15.5v2a2 2 0 0 1-2.2 2 16.5 16.5 0 0 1-7.2-2.6 16 16 0 0 1-5-5A16.5 16.5 0 0 1 4 4.7 2 2 0 0 1 6 2.5h2a2 2 0 0 1 2 1.7c.1 1 .4 2 .8 2.9a2 2 0 0 1-.5 2.1l-.9.9a13 13 0 0 0 5 5l.9-.9a2 2 0 0 1 2.1-.5c.9.4 1.9.7 2.9.8a2 2 0 0 1 1.7 2Z" />
+                        </svg>
+
+                        <div>
+                            <p class="gov-contact-label">Contact Us</p>
+                            <p class="gov-contact-value">+63 917 724 3823</p>
+                        </div>
+                    </article>
+
+                    <article class="gov-contact-card" aria-label="Email address">
+                        <svg class="gov-contact-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <rect x="2.5" y="4" width="19" height="16" rx="2" />
+                            <path d="m3.5 6 8.5 6 8.5-6M14 13l7 7M3 20l6-6" />
+                        </svg>
+
+                        <div>
+                            <p class="gov-contact-label">Email Us</p>
+                            <p class="gov-contact-value">mmo@manolofortich.gov.ph</p>
+                        </div>
+                    </article>
                 </div>
             </div>
         </header>
+
         <main
-            class="main-background flex-1 flex flex-col"
+            class="gov-main"
             role="main"
             style="{{ $municipalBgAsset ? '--municipal-bg-image: url(\''.$municipalBgAsset.'\');' : '' }}"
         >
-            <div class="flex-1 flex items-center justify-center p-6">
-                <div class="text-center max-w-2xl">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-4">Welcome to the LGU Queue System</h2>
-                    <p class="text-slate-600 mb-8">
-                        Get a queue number by selecting your office (MENRO, MISO, MAO, etc.). Your ticket will be announced by voice and shown in a pop-up.
-                        Staff may log in to manage queues and serve clients.
-                    </p>
-                    <div class="flex flex-wrap justify-center gap-4">
-                        <a href="{{ route('queue.client') }}" class="lgu-btn px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-                            Get your Queue Number
-                        </a>
-                   
+            <div class="gov-main-inner">
+                <section class="gov-hero-panel">
+                    <div class="gov-hero-copy">
+                        <h2 class="gov-hero-title">Welcome to the LGU Queue System</h2>
+                        <p class="gov-hero-text">
+                            Get a queue number by selecting your office (MENRO, MHO, MSWDO, etc.). Your ticket will be generated and will be announced by voice.
+                            Staff may log in to manage queues and serve clients.
+                        </p>
+
+                        <div class="gov-hero-actions">
+                            <a href="{{ route('queue.client') }}" class="gov-cta">
+                                Get your Queue Number
+                            </a>
+                        </div>
                     </div>
-                </div>
+
+                    <div class="gov-media-stage" aria-hidden="true">
+                        @if($slideAssets->isNotEmpty())
+                            <div class="gov-slider" data-gov-slider>
+                                <div class="gov-slider-track">
+                                    @foreach($slideAssets as $slideAsset)
+                                        <figure class="gov-slide {{ $loop->first ? 'is-active' : '' }}" data-gov-slide>
+                                            <img src="{{ $slideAsset }}" alt="Municipality of Manolo Fortich feature slide {{ $loop->iteration }}">
+                                        </figure>
+                                    @endforeach
+                                </div>
+
+                                <div class="gov-slider-dots" aria-hidden="true">
+                                    @foreach($slideAssets as $slideAsset)
+                                        <span class="gov-slider-dot {{ $loop->first ? 'is-active' : '' }}" data-gov-dot></span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div class="gov-seal-mark">
+                                <img src="{{ asset('images/lgu-logo.png') }}" alt="">
+                            </div>
+                        @endif
+                    </div>
+                </section>
             </div>
 
-            <footer class="relative z-10 py-4 text-center text-slate-500 text-sm">
-                <div class="max-w-6xl mx-auto px-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p class="sm:text-left">Copyright &copy; 2026 <span>LGU Manolo Fortich Website</span>, All Rights Reserved.</p>
-                    <p class="sm:text-right">Developed By <span>Management Information Systems Office</span></p>
+            <footer class="gov-footer">
+                <div class="gov-footer-bar">
+                    <p>Copyright &copy; 2026 <span>LGU Manolo Fortich Website</span>, All Rights Reserved.</p>
+                    <p>Developed By <span>Management Information Systems Office</span></p>
                 </div>
             </footer>
         </main>
@@ -251,6 +625,32 @@
 
             updateTime();
             window.setInterval(updateTime, 1000);
+        })();
+
+        (() => {
+            const slider = document.querySelector('[data-gov-slider]');
+            if (!slider) return;
+
+            const slides = Array.from(slider.querySelectorAll('[data-gov-slide]'));
+            const dots = Array.from(slider.querySelectorAll('[data-gov-dot]'));
+            if (slides.length <= 1) return;
+
+            let activeIndex = 0;
+
+            const showSlide = (index) => {
+                slides.forEach((slide, slideIndex) => {
+                    slide.classList.toggle('is-active', slideIndex === index);
+                });
+
+                dots.forEach((dot, dotIndex) => {
+                    dot.classList.toggle('is-active', dotIndex === index);
+                });
+            };
+
+            window.setInterval(() => {
+                activeIndex = (activeIndex + 1) % slides.length;
+                showSlide(activeIndex);
+            }, 4000);
         })();
     </script>
 </body>

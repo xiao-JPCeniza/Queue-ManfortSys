@@ -103,19 +103,22 @@
             </section>
         </main>
     </section>
+    @include('livewire.office-admin.partials.live-monitor-announcer', [
+        'announcementPayload' => $announcementPayload ?? null,
+    ])
 </div>
 
 @once
     <style>
         .gov-monitor-root {
             --gov-blue-950: #0b2f57;
-            --gov-blue-900: #164878;
+            --gov-blue-900: #785416;
             --gov-blue-800: #2c5f97;
             --gov-blue-100: #d9e7f7;
             --gov-gold-500: #b88a2c;
             --gov-emerald-700: #0c7a58;
             --gov-emerald-100: #ddf8ec;
-            --gov-sky-700: #1269ad;
+            --gov-sky-700: #ad5f12;
             --gov-sky-100: #e1f1ff;
             --gov-surface: #f4f7fb;
             --gov-ink-900: #152742;

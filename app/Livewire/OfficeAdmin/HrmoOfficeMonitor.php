@@ -2,13 +2,15 @@
 
 namespace App\Livewire\OfficeAdmin;
 
+use App\Livewire\OfficeAdmin\Concerns\HandlesOfficeQueueAnnouncements;
 use App\Models\Office;
 use App\Models\QueueEntry;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class HrmoOfficeMonitor extends Component
 {
+    use HandlesOfficeQueueAnnouncements;
+
     public Office $office;
 
     public function mount(Office $office): void
@@ -18,7 +20,6 @@ class HrmoOfficeMonitor extends Component
 
     public function tick(): void
     {
-        $this->ensureCurrentServing();
     }
 
     public function resetTickets(): void
@@ -53,40 +54,6 @@ class HrmoOfficeMonitor extends Component
         );
     }
 
-    private function ensureCurrentServing(): void
-    {
-        $serving = QueueEntry::where('office_id', $this->office->id)
-            ->serving()
-            ->orderBy('called_at')
-            ->first();
-
-        if (!$serving) {
-            $next = QueueEntry::where('office_id', $this->office->id)
-                ->waiting()
-                ->orderBy('created_at')
-                ->first();
-
-            if ($next) {
-                $updatePayload = [
-                    'status' => QueueEntry::STATUS_SERVING,
-                    'called_at' => now(),
-                ];
-
-                $servedBy = Auth::id();
-                if ($servedBy !== null) {
-                    $updatePayload['served_by'] = $servedBy;
-                }
-
-                $next->update($updatePayload);
-            }
-            return;
-        }
-
-        if (!$serving->called_at) {
-            $serving->update(['called_at' => now()]);
-        }
-    }
-
     private function manilaDayBounds(): array
     {
         $manilaNow = now('Asia/Manila');
@@ -100,8 +67,6 @@ class HrmoOfficeMonitor extends Component
 
     public function render()
     {
-        $this->ensureCurrentServing();
-
         $serving = QueueEntry::where('office_id', $this->office->id)
             ->serving()
             ->orderBy('called_at')
@@ -136,6 +101,7 @@ class HrmoOfficeMonitor extends Component
             'nextInline' => $nextInline,
             'recentTransactions' => $recentTransactions,
             'manilaNow' => $manilaNow,
+            'announcementPayload' => $this->getOfficeAnnouncement($this->office),
         ]);
     }
 }

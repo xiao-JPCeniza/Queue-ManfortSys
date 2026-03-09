@@ -100,7 +100,7 @@
             --gov-red-600: #9f1239;
             --gov-ink-900: #142033;
             --gov-ink-700: #334155;
-            --gov-ink-500: #64748b;
+            --gov-ink-500: #8b8664;
             --gov-surface: #ffffff;
             --gov-border: #d8e2ef;
             position: relative;
@@ -151,7 +151,7 @@
             position: relative;
             padding: 1.5rem 1.5rem 1.1rem;
             background:
-                linear-gradient(120deg, #3e3e79, #d7791c),
+                linear-gradient(120deg, #f77b00, #1d3883),
                 linear-gradient(45deg, rgb(255 255 255 / 0.07), transparent 50%);
             color: #fff;
         }
@@ -161,7 +161,7 @@
             position: absolute;
             inset: auto 0 0;
             height: 0.35rem;
-            background: linear-gradient(90deg, #994c0c 0%, #488028 66%, #d2891b 66%, #020682 84%, #0f20b6 84%, #9f1239 100%);
+            background: linear-gradient(90deg, #ffff08 0%, #133085 66%, #d72c2c 66%, #09811b 84%, #ffff08 84%, #d58904 100%);
         }
 
         .gov-banner-content {

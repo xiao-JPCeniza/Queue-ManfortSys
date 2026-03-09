@@ -1,7 +1,7 @@
 <div class="queue-page min-h-screen flex flex-col">
     <header class="queue-header text-white relative overflow-hidden">
         <div class="queue-header-ribbon" aria-hidden="true"></div>
-        <div class="max-w-6xl mx-auto px-4 py-6 relative z-10">
+        <div class="queue-shell-inner queue-header-inner relative z-10">
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-3 min-w-0">
                     <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich logo" class="queue-header-logo">
@@ -45,28 +45,28 @@
         </div>
     </header>
 
-    <main class="flex-1 max-w-6xl mx-auto w-full p-4 sm:p-6" role="main">
+    <main class="queue-shell-inner queue-main flex-1" role="main">
         @if(!$ticket)
             <section class="queue-intro-card">
                 <h2 class="queue-intro-title">Select an Office to Get Your Queue Number</h2>
                 <p class="queue-intro-copy">Please choose the office you need to visit. A queue number will be generated instantly and announced through the public queue system.</p>
             </section>
 
-            <div class="gov-office-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mt-5" role="list">
+            <div class="gov-office-grid mt-5" role="list">
                 @foreach($offices as $office)
                     <button
                         type="button"
                         wire:click="selectOffice({{ $office->id }})"
                         wire:loading.attr="disabled"
-                        class="queue-office-card group relative p-6 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none min-h-[170px]"
+                        class="queue-office-card group relative p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none"
                         role="listitem"
                     >
                         <span class="queue-office-index" aria-hidden="true">{{ sprintf('%02d', $loop->iteration) }}</span>
 
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <span class="text-xl font-extrabold text-slate-900 group-hover:text-blue-900 transition block leading-tight">{{ $office->name }}</span>
-                                <p class="text-slate-600 text-sm mt-2 leading-relaxed">{{ $office->description }}</p>
+                                <span class="queue-office-name">{{ $office->name }}</span>
+                                <p class="queue-office-description">{{ $office->description }}</p>
                             </div>
                             <span class="queue-office-arrow" aria-hidden="true">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5l7 7-7 7"/></svg>
@@ -93,21 +93,31 @@
             @endif
         @else
             <section class="queue-ticket-wrap">
-                <div class="queue-ticket-card">
+                <div
+                    class="queue-ticket-card"
+                    data-auto-print-ticket="{{ $ticket['entry_id'] }}"
+                    data-redirect-url="{{ route('queue.client') }}"
+                >
                     <div class="queue-ticket-head">
                         <p class="queue-ticket-kicker">Official Queue Ticket</p>
-                        <h2 class="text-2xl font-extrabold text-white mt-1">{{ $ticket['office_name'] }}</h2>
+                        <h2 class="queue-ticket-office">{{ $ticket['office_name'] }}</h2>
                     </div>
                     <div class="queue-ticket-body">
                         <p class="queue-ticket-label">Queue Number</p>
                         <p class="queue-ticket-number" id="ticket-number-display" aria-label="Your queue number is {{ $ticket['queue_number'] }}">{{ $ticket['queue_number'] }}</p>
+                        <p class="queue-ticket-timestamp" aria-label="Ticket issue date and time">
+                            <span>{{ $ticket['issued_date'] ?? '' }}</span>
+                            <span aria-hidden="true">&bull;</span>
+                            <span>{{ $ticket['issued_time'] ?? '' }}</span>
+                        </p>
                         <p class="queue-ticket-note">Please wait for your number to be called at the service desk.</p>
+                        <p class="queue-ticket-status" data-ticket-print-status aria-live="polite">Printing automatically in 3 seconds...</p>
                         <button
                             type="button"
                             class="lgu-btn queue-print-btn"
-                            onclick="try { window.print(); } finally { window.location.href='{{ route('queue.client') }}'; }"
+                            data-ticket-print-btn
                         >
-                            Print Ticket
+                            Print now
                         </button>
                     </div>
                 </div>
@@ -116,7 +126,7 @@
     </main>
 
     <footer class="queue-footer py-4 text-sm">
-        <div class="max-w-6xl mx-auto px-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div class="queue-shell-inner flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <p class="sm:text-left">Municipality of Manolo Fortich &copy; {{ date('Y') }} - Queue Management System</p>
             <p class="sm:text-right">Developed by Management Information Systems Office</p>
         </div>
@@ -125,15 +135,31 @@
 
 <style>
     .queue-page {
-        --gov-blue-900: #cd9e38;
-        --gov-blue-800: #e58b15;
-        --gov-blue-700: #14539e;
-        --gov-gold-500: #8d641c;
+        --gov-blue-900: #ff8f1f;
+        --gov-blue-800: #bc6609;
+        --gov-blue-700: #133ba1;
+        --gov-gold-500: #f1bb6b;
         --gov-red-500: #b74231;
         background:
             radial-gradient(1200px 420px at -10% -20%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 60%),
             radial-gradient(900px 440px at 110% 25%, rgba(158, 82, 20, 0.11), rgba(20, 83, 158, 0) 55%),
             linear-gradient(180deg, #eaf1fa 0%, #f7f9fc 46%, #edf3fa 100%);
+    }
+
+    .queue-shell-inner {
+        width: 100%;
+        padding-left: clamp(1rem, 2.5vw, 2.5rem);
+        padding-right: clamp(1rem, 2.5vw, 2.5rem);
+    }
+
+    .queue-header-inner {
+        padding-top: clamp(1.25rem, 2vw, 2rem);
+        padding-bottom: clamp(1.25rem, 2vw, 2rem);
+    }
+
+    .queue-main {
+        padding-top: clamp(1.1rem, 2vw, 1.85rem);
+        padding-bottom: clamp(1.5rem, 2.2vw, 2.5rem);
     }
 
     .queue-header {
@@ -144,13 +170,13 @@
     }
 
     .queue-header-ribbon {
-        height: 7px;
+        height: 15px;
         background: linear-gradient(90deg, #0038a8 0 34%, #fcd116 34% 66%, #ce1126 66% 100%);
     }
 
     .queue-header-logo {
-        width: 56px;
-        height: 56px;
+        width: 70px;
+        height: 70px;
         object-fit: contain;
         border-radius: 9999px;
         padding: 2px;
@@ -260,7 +286,7 @@
     .queue-intro-title {
         margin: 0;
         color: #0f2f57;
-        font-size: clamp(1.05rem, 2vw, 1.35rem);
+        font-size: clamp(1.35rem, 2.6vw, 1.9rem);
         font-weight: 800;
         letter-spacing: -0.01em;
     }
@@ -268,16 +294,24 @@
     .queue-intro-copy {
         margin: 0.45rem 0 0;
         color: #334155;
-        max-width: 58ch;
+        max-width: 72ch;
+    }
+
+    .gov-office-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: clamp(1rem, 1.3vw, 1.5rem);
     }
 
     .queue-office-card {
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
         border-radius: 1.1rem;
         border: 1px solid #d6e1ef;
         background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
-        padding-bottom: 2.75rem;
+        min-height: 11rem;
         transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
@@ -312,12 +346,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 0.75rem;
-        height: 1.5rem;
-        min-width: 2.3rem;
-        padding: 0 0.5rem;
+        margin-bottom: 0.8rem;
+        height: 1.8rem;
+        min-width: 2.6rem;
+        padding: 0 0.6rem;
         border-radius: 9999px;
-        font-size: 0.75rem;
+        font-size: 0.88rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         color: #08356a;
@@ -325,9 +359,36 @@
         border: 1px solid #bdd2f2;
     }
 
+    .queue-office-name {
+        display: block;
+        color: #0f172a;
+        font-size: clamp(1.35rem, 1.8vw, 1.75rem);
+        font-weight: 800;
+        line-height: 1.12;
+        transition: color 0.2s ease;
+    }
+
+    .queue-office-description {
+        margin: 0.55rem 0 0;
+        color: #475569;
+        font-size: clamp(0.92rem, 1.05vw, 1.02rem);
+        line-height: 1.45;
+    }
+
+    .queue-office-card:hover .queue-office-name {
+        color: #14539e;
+    }
+
     .queue-office-arrow {
         color: #94a3b8;
         transition: color 0.2s ease, transform 0.2s ease;
+        padding-top: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .queue-office-arrow svg {
+        width: 1.9rem;
+        height: 1.9rem;
     }
 
     .queue-office-card:hover .queue-office-arrow {
@@ -336,10 +397,9 @@
     }
 
     .queue-office-meta {
-        position: absolute;
-        left: 1.5rem;
-        bottom: 1rem;
-        font-size: 0.72rem;
+        margin-top: auto;
+        padding-top: 0.9rem;
+        font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
@@ -347,20 +407,21 @@
     }
 
     .queue-ticket-wrap {
-        max-width: 40rem;
+        width: min(100%, 90mm);
         margin: 2.3rem auto 0;
     }
 
     .queue-ticket-card {
-        border-radius: 1.4rem;
+        border-radius: 1rem;
         overflow: hidden;
-        border: 1px solid #c9d8ec;
-        background: #ffffff;
+        border: 1px dashed #c9d8ec;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #ffffff 100%);
         box-shadow: 0 18px 36px rgba(12, 59, 115, 0.22);
     }
 
     .queue-ticket-head {
-        padding: 1.25rem 1.4rem;
+        padding: 1rem 1rem 0.95rem;
         text-align: center;
         background: linear-gradient(140deg, #082a55 0%, #0c3b73 58%, #14539e 100%);
     }
@@ -374,8 +435,16 @@
         font-weight: 700;
     }
 
+    .queue-ticket-office {
+        margin: 0.3rem 0 0;
+        font-size: 1.25rem;
+        line-height: 1.2;
+        font-weight: 800;
+        color: #ffffff;
+    }
+
     .queue-ticket-body {
-        padding: 2rem 1.5rem;
+        padding: 1.35rem 1rem 1.15rem;
         text-align: center;
     }
 
@@ -391,21 +460,48 @@
     .queue-ticket-number {
         margin: 0.4rem 0 0;
         color: #047857;
-        font-size: clamp(3rem, 8vw, 4.6rem);
+        font-family: "Courier New", Courier, monospace;
+        font-size: clamp(3rem, 15vw, 4rem);
         line-height: 1;
         font-weight: 900;
-        letter-spacing: -0.03em;
+        letter-spacing: 0.08em;
+    }
+
+    .queue-ticket-timestamp {
+        margin: 0.45rem auto 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.32rem;
+        max-width: 26ch;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
     }
 
     .queue-ticket-note {
-        margin: 1rem auto 0;
-        max-width: 34ch;
+        margin: 0.9rem auto 0;
+        max-width: 28ch;
         color: #334155;
+        font-size: 0.9rem;
+    }
+
+    .queue-ticket-status {
+        margin: 0.8rem 0 0;
+        color: #0c3b73;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
     }
 
     .queue-print-btn {
-        margin-top: 1.1rem;
-        padding: 0.75rem 1.5rem;
+        margin-top: 0.9rem;
+        width: 100%;
+        padding: 0.7rem 1rem;
         border-radius: 0.75rem;
         font-weight: 700;
         color: #ffffff;
@@ -422,7 +518,7 @@
         margin-top: auto;
         color: #dbeafe;
         border-top: 3px solid var(--gov-gold-500);
-        background: linear-gradient(145deg, #082a55 0%, #0c3b73 68%, #14539e 100%);
+        background: linear-gradient(145deg, #6e678e 0%, #0c3b73 68%, #14539e 100%);
     }
 
     .queue-empty-state {
@@ -434,13 +530,31 @@
         padding: 1.2rem;
     }
 
+    @media (max-width: 1280px) {
+        .gov-office-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
     @media (max-width: 900px) {
         .queue-step-grid {
             grid-template-columns: 1fr;
         }
+
+        .gov-office-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (max-width: 640px) {
+        .gov-office-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .queue-office-card {
+            min-height: 9.75rem;
+        }
+
         .queue-header-logo {
             width: 48px;
             height: 48px;
@@ -459,7 +573,249 @@
         }
 
         .queue-office-meta {
-            left: 1.25rem;
+            padding-top: 0.75rem;
+        }
+    }
+
+    @media print {
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+
+        html,
+        body {
+            width: 80mm;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+        }
+
+        .queue-header,
+        .queue-footer,
+        .queue-intro-card,
+        .gov-office-grid {
+            display: none !important;
+        }
+
+        .queue-page,
+        .queue-page main {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+            background: #ffffff !important;
+        }
+
+        .queue-ticket-wrap {
+            width: 72mm !important;
+            max-width: 72mm !important;
+            margin: 0 auto !important;
+        }
+
+        .queue-ticket-card {
+            border-radius: 0 !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .queue-ticket-head {
+            background: #ffffff !important;
+            border-bottom: 1px dashed #000000 !important;
+            padding: 0.45rem 0.35rem !important;
+        }
+
+        .queue-ticket-office,
+        .queue-ticket-kicker,
+        .queue-ticket-label,
+        .queue-ticket-number,
+        .queue-ticket-note,
+        .queue-ticket-timestamp,
+        .queue-ticket-status {
+            color: #000000 !important;
+        }
+
+        .queue-ticket-body {
+            padding: 0.6rem 0.35rem 0.65rem !important;
+        }
+
+        .queue-ticket-number {
+            font-size: 2.9rem !important;
+            letter-spacing: 0.06em !important;
+        }
+
+        .queue-ticket-timestamp {
+            margin-top: 0.2rem !important;
+            font-size: 0.6rem !important;
+            letter-spacing: 0.08em !important;
+        }
+
+        .queue-ticket-note {
+            margin-top: 0.55rem !important;
+            font-size: 0.72rem !important;
+        }
+
+        .queue-ticket-status,
+        .queue-print-btn {
+            display: none !important;
         }
     }
 </style>
+
+<script>
+    (function () {
+        if (window.__queueTicketPrintHandlerBound) {
+            return;
+        }
+
+        window.__queueTicketPrintHandlerBound = true;
+
+        const state = {
+            activeTicketKey: null,
+            countdownIntervalId: null,
+            hasPrinted: false,
+            hasRedirected: false,
+            printTimeoutId: null,
+            redirectTimeoutId: null,
+        };
+
+        function clearTimers() {
+            if (state.countdownIntervalId) {
+                window.clearInterval(state.countdownIntervalId);
+                state.countdownIntervalId = null;
+            }
+
+            if (state.printTimeoutId) {
+                window.clearTimeout(state.printTimeoutId);
+                state.printTimeoutId = null;
+            }
+
+            if (state.redirectTimeoutId) {
+                window.clearTimeout(state.redirectTimeoutId);
+                state.redirectTimeoutId = null;
+            }
+        }
+
+        function redirectTo(url) {
+            if (!url || state.hasRedirected) {
+                return;
+            }
+
+            state.hasRedirected = true;
+            window.location.href = url;
+        }
+
+        function updateStatus(ticketElement, remainingMs) {
+            const statusElement = ticketElement.querySelector('[data-ticket-print-status]');
+            if (!statusElement) {
+                return;
+            }
+
+            if (remainingMs <= 0) {
+                statusElement.textContent = 'Opening print dialog...';
+
+                return;
+            }
+
+            const remainingSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+
+            statusElement.textContent = 'Printing automatically in ' + remainingSeconds + ' second' + (remainingSeconds === 1 ? '' : 's') + '...';
+        }
+
+        function launchPrint(ticketElement) {
+            if (state.hasPrinted) {
+                return;
+            }
+
+            const redirectUrl = ticketElement.getAttribute('data-redirect-url') || '';
+            state.hasPrinted = true;
+
+            clearTimers();
+            updateStatus(ticketElement, 0);
+
+            window.addEventListener('afterprint', function () {
+                redirectTo(redirectUrl);
+            }, { once: true });
+
+            window.print();
+
+            state.redirectTimeoutId = window.setTimeout(function () {
+                redirectTo(redirectUrl);
+            }, 2500);
+        }
+
+        function scheduleTicketPrint(ticketElement) {
+            const ticketKey = ticketElement.getAttribute('data-auto-print-ticket') || '';
+            const delayMs = Number(ticketElement.getAttribute('data-print-delay-ms') || '3000');
+
+            if (!ticketKey || state.activeTicketKey === ticketKey) {
+                return;
+            }
+
+            clearTimers();
+            state.activeTicketKey = ticketKey;
+            state.hasPrinted = false;
+            state.hasRedirected = false;
+
+            const scheduledAt = Date.now();
+
+            updateStatus(ticketElement, delayMs);
+
+            state.countdownIntervalId = window.setInterval(function () {
+                const elapsed = Date.now() - scheduledAt;
+                updateStatus(ticketElement, delayMs - elapsed);
+            }, 250);
+
+            state.printTimeoutId = window.setTimeout(function () {
+                launchPrint(ticketElement);
+            }, delayMs);
+        }
+
+        function syncCurrentTicket() {
+            const ticketElement = document.querySelector('[data-auto-print-ticket]');
+
+            if (!ticketElement) {
+                clearTimers();
+                state.activeTicketKey = null;
+                state.hasPrinted = false;
+                state.hasRedirected = false;
+
+                return;
+            }
+
+            scheduleTicketPrint(ticketElement);
+        }
+
+        function onPrintButtonClick(event) {
+            const button = event.target.closest('[data-ticket-print-btn]');
+            if (!button) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const ticketElement = button.closest('[data-auto-print-ticket]');
+            if (!ticketElement) {
+                return;
+            }
+
+            launchPrint(ticketElement);
+        }
+
+        document.addEventListener('click', onPrintButtonClick);
+
+        const observer = new MutationObserver(function () {
+            syncCurrentTicket();
+        });
+
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+            syncCurrentTicket();
+        } else {
+            document.addEventListener('DOMContentLoaded', function () {
+                observer.observe(document.body, { childList: true, subtree: true });
+                syncCurrentTicket();
+            }, { once: true });
+        }
+    })();
+</script>
