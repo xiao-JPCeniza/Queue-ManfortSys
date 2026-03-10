@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__.'/compat.php';
+
 use App\Http\Middleware\EnsureOfficeAccess;
 use App\Http\Middleware\EnsureUserRole;
 use Illuminate\Foundation\Application;

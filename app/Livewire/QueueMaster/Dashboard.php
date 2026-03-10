@@ -4,6 +4,8 @@ namespace App\Livewire\QueueMaster;
 
 use App\Models\Office;
 use App\Models\QueueEntry;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -38,9 +40,16 @@ class Dashboard extends Component
         ];
     }
 
+    private function currentUser(): ?User
+    {
+        $user = Auth::user();
+
+        return $user instanceof User ? $user : null;
+    }
+
     public function render()
     {
-        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+        $isSuperAdmin = $this->currentUser()?->isSuperAdmin() ?? false;
         [$dayStart, $dayEnd] = $this->manilaDayBounds();
 
         $officeQuery = Office::query();
