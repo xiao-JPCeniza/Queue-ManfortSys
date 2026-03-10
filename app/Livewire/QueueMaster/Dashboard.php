@@ -47,9 +47,26 @@ class Dashboard extends Component
             $officeQuery->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
         }
 
-        $offices = $officeQuery->withCount(['queueEntries as waiting_count' => function ($q) {
-            $q->where('status', QueueEntry::STATUS_WAITING);
-        }])->orderBy('name')->get();
+        $offices = $officeQuery
+            ->addSelect([
+                'serving_ticket' => QueueEntry::query()
+                    ->select('queue_number')
+                    ->whereColumn('office_id', 'offices.id')
+                    ->where('status', QueueEntry::STATUS_SERVING)
+                    ->orderBy('created_at')
+                    ->limit(1),
+                'next_waiting_ticket' => QueueEntry::query()
+                    ->select('queue_number')
+                    ->whereColumn('office_id', 'offices.id')
+                    ->where('status', QueueEntry::STATUS_WAITING)
+                    ->orderBy('created_at')
+                    ->limit(1),
+            ])
+            ->withCount(['queueEntries as waiting_count' => function ($q) {
+                $q->where('status', QueueEntry::STATUS_WAITING);
+            }])
+            ->orderBy('name')
+            ->get();
 
         $recentEntriesQuery = QueueEntry::with('office')
             ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
