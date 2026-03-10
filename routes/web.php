@@ -25,6 +25,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::view('/welcome', 'welcome')->name('welcome');
+Route::view('/live-monitor', 'office.all-offices-monitor')->name('live-monitor.public');
 
 Route::get('/login', Login::class)->name('login')->middleware('guest');
 
@@ -78,6 +79,7 @@ Route::post('/logout', function () {
 
     Route::middleware(['role:super_admin,queue_master'])->prefix('queue-master')->name('queue-master.')->group(function () {
         Route::get('/', QueueMasterDashboard::class)->name('index');
+        Route::redirect('/live-monitor', '/live-monitor')->name('live-monitor');
         Route::get('/office/{office}', QueueMasterOfficeManage::class)->name('office');
     });
 

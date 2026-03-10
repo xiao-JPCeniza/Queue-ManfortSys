@@ -6,9 +6,11 @@ use App\Livewire\OfficeAdmin\Concerns\HandlesOfficeQueueAnnouncements;
 use App\Models\Office;
 use App\Models\QueueEntry;
 use App\Models\User;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Illuminate\Support\Facades\Schema;
 
 #[Layout('layouts.app')]
 class Dashboard extends Component
@@ -63,6 +65,7 @@ class Dashboard extends Component
     ];
 
     public Office $office;
+
     public string $hrmoTab = 'dashboard';
 
     public function mount(Office $office): void
@@ -86,7 +89,7 @@ class Dashboard extends Component
 
         $requestedTab = (string) request()->query('tab', 'dashboard');
         $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
-        if (auth()->user()?->isSuperAdmin()) {
+        if ($this->isSuperAdmin()) {
             $allowedTabs[] = 'user-management';
         }
 
@@ -97,16 +100,16 @@ class Dashboard extends Component
 
     public function setHrmoTab(string $tab): void
     {
-        if (!$this->supportsAdvancedQueueDashboard()) {
+        if (! $this->supportsAdvancedQueueDashboard()) {
             return;
         }
 
         $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
-        if (auth()->user()?->isSuperAdmin()) {
+        if ($this->isSuperAdmin()) {
             $allowedTabs[] = 'user-management';
         }
 
-        if (!in_array($tab, $allowedTabs, true)) {
+        if (! in_array($tab, $allowedTabs, true)) {
             return;
         }
 
@@ -115,42 +118,30 @@ class Dashboard extends Component
 
     public function callNext()
     {
-        $next = $this->office->queueEntries()
+        $next = $this->todayOfficeQueueEntries()
             ->waiting()
             ->orderBy('created_at')
+            ->orderBy('id')
             ->first();
 
-        if (!$next) {
+        if (! $next) {
             session()->flash('office_message', 'No one waiting in queue.');
+
             return;
         }
 
-        $this->office->queueEntries()->serving()->update(['status' => QueueEntry::STATUS_WAITING]);
+        $this->todayOfficeQueueEntries()
+            ->serving()
+            ->update(['status' => QueueEntry::STATUS_WAITING]);
 
         $next->update([
             'status' => QueueEntry::STATUS_SERVING,
             'called_at' => now(),
-            'served_by' => auth()->id(),
+            'served_by' => $this->authenticatedUserId(),
         ]);
 
-        $this->storeOfficeAnnouncement($this->office, 'prepare', $next->queue_number);
+        $this->storeOfficeAnnouncement($this->office, 'serving', $next->queue_number);
         session()->flash('office_message', "Now serving {$next->queue_number}");
-    }
-
-    public function announceServing(): void
-    {
-        $serving = $this->office->queueEntries()
-            ->serving()
-            ->first();
-
-        if (!$serving) {
-            session()->flash('office_message', 'No active ticket to announce.');
-
-            return;
-        }
-
-        $this->storeOfficeAnnouncement($this->office, 'serving', $serving->queue_number);
-        session()->flash('office_message', "Announcement sent to the live monitor for {$serving->queue_number}");
     }
 
     public function complete(int $entryId)
@@ -160,7 +151,7 @@ class Dashboard extends Component
             $entry->update([
                 'status' => QueueEntry::STATUS_COMPLETED,
                 'served_at' => now(),
-                'served_by' => auth()->id(),
+                'served_by' => $this->authenticatedUserId(),
             ]);
         }
     }
@@ -181,19 +172,24 @@ class Dashboard extends Component
 
     public function clearTransaction(): void
     {
+        $deletedCount = $this->todayOfficeQueueEntries()
+            ->waiting()
+            ->delete();
+
         [$dayStart, $dayEnd] = $this->manilaDayBounds();
 
-        $updatedCount = QueueEntry::where('office_id', $this->office->id)
+        $clearedRecentCount = QueueEntry::where('office_id', $this->office->id)
             ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
+            ->whereNotNull('served_at')
             ->whereBetween('served_at', [$dayStart, $dayEnd])
             ->whereNull('recent_transaction_cleared_at')
             ->update(['recent_transaction_cleared_at' => now()]);
 
         session()->flash(
             'office_message',
-            $updatedCount > 0
-                ? 'Recent transactions for today were cleared.'
-                : 'No recent transactions found for today.'
+            ($deletedCount + $clearedRecentCount) > 0
+                ? 'Waiting line and recent transactions were cleared.'
+                : 'No waiting tickets or recent transactions found for today.'
         );
     }
 
@@ -208,537 +204,625 @@ class Dashboard extends Component
         ];
     }
 
+    private function todayOfficeQueueEntries()
+    {
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+        return $this->office->queueEntries()
+            ->whereBetween('created_at', [$dayStart, $dayEnd]);
+    }
+
     public function render()
     {
-        $waiting = $this->office->queueEntries()
-            ->waiting()
-            ->orderBy('created_at')
-            ->get();
-
-        $serving = $this->office->queueEntries()
-            ->serving()
-            ->first();
-
-        $summary = null;
-        $overallTickets = collect();
-        $overallTicketsByOffice = collect();
-        $statusBreakdown = [];
-        $statusPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
-        $statusPieHasData = false;
-        $hourlyTicketSeries = [];
-        $hourlyMax = 1;
-        $peakHourLabel = 'No tickets yet today';
-        $monthlyVolumeSeries = [];
-        $monthlyVolumeMax = 1;
-        $monthlyPeakMonthLabel = 'No tickets in the last 12 months';
-        $monthlyStatusSeries = [];
-        $monthlyStatusLegend = [];
-        $officeAccommodatedSummary = [];
-        $officeAccommodatedChartSeries = [];
-        $officeAccommodatedPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
-        $officeAccommodatedHasData = false;
-        $officeAccommodatedTotal = 0;
-        $officeAccommodatedMax = 1;
-        $queueReportDailyCounts = [];
-        $queueReportWeeklyCounts = [];
-        $queueReportStatusSummary = [
-            'served' => 0,
-            'skipped' => 0,
+        $viewData = [
+            'waiting' => $this->todayOfficeQueueEntries()
+                ->waiting()
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->get(),
+            'serving' => $this->todayOfficeQueueEntries()
+                ->serving()
+                ->first(),
         ];
-        $queueReportAverageProcessingTime = '00h 00m 00s';
-        $queueReportScopeLabel = $this->office->name;
-        $userManagementRows = [];
-        $userManagementStatusSummary = [
-            'active' => 0,
-            'inactive' => 0,
-        ];
+
         if ($this->supportsAdvancedQueueDashboard()) {
-            [$dayStart, $dayEnd] = $this->manilaDayBounds();
-            $manilaNow = now('Asia/Manila');
-            $dbTimezone = (string) config('app.timezone', 'UTC');
-            $reportOfficeIds = $this->resolveReportOfficeIds();
-            $hasAccommodatedTotalColumn = Schema::hasColumn('offices', 'tickets_accommodated_total');
-
-            $todayEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
-                ->whereBetween('created_at', [$dayStart, $dayEnd])
-                ->get();
-
-            $totalToday = $todayEntries->count();
-            $overallAccommodated = $hasAccommodatedTotalColumn
-                ? (int) Office::query()
-                    ->whereIn('id', $reportOfficeIds)
-                    ->sum('tickets_accommodated_total')
-                : QueueEntry::whereIn('office_id', $reportOfficeIds)->count();
-
-            $summary = [
-                'total_today' => $totalToday,
-                'completed_today' => $todayEntries
-                    ->where('status', QueueEntry::STATUS_COMPLETED)
-                    ->count(),
-                'overall_accommodated' => $overallAccommodated,
-            ];
-
-            if (auth()->user()?->isSuperAdmin() && $this->hrmoTab === 'reports') {
-                if ($hasAccommodatedTotalColumn) {
-                    $officeAccommodatedSummary = Office::query()
-                        ->whereIn('id', $reportOfficeIds)
-                        ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-                        ->orderBy('name')
-                        ->get(['id', 'name', 'tickets_accommodated_total'])
-                        ->map(function (Office $office) {
-                            return [
-                                'office_name' => $office->name,
-                                'accommodated_total' => (int) $office->tickets_accommodated_total,
-                            ];
-                        })
-                        ->sortByDesc('accommodated_total')
-                        ->values()
-                        ->all();
-                } else {
-                    $reportOffices = Office::query()
-                        ->whereIn('id', $reportOfficeIds)
-                        ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-                        ->orderBy('name')
-                        ->get(['id', 'name']);
-
-                    $fallbackCounts = QueueEntry::query()
-                        ->selectRaw('office_id, COUNT(*) as total')
-                        ->whereIn('office_id', $reportOffices->pluck('id'))
-                        ->groupBy('office_id')
-                        ->pluck('total', 'office_id');
-
-                    $officeAccommodatedSummary = $reportOffices
-                        ->map(function (Office $office) use ($fallbackCounts) {
-                            return [
-                                'office_name' => $office->name,
-                                'accommodated_total' => (int) ($fallbackCounts->get($office->id, 0)),
-                            ];
-                        })
-                        ->sortByDesc('accommodated_total')
-                        ->values()
-                        ->all();
-                }
-
-                $officeChartPalette = [
-                    ['hex_color' => '#3b82f6', 'bar_class' => 'bg-blue-500', 'chip_class' => 'bg-blue-500'],
-                    ['hex_color' => '#10b981', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500'],
-                    ['hex_color' => '#f59e0b', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500'],
-                    ['hex_color' => '#f43f5e', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500'],
-                    ['hex_color' => '#8b5cf6', 'bar_class' => 'bg-violet-500', 'chip_class' => 'bg-violet-500'],
-                    ['hex_color' => '#06b6d4', 'bar_class' => 'bg-cyan-500', 'chip_class' => 'bg-cyan-500'],
-                    ['hex_color' => '#14b8a6', 'bar_class' => 'bg-teal-500', 'chip_class' => 'bg-teal-500'],
-                    ['hex_color' => '#6366f1', 'bar_class' => 'bg-indigo-500', 'chip_class' => 'bg-indigo-500'],
-                ];
-
-                $paletteCount = count($officeChartPalette);
-                $officeAccommodatedTotal = (int) collect($officeAccommodatedSummary)->sum('accommodated_total');
-                $officeAccommodatedMax = max(1, (int) collect($officeAccommodatedSummary)->max('accommodated_total'));
-
-                $officeAccommodatedChartSeries = collect($officeAccommodatedSummary)
-                    ->values()
-                    ->map(function (array $officeRow, int $index) use ($officeAccommodatedTotal, $officeChartPalette, $paletteCount) {
-                        $palette = $officeChartPalette[$index % $paletteCount];
-                        $percentage = $officeAccommodatedTotal > 0
-                            ? round(($officeRow['accommodated_total'] / $officeAccommodatedTotal) * 100, 1)
-                            : 0.0;
-
-                        return [
-                            ...$officeRow,
-                            'percentage' => $percentage,
-                            'hex_color' => $palette['hex_color'],
-                            'bar_class' => $palette['bar_class'],
-                            'chip_class' => $palette['chip_class'],
-                        ];
-                    })
-                    ->all();
-
-                $officeAccommodatedHasData = $officeAccommodatedTotal > 0;
-                if ($officeAccommodatedHasData) {
-                    $positiveOfficeSegments = collect($officeAccommodatedChartSeries)
-                        ->filter(fn (array $officeRow) => $officeRow['accommodated_total'] > 0)
-                        ->values();
-
-                    $runningCount = 0;
-                    $pieSegments = [];
-                    $lastIndex = $positiveOfficeSegments->count() - 1;
-
-                    foreach ($positiveOfficeSegments as $index => $officeRow) {
-                        $start = ($runningCount / $officeAccommodatedTotal) * 100;
-                        $runningCount += $officeRow['accommodated_total'];
-                        $end = $index === $lastIndex
-                            ? 100
-                            : ($runningCount / $officeAccommodatedTotal) * 100;
-
-                        $pieSegments[] = $officeRow['hex_color'].' '.number_format($start, 3, '.', '').'% '.number_format($end, 3, '.', '').'%';
-                    }
-
-                    if (!empty($pieSegments)) {
-                        $officeAccommodatedPieStyle = 'conic-gradient('.implode(', ', $pieSegments).')';
-                    }
-                }
-            }
-
-            $statusMetadata = [
-                ['key' => QueueEntry::STATUS_COMPLETED, 'label' => 'Completed', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500', 'hex_color' => '#10b981'],
-                ['key' => QueueEntry::STATUS_SERVING, 'label' => 'Serving', 'bar_class' => 'bg-sky-500', 'chip_class' => 'bg-sky-500', 'hex_color' => '#0ea5e9'],
-                ['key' => QueueEntry::STATUS_WAITING, 'label' => 'Waiting', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500', 'hex_color' => '#f59e0b'],
-                ['key' => QueueEntry::STATUS_NOT_SERVED, 'label' => 'Not Served', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500', 'hex_color' => '#f43f5e'],
-                ['key' => QueueEntry::STATUS_CANCELLED, 'label' => 'Cancelled', 'bar_class' => 'bg-slate-400', 'chip_class' => 'bg-slate-400', 'hex_color' => '#94a3b8'],
-            ];
-
-            $monthlyStatusLegend = collect($statusMetadata)->map(function (array $status) {
-                return [
-                    'label' => $status['label'],
-                    'chip_class' => $status['chip_class'],
-                ];
-            })->all();
-
-            $statusBreakdown = collect($statusMetadata)->map(function (array $status) use ($todayEntries, $totalToday) {
-                $count = $todayEntries->where('status', $status['key'])->count();
-                $percentage = $totalToday > 0 ? round(($count / $totalToday) * 100, 1) : 0.0;
-
-                return [
-                    ...$status,
-                    'count' => $count,
-                    'percentage' => $percentage,
-                ];
-            })->all();
-
-            $statusPieHasData = $totalToday > 0;
-            if ($statusPieHasData) {
-                $positiveStatuses = collect($statusBreakdown)
-                    ->filter(fn (array $status) => $status['count'] > 0)
-                    ->values();
-
-                $runningCount = 0;
-                $segments = [];
-                $lastIndex = $positiveStatuses->count() - 1;
-
-                foreach ($positiveStatuses as $index => $status) {
-                    $start = ($runningCount / $totalToday) * 100;
-                    $runningCount += $status['count'];
-                    $end = $index === $lastIndex
-                        ? 100
-                        : ($runningCount / $totalToday) * 100;
-
-                    $segments[] = $status['hex_color'].' '.number_format($start, 3, '.', '').'% '.number_format($end, 3, '.', '').'%';
-                }
-
-                if (!empty($segments)) {
-                    $statusPieStyle = 'conic-gradient('.implode(', ', $segments).')';
-                }
-            }
-
-            $startMonthManila = $manilaNow->copy()->startOfMonth()->subMonths(11);
-            $endMonthManila = $manilaNow->copy()->endOfMonth();
-            $monthStartDb = $startMonthManila->copy()->setTimezone($dbTimezone);
-            $monthEndDb = $endMonthManila->copy()->setTimezone($dbTimezone);
-
-            $monthlyEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
-                ->whereBetween('created_at', [$monthStartDb, $monthEndDb])
-                ->get();
-
-            $entriesByMonth = $monthlyEntries->groupBy(function (QueueEntry $entry) {
-                return $entry->created_at->copy()->setTimezone('Asia/Manila')->format('Y-m');
-            });
-
-            $monthlyStatusSeries = collect(range(0, 11))->map(function (int $offset) use ($startMonthManila, $entriesByMonth, $statusMetadata) {
-                $month = $startMonthManila->copy()->addMonths($offset);
-                $monthKey = $month->format('Y-m');
-                $monthEntries = $entriesByMonth->get($monthKey, collect());
-                $total = $monthEntries->count();
-
-                $segments = collect($statusMetadata)->map(function (array $status) use ($monthEntries, $total) {
-                    $count = $monthEntries->where('status', $status['key'])->count();
-                    $percentage = $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
-
-                    return [
-                        ...$status,
-                        'count' => $count,
-                        'percentage' => $percentage,
-                    ];
-                })->all();
-
-                return [
-                    'month_key' => $monthKey,
-                    'label' => $month->format('M Y'),
-                    'short_label' => $month->format('M'),
-                    'year_short' => $month->format('y'),
-                    'total' => $total,
-                    'segments' => $segments,
-                ];
-            })->all();
-
-            $monthlyVolumeSeries = collect($monthlyStatusSeries)->map(function (array $monthRow) {
-                return [
-                    'month_key' => $monthRow['month_key'],
-                    'label' => $monthRow['label'],
-                    'short_label' => $monthRow['short_label'],
-                    'year_short' => $monthRow['year_short'],
-                    'total' => $monthRow['total'],
-                ];
-            })->all();
-
-            $monthlyVolumeMax = max(1, (int) collect($monthlyVolumeSeries)->max('total'));
-            $peakMonth = collect($monthlyVolumeSeries)->sortByDesc('total')->first();
-
-            if ($peakMonth && $peakMonth['total'] > 0) {
-                $monthlyPeakMonthLabel = $peakMonth['label'].' ('.$peakMonth['total'].' tickets)';
-            }
-
-            $hourlyCounts = $todayEntries
-                ->groupBy(function (QueueEntry $entry) {
-                    return (int) $entry->created_at->copy()->setTimezone('Asia/Manila')->format('G');
-                })
-                ->map(fn ($entries) => $entries->count());
-
-            $hourlyTicketSeries = collect(range(0, 23))->map(function (int $hour) use ($hourlyCounts) {
-                $hourStart = now('Asia/Manila')->copy()->startOfDay()->setHour($hour);
-
-                return [
-                    'hour' => $hour,
-                    'label' => $hourStart->format('g A'),
-                    'short_label' => $hourStart->format('ga'),
-                    'count' => (int) ($hourlyCounts->get($hour, 0)),
-                ];
-            })->all();
-
-            $hourlyMax = max(1, (int) collect($hourlyTicketSeries)->max('count'));
-            $peakHour = collect($hourlyTicketSeries)->sortByDesc('count')->first();
-
-            if ($peakHour && $peakHour['count'] > 0) {
-                $peakHourLabel = $peakHour['label'].' ('.$peakHour['count'].' tickets)';
-            }
-
-            $activityWithinDay = function ($query) use ($dayStart, $dayEnd) {
-                $query->where(function ($activityQuery) use ($dayStart, $dayEnd) {
-                    $activityQuery->whereBetween('created_at', [$dayStart, $dayEnd])
-                        ->orWhereBetween('called_at', [$dayStart, $dayEnd])
-                        ->orWhereBetween('served_at', [$dayStart, $dayEnd]);
-                });
-            };
-
-            $overallTickets = QueueEntry::where('office_id', $this->office->id)
-                ->where($activityWithinDay)
-                ->orderByDesc('served_at')
-                ->orderByDesc('called_at')
-                ->orderByDesc('created_at')
-                ->limit(20)
-                ->get();
-
-            if (auth()->user()?->isSuperAdmin() && $this->hrmoTab === 'queue-management') {
-                $officeList = Office::query()
-                    ->where('is_active', true)
-                    ->whereNotIn('name', self::HIDDEN_OVERALL_ACTIVITY_OFFICES)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'slug']);
-
-                $entriesByOffice = QueueEntry::query()
-                    ->with('office:id,name,slug')
-                    ->whereIn('office_id', $officeList->pluck('id'))
-                    ->where($activityWithinDay)
-                    ->orderByDesc('served_at')
-                    ->orderByDesc('called_at')
-                    ->orderByDesc('created_at')
-                    ->get()
-                    ->groupBy('office_id');
-
-                $overallTicketsByOffice = $officeList->map(function (Office $office) use ($entriesByOffice) {
-                    return [
-                        'office' => $office,
-                        'entries' => $entriesByOffice->get($office->id, collect()),
-                    ];
-                })->values();
-            }
-
-            if (auth()->user()?->isSuperAdmin() && $this->hrmoTab === 'user-management') {
-                $managedOffices = Office::query()
-                    ->where('is_active', true)
-                    ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'slug']);
-
-                $activeOfficeIds = QueueEntry::query()
-                    ->whereIn('office_id', $managedOffices->pluck('id'))
-                    ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
-                    ->where(function ($query) use ($dayStart, $dayEnd) {
-                        $query->whereBetween('created_at', [$dayStart, $dayEnd])
-                            ->orWhereBetween('called_at', [$dayStart, $dayEnd]);
-                    })
-                    ->pluck('office_id')
-                    ->unique();
-
-                $userManagementRows = User::query()
-                    ->with([
-                        'role:id,name,slug',
-                        'office:id,name,slug',
-                    ])
-                    ->whereIn('office_id', $managedOffices->pluck('id'))
-                    ->get()
-                    ->sortBy(function (User $user) {
-                        return sprintf(
-                            '%s|%s|%s',
-                            strtolower((string) $user->office?->name),
-                            strtolower((string) $user->role?->name),
-                            strtolower($user->name)
-                        );
-                    })
-                    ->values()
-                    ->map(function (User $user) use ($activeOfficeIds) {
-                        $isQueueActive = $user->office_id !== null && $activeOfficeIds->contains($user->office_id);
-
-                        return [
-                            'name' => $user->name,
-                            'role' => $user->role?->name ?? 'Unassigned',
-                            'office' => $user->office?->name ?? 'Unassigned',
-                            'status_label' => $isQueueActive ? 'Active' : 'Not Active',
-                            'status_badge_class' => $isQueueActive
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-slate-200 text-slate-600',
-                        ];
-                    })
-                    ->all();
-
-                $userManagementStatusSummary = [
-                    'active' => collect($userManagementRows)->where('status_label', 'Active')->count(),
-                    'inactive' => collect($userManagementRows)->where('status_label', 'Not Active')->count(),
-                ];
-            }
-
-            if ($this->hrmoTab === 'queue-reports') {
-                $queueReportOfficeIds = collect([$this->office->id]);
-
-                if (auth()->user()?->isSuperAdmin()) {
-                    $queueReportOfficeIds = Office::query()
-                        ->where('is_active', true)
-                        ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-                        ->pluck('id');
-                    $queueReportScopeLabel = 'All Offices';
-                }
-
-                $dailyStartManila = $manilaNow->copy()->startOfDay()->subDays(6);
-                $dailyEndManila = $manilaNow->copy()->endOfDay();
-
-                $dailyEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
-                    ->whereBetween('created_at', [
-                        $dailyStartManila->copy()->setTimezone($dbTimezone),
-                        $dailyEndManila->copy()->setTimezone($dbTimezone),
-                    ])
-                    ->get(['created_at']);
-
-                $dailyCountMap = $dailyEntries
-                    ->groupBy(fn (QueueEntry $entry) => $entry->created_at->copy()->setTimezone('Asia/Manila')->format('Y-m-d'))
-                    ->map(fn ($entries) => $entries->count());
-
-                $queueReportDailyCounts = collect(range(0, 6))->map(function (int $offset) use ($dailyStartManila, $dailyCountMap) {
-                    $day = $dailyStartManila->copy()->addDays($offset);
-                    $dayKey = $day->format('Y-m-d');
-
-                    return [
-                        'date' => $dayKey,
-                        'total_tickets' => (int) ($dailyCountMap->get($dayKey, 0)),
-                    ];
-                })
-                    ->filter(fn (array $row) => $row['total_tickets'] > 0)
-                    ->values()
-                    ->all();
-
-                $weeklyStartManila = $manilaNow->copy()->startOfWeek()->subWeeks(4);
-                $weeklyEndManila = $manilaNow->copy()->endOfWeek();
-
-                $weeklyEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
-                    ->whereBetween('created_at', [
-                        $weeklyStartManila->copy()->setTimezone($dbTimezone),
-                        $weeklyEndManila->copy()->setTimezone($dbTimezone),
-                    ])
-                    ->get(['created_at']);
-
-                $weeklyCountMap = $weeklyEntries
-                    ->groupBy(fn (QueueEntry $entry) => $entry->created_at->copy()->setTimezone('Asia/Manila')->format('oW'))
-                    ->map(fn ($entries) => $entries->count());
-
-                $queueReportWeeklyCounts = collect(range(0, 4))->map(function (int $offset) use ($weeklyStartManila, $weeklyCountMap) {
-                    $weekStart = $weeklyStartManila->copy()->addWeeks($offset);
-                    $weekKey = $weekStart->format('oW');
-
-                    return [
-                        'week' => $weekKey,
-                        'total_tickets' => (int) ($weeklyCountMap->get($weekKey, 0)),
-                    ];
-                })
-                    ->filter(fn (array $row) => $row['total_tickets'] > 0)
-                    ->values()
-                    ->all();
-
-                $queueReportStatusSummary = [
-                    'served' => QueueEntry::whereIn('office_id', $queueReportOfficeIds)
-                        ->where('status', QueueEntry::STATUS_COMPLETED)
-                        ->count(),
-                    'skipped' => QueueEntry::whereIn('office_id', $queueReportOfficeIds)
-                        ->where('status', QueueEntry::STATUS_NOT_SERVED)
-                        ->count(),
-                ];
-
-                $processedEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
-                    ->where('status', QueueEntry::STATUS_COMPLETED)
-                    ->whereNotNull('called_at')
-                    ->whereNotNull('served_at')
-                    ->get(['called_at', 'served_at']);
-
-                $processedCount = $processedEntries->count();
-                $averageSeconds = 0;
-
-                if ($processedCount > 0) {
-                    $totalSeconds = $processedEntries->sum(function (QueueEntry $entry) {
-                        return max(0, $entry->called_at->diffInSeconds($entry->served_at));
-                    });
-
-                    $averageSeconds = (int) round($totalSeconds / $processedCount);
-                }
-
-                $hours = intdiv($averageSeconds, 3600);
-                $minutes = intdiv($averageSeconds % 3600, 60);
-                $seconds = $averageSeconds % 60;
-                $queueReportAverageProcessingTime = sprintf('%02dh %02dm %02ds', $hours, $minutes, $seconds);
-            }
+            $viewData = array_merge($viewData, $this->buildAdvancedDashboardData());
         } else {
             $this->hrmoTab = 'dashboard';
+            $viewData = array_merge($viewData, $this->defaultAdvancedDashboardData());
         }
 
-        return view('livewire.office-admin.dashboard', [
-            'waiting' => $waiting,
-            'serving' => $serving,
-            'summary' => $summary,
-            'overallTickets' => $overallTickets,
-            'overallTicketsByOffice' => $overallTicketsByOffice,
+        return view('livewire.office-admin.dashboard', $viewData);
+    }
+
+    private function defaultAdvancedDashboardData(): array
+    {
+        return [
+            'summary' => null,
+            'overallTickets' => collect(),
+            'overallTicketsByOffice' => collect(),
+            'statusBreakdown' => [],
+            'statusPieStyle' => 'conic-gradient(#e2e8f0 0 100%)',
+            'statusPieHasData' => false,
+            'hourlyTicketSeries' => [],
+            'hourlyMax' => 1,
+            'peakHourLabel' => 'No tickets yet today',
+            'monthlyVolumeSeries' => [],
+            'monthlyVolumeMax' => 1,
+            'monthlyPeakMonthLabel' => 'No tickets in the last 12 months',
+            'monthlyStatusSeries' => [],
+            'monthlyStatusLegend' => [],
+            'officeAccommodatedSummary' => [],
+            'officeAccommodatedChartSeries' => [],
+            'officeAccommodatedPieStyle' => 'conic-gradient(#e2e8f0 0 100%)',
+            'officeAccommodatedHasData' => false,
+            'officeAccommodatedTotal' => 0,
+            'officeAccommodatedMax' => 1,
+            'queueReportDailyCounts' => [],
+            'queueReportWeeklyCounts' => [],
+            'queueReportStatusSummary' => [
+                'served' => 0,
+                'skipped' => 0,
+            ],
+            'queueReportAverageProcessingTime' => '00h 00m 00s',
+            'queueReportScopeLabel' => $this->office->name,
+            'userManagementRows' => [],
+            'userManagementStatusSummary' => [
+                'active' => 0,
+                'inactive' => 0,
+            ],
+        ];
+    }
+
+    private function buildAdvancedDashboardData(): array
+    {
+        $data = $this->defaultAdvancedDashboardData();
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+        $manilaNow = now('Asia/Manila');
+        $dbTimezone = (string) config('app.timezone', 'UTC');
+        $reportOfficeIds = $this->resolveReportOfficeIds();
+        $hasAccommodatedTotalColumn = Schema::hasColumn('offices', 'tickets_accommodated_total');
+        $statusMetadata = $this->statusMetadata();
+
+        $todayEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->get();
+
+        $data['summary'] = $this->buildSummary($reportOfficeIds, $todayEntries, $hasAccommodatedTotalColumn);
+        $data = array_merge($data, $this->buildStatusBreakdownData($todayEntries, $statusMetadata));
+        $data = array_merge($data, $this->buildMonthlyChartData($reportOfficeIds, $manilaNow, $dbTimezone, $statusMetadata));
+        $data = array_merge($data, $this->buildHourlyChartData($todayEntries));
+        $data['overallTickets'] = $this->buildOverallTickets($dayStart, $dayEnd);
+
+        if ($this->isSuperAdmin() && $this->hrmoTab === 'reports') {
+            $data = array_merge($data, $this->buildOfficeAccommodatedData($reportOfficeIds, $hasAccommodatedTotalColumn));
+        }
+
+        if ($this->isSuperAdmin() && $this->hrmoTab === 'queue-management') {
+            $data['overallTicketsByOffice'] = $this->buildOverallTicketsByOffice($dayStart, $dayEnd);
+        }
+
+        if ($this->isSuperAdmin() && $this->hrmoTab === 'user-management') {
+            $data = array_merge($data, $this->buildUserManagementData($dayStart, $dayEnd));
+        }
+
+        if ($this->hrmoTab === 'queue-reports') {
+            $data = array_merge($data, $this->buildQueueReportData($manilaNow, $dbTimezone));
+        }
+
+        return $data;
+    }
+
+    private function buildSummary(Collection $reportOfficeIds, Collection $todayEntries, bool $hasAccommodatedTotalColumn): array
+    {
+        $overallAccommodated = $hasAccommodatedTotalColumn
+            ? (int) Office::query()
+                ->whereIn('id', $reportOfficeIds)
+                ->sum('tickets_accommodated_total')
+            : QueueEntry::whereIn('office_id', $reportOfficeIds)->count();
+
+        return [
+            'total_today' => $todayEntries->count(),
+            'completed_today' => $todayEntries->where('status', QueueEntry::STATUS_COMPLETED)->count(),
+            'overall_accommodated' => $overallAccommodated,
+        ];
+    }
+
+    private function buildStatusBreakdownData(Collection $todayEntries, array $statusMetadata): array
+    {
+        $totalToday = $todayEntries->count();
+        $statusBreakdown = collect($statusMetadata)->map(function (array $status) use ($todayEntries, $totalToday) {
+            $count = $todayEntries->where('status', $status['key'])->count();
+            $percentage = $totalToday > 0 ? round(($count / $totalToday) * 100, 1) : 0.0;
+
+            return array_merge($status, [
+                'count' => $count,
+                'percentage' => $percentage,
+            ]);
+        })->all();
+
+        $statusPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
+        $statusPieHasData = $totalToday > 0;
+
+        if ($statusPieHasData) {
+            $positiveStatuses = collect($statusBreakdown)
+                ->filter(fn (array $status) => $status['count'] > 0)
+                ->values();
+
+            $runningCount = 0;
+            $segments = [];
+            $lastIndex = $positiveStatuses->count() - 1;
+
+            foreach ($positiveStatuses as $index => $status) {
+                $start = ($runningCount / $totalToday) * 100;
+                $runningCount += $status['count'];
+                $end = $index === $lastIndex
+                    ? 100
+                    : ($runningCount / $totalToday) * 100;
+
+                $segments[] = $status['hex_color'].' '.number_format($start, 3, '.', '').'% '.number_format($end, 3, '.', '').'%';
+            }
+
+            if (! empty($segments)) {
+                $statusPieStyle = 'conic-gradient('.implode(', ', $segments).')';
+            }
+        }
+
+        return [
             'statusBreakdown' => $statusBreakdown,
             'statusPieStyle' => $statusPieStyle,
             'statusPieHasData' => $statusPieHasData,
-            'hourlyTicketSeries' => $hourlyTicketSeries,
-            'hourlyMax' => $hourlyMax,
-            'peakHourLabel' => $peakHourLabel,
+        ];
+    }
+
+    private function buildMonthlyChartData(Collection $reportOfficeIds, $manilaNow, string $dbTimezone, array $statusMetadata): array
+    {
+        $monthlyStatusLegend = collect($statusMetadata)->map(function (array $status) {
+            return [
+                'label' => $status['label'],
+                'chip_class' => $status['chip_class'],
+            ];
+        })->all();
+
+        $startMonthManila = $manilaNow->copy()->startOfMonth()->subMonths(11);
+        $endMonthManila = $manilaNow->copy()->endOfMonth();
+        $monthStartDb = $startMonthManila->copy()->setTimezone($dbTimezone);
+        $monthEndDb = $endMonthManila->copy()->setTimezone($dbTimezone);
+
+        $monthlyEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
+            ->whereBetween('created_at', [$monthStartDb, $monthEndDb])
+            ->get();
+
+        $entriesByMonth = $monthlyEntries->groupBy(function (QueueEntry $entry) {
+            return $entry->created_at->copy()->setTimezone('Asia/Manila')->format('Y-m');
+        });
+
+        $monthlyStatusSeries = collect(range(0, 11))->map(function (int $offset) use ($startMonthManila, $entriesByMonth, $statusMetadata) {
+            $month = $startMonthManila->copy()->addMonths($offset);
+            $monthKey = $month->format('Y-m');
+            $monthEntries = $entriesByMonth->get($monthKey, collect());
+            $total = $monthEntries->count();
+
+            $segments = collect($statusMetadata)->map(function (array $status) use ($monthEntries, $total) {
+                $count = $monthEntries->where('status', $status['key'])->count();
+                $percentage = $total > 0 ? round(($count / $total) * 100, 1) : 0.0;
+
+                return array_merge($status, [
+                    'count' => $count,
+                    'percentage' => $percentage,
+                ]);
+            })->all();
+
+            return [
+                'month_key' => $monthKey,
+                'label' => $month->format('M Y'),
+                'short_label' => $month->format('M'),
+                'year_short' => $month->format('y'),
+                'total' => $total,
+                'segments' => $segments,
+            ];
+        })->all();
+
+        $monthlyVolumeSeries = collect($monthlyStatusSeries)->map(function (array $monthRow) {
+            return [
+                'month_key' => $monthRow['month_key'],
+                'label' => $monthRow['label'],
+                'short_label' => $monthRow['short_label'],
+                'year_short' => $monthRow['year_short'],
+                'total' => $monthRow['total'],
+            ];
+        })->all();
+
+        $monthlyVolumeMax = max(1, (int) collect($monthlyVolumeSeries)->max('total'));
+        $monthlyPeakMonthLabel = 'No tickets in the last 12 months';
+        $peakMonth = collect($monthlyVolumeSeries)->sortByDesc('total')->first();
+
+        if ($peakMonth && $peakMonth['total'] > 0) {
+            $monthlyPeakMonthLabel = $peakMonth['label'].' ('.$peakMonth['total'].' tickets)';
+        }
+
+        return [
             'monthlyVolumeSeries' => $monthlyVolumeSeries,
             'monthlyVolumeMax' => $monthlyVolumeMax,
             'monthlyPeakMonthLabel' => $monthlyPeakMonthLabel,
             'monthlyStatusSeries' => $monthlyStatusSeries,
             'monthlyStatusLegend' => $monthlyStatusLegend,
+        ];
+    }
+
+    private function buildHourlyChartData(Collection $todayEntries): array
+    {
+        $hourlyCounts = $todayEntries
+            ->groupBy(function (QueueEntry $entry) {
+                return (int) $entry->created_at->copy()->setTimezone('Asia/Manila')->format('G');
+            })
+            ->map(fn ($entries) => $entries->count());
+
+        $hourlyTicketSeries = collect(range(0, 23))->map(function (int $hour) {
+            $hourStart = now('Asia/Manila')->copy()->startOfDay()->setHour($hour);
+
+            return [
+                'hour' => $hour,
+                'label' => $hourStart->format('g A'),
+                'short_label' => $hourStart->format('ga'),
+                'count' => 0,
+            ];
+        })->all();
+
+        foreach ($hourlyTicketSeries as $index => $hourRow) {
+            $hourlyTicketSeries[$index]['count'] = (int) ($hourlyCounts->get($hourRow['hour'], 0));
+        }
+
+        $hourlyMax = max(1, (int) collect($hourlyTicketSeries)->max('count'));
+        $peakHourLabel = 'No tickets yet today';
+        $peakHour = collect($hourlyTicketSeries)->sortByDesc('count')->first();
+
+        if ($peakHour && $peakHour['count'] > 0) {
+            $peakHourLabel = $peakHour['label'].' ('.$peakHour['count'].' tickets)';
+        }
+
+        return [
+            'hourlyTicketSeries' => $hourlyTicketSeries,
+            'hourlyMax' => $hourlyMax,
+            'peakHourLabel' => $peakHourLabel,
+        ];
+    }
+
+    private function buildOverallTickets($dayStart, $dayEnd): Collection
+    {
+        return QueueEntry::where('office_id', $this->office->id)
+            ->where($this->activityWithinDayScope($dayStart, $dayEnd))
+            ->orderByDesc('served_at')
+            ->orderByDesc('called_at')
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+    }
+
+    private function buildOverallTicketsByOffice($dayStart, $dayEnd): Collection
+    {
+        $officeList = Office::query()
+            ->where('is_active', true)
+            ->whereNotIn('name', self::HIDDEN_OVERALL_ACTIVITY_OFFICES)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
+
+        $entriesByOffice = QueueEntry::query()
+            ->with('office:id,name,slug')
+            ->whereIn('office_id', $officeList->pluck('id'))
+            ->where($this->activityWithinDayScope($dayStart, $dayEnd))
+            ->orderByDesc('served_at')
+            ->orderByDesc('called_at')
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('office_id');
+
+        return $officeList->map(function (Office $office) use ($entriesByOffice) {
+            return [
+                'office' => $office,
+                'entries' => $entriesByOffice->get($office->id, collect()),
+            ];
+        })->values();
+    }
+
+    private function activityWithinDayScope($dayStart, $dayEnd): \Closure
+    {
+        return function ($query) use ($dayStart, $dayEnd) {
+            $query->where(function ($activityQuery) use ($dayStart, $dayEnd) {
+                $activityQuery->whereBetween('created_at', [$dayStart, $dayEnd])
+                    ->orWhereBetween('called_at', [$dayStart, $dayEnd])
+                    ->orWhereBetween('served_at', [$dayStart, $dayEnd]);
+            });
+        };
+    }
+
+    private function buildUserManagementData($dayStart, $dayEnd): array
+    {
+        $managedOffices = Office::query()
+            ->where('is_active', true)
+            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
+
+        $activeOfficeIds = QueueEntry::query()
+            ->whereIn('office_id', $managedOffices->pluck('id'))
+            ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
+            ->where(function ($query) use ($dayStart, $dayEnd) {
+                $query->whereBetween('created_at', [$dayStart, $dayEnd])
+                    ->orWhereBetween('called_at', [$dayStart, $dayEnd]);
+            })
+            ->pluck('office_id')
+            ->unique();
+
+        $userManagementRows = User::query()
+            ->with([
+                'role:id,name,slug',
+                'office:id,name,slug',
+            ])
+            ->whereIn('office_id', $managedOffices->pluck('id'))
+            ->get()
+            ->sortBy(function (User $user) {
+                return sprintf(
+                    '%s|%s|%s',
+                    strtolower((string) $user->office?->name),
+                    strtolower((string) $user->role?->name),
+                    strtolower($user->name)
+                );
+            })
+            ->values()
+            ->map(function (User $user) use ($activeOfficeIds) {
+                $isQueueActive = $user->office_id !== null && $activeOfficeIds->contains($user->office_id);
+
+                return [
+                    'name' => $user->name,
+                    'role' => $user->role?->name ?? 'Unassigned',
+                    'office' => $user->office?->name ?? 'Unassigned',
+                    'status_label' => $isQueueActive ? 'Active' : 'Not Active',
+                    'status_badge_class' => $isQueueActive
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-200 text-slate-600',
+                ];
+            })
+            ->all();
+
+        return [
+            'userManagementRows' => $userManagementRows,
+            'userManagementStatusSummary' => [
+                'active' => collect($userManagementRows)->where('status_label', 'Active')->count(),
+                'inactive' => collect($userManagementRows)->where('status_label', 'Not Active')->count(),
+            ],
+        ];
+    }
+
+    private function buildQueueReportData($manilaNow, string $dbTimezone): array
+    {
+        $queueReportOfficeIds = collect([$this->office->id]);
+        $queueReportScopeLabel = $this->office->name;
+
+        if ($this->isSuperAdmin()) {
+            $queueReportOfficeIds = Office::query()
+                ->where('is_active', true)
+                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                ->pluck('id');
+            $queueReportScopeLabel = 'All Offices';
+        }
+
+        $dailyStartManila = $manilaNow->copy()->startOfDay()->subDays(6);
+        $dailyEndManila = $manilaNow->copy()->endOfDay();
+
+        $dailyEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
+            ->whereBetween('created_at', [
+                $dailyStartManila->copy()->setTimezone($dbTimezone),
+                $dailyEndManila->copy()->setTimezone($dbTimezone),
+            ])
+            ->get(['created_at']);
+
+        $dailyCountMap = $dailyEntries
+            ->groupBy(fn (QueueEntry $entry) => $entry->created_at->copy()->setTimezone('Asia/Manila')->format('Y-m-d'))
+            ->map(fn ($entries) => $entries->count());
+
+        $queueReportDailyCounts = collect(range(0, 6))->map(function (int $offset) use ($dailyStartManila, $dailyCountMap) {
+            $day = $dailyStartManila->copy()->addDays($offset);
+            $dayKey = $day->format('Y-m-d');
+
+            return [
+                'date' => $dayKey,
+                'total_tickets' => (int) ($dailyCountMap->get($dayKey, 0)),
+            ];
+        })
+            ->filter(fn (array $row) => $row['total_tickets'] > 0)
+            ->values()
+            ->all();
+
+        $weeklyStartManila = $manilaNow->copy()->startOfWeek()->subWeeks(4);
+        $weeklyEndManila = $manilaNow->copy()->endOfWeek();
+
+        $weeklyEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
+            ->whereBetween('created_at', [
+                $weeklyStartManila->copy()->setTimezone($dbTimezone),
+                $weeklyEndManila->copy()->setTimezone($dbTimezone),
+            ])
+            ->get(['created_at']);
+
+        $weeklyCountMap = $weeklyEntries
+            ->groupBy(fn (QueueEntry $entry) => $entry->created_at->copy()->setTimezone('Asia/Manila')->format('oW'))
+            ->map(fn ($entries) => $entries->count());
+
+        $queueReportWeeklyCounts = collect(range(0, 4))->map(function (int $offset) use ($weeklyStartManila, $weeklyCountMap) {
+            $weekStart = $weeklyStartManila->copy()->addWeeks($offset);
+            $weekKey = $weekStart->format('oW');
+
+            return [
+                'week' => $weekKey,
+                'total_tickets' => (int) ($weeklyCountMap->get($weekKey, 0)),
+            ];
+        })
+            ->filter(fn (array $row) => $row['total_tickets'] > 0)
+            ->values()
+            ->all();
+
+        $queueReportStatusSummary = [
+            'served' => QueueEntry::whereIn('office_id', $queueReportOfficeIds)
+                ->where('status', QueueEntry::STATUS_COMPLETED)
+                ->count(),
+            'skipped' => QueueEntry::whereIn('office_id', $queueReportOfficeIds)
+                ->where('status', QueueEntry::STATUS_NOT_SERVED)
+                ->count(),
+        ];
+
+        $processedEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
+            ->where('status', QueueEntry::STATUS_COMPLETED)
+            ->whereNotNull('called_at')
+            ->whereNotNull('served_at')
+            ->get(['called_at', 'served_at']);
+
+        $processedCount = $processedEntries->count();
+        $averageSeconds = 0;
+
+        if ($processedCount > 0) {
+            $totalSeconds = $processedEntries->sum(function (QueueEntry $entry) {
+                return max(0, $entry->called_at->diffInSeconds($entry->served_at));
+            });
+
+            $averageSeconds = (int) round($totalSeconds / $processedCount);
+        }
+
+        return [
+            'queueReportDailyCounts' => $queueReportDailyCounts,
+            'queueReportWeeklyCounts' => $queueReportWeeklyCounts,
+            'queueReportStatusSummary' => $queueReportStatusSummary,
+            'queueReportAverageProcessingTime' => sprintf(
+                '%02dh %02dm %02ds',
+                intdiv($averageSeconds, 3600),
+                intdiv($averageSeconds % 3600, 60),
+                $averageSeconds % 60
+            ),
+            'queueReportScopeLabel' => $queueReportScopeLabel,
+        ];
+    }
+
+    private function buildOfficeAccommodatedData(Collection $reportOfficeIds, bool $hasAccommodatedTotalColumn): array
+    {
+        if ($hasAccommodatedTotalColumn) {
+            $officeAccommodatedSummary = Office::query()
+                ->whereIn('id', $reportOfficeIds)
+                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                ->orderBy('name')
+                ->get(['id', 'name', 'tickets_accommodated_total'])
+                ->map(function (Office $office) {
+                    return [
+                        'office_name' => $office->name,
+                        'accommodated_total' => (int) $office->tickets_accommodated_total,
+                    ];
+                })
+                ->sortByDesc('accommodated_total')
+                ->values()
+                ->all();
+        } else {
+            $reportOffices = Office::query()
+                ->whereIn('id', $reportOfficeIds)
+                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                ->orderBy('name')
+                ->get(['id', 'name']);
+
+            $fallbackCounts = QueueEntry::query()
+                ->selectRaw('office_id, COUNT(*) as total')
+                ->whereIn('office_id', $reportOffices->pluck('id'))
+                ->groupBy('office_id')
+                ->pluck('total', 'office_id');
+
+            $officeAccommodatedSummary = $reportOffices
+                ->map(function (Office $office) use ($fallbackCounts) {
+                    return [
+                        'office_name' => $office->name,
+                        'accommodated_total' => (int) ($fallbackCounts->get($office->id, 0)),
+                    ];
+                })
+                ->sortByDesc('accommodated_total')
+                ->values()
+                ->all();
+        }
+
+        $officeChartPalette = [
+            ['hex_color' => '#3b82f6', 'bar_class' => 'bg-blue-500', 'chip_class' => 'bg-blue-500'],
+            ['hex_color' => '#10b981', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500'],
+            ['hex_color' => '#f59e0b', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500'],
+            ['hex_color' => '#f43f5e', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500'],
+            ['hex_color' => '#8b5cf6', 'bar_class' => 'bg-violet-500', 'chip_class' => 'bg-violet-500'],
+            ['hex_color' => '#06b6d4', 'bar_class' => 'bg-cyan-500', 'chip_class' => 'bg-cyan-500'],
+            ['hex_color' => '#14b8a6', 'bar_class' => 'bg-teal-500', 'chip_class' => 'bg-teal-500'],
+            ['hex_color' => '#6366f1', 'bar_class' => 'bg-indigo-500', 'chip_class' => 'bg-indigo-500'],
+        ];
+
+        $paletteCount = count($officeChartPalette);
+        $officeAccommodatedTotal = (int) collect($officeAccommodatedSummary)->sum('accommodated_total');
+        $officeAccommodatedMax = max(1, (int) collect($officeAccommodatedSummary)->max('accommodated_total'));
+        $officeAccommodatedChartSeries = collect($officeAccommodatedSummary)
+            ->values()
+            ->map(function (array $officeRow, int $index) use ($officeAccommodatedTotal, $officeChartPalette, $paletteCount) {
+                $palette = $officeChartPalette[$index % $paletteCount];
+                $percentage = $officeAccommodatedTotal > 0
+                    ? round(($officeRow['accommodated_total'] / $officeAccommodatedTotal) * 100, 1)
+                    : 0.0;
+
+                return array_merge($officeRow, [
+                    'percentage' => $percentage,
+                    'hex_color' => $palette['hex_color'],
+                    'bar_class' => $palette['bar_class'],
+                    'chip_class' => $palette['chip_class'],
+                ]);
+            })
+            ->all();
+
+        $officeAccommodatedPieStyle = 'conic-gradient(#e2e8f0 0 100%)';
+        $officeAccommodatedHasData = $officeAccommodatedTotal > 0;
+
+        if ($officeAccommodatedHasData) {
+            $positiveOfficeSegments = collect($officeAccommodatedChartSeries)
+                ->filter(fn (array $officeRow) => $officeRow['accommodated_total'] > 0)
+                ->values();
+
+            $runningCount = 0;
+            $pieSegments = [];
+            $lastIndex = $positiveOfficeSegments->count() - 1;
+
+            foreach ($positiveOfficeSegments as $index => $officeRow) {
+                $start = ($runningCount / $officeAccommodatedTotal) * 100;
+                $runningCount += $officeRow['accommodated_total'];
+                $end = $index === $lastIndex
+                    ? 100
+                    : ($runningCount / $officeAccommodatedTotal) * 100;
+
+                $pieSegments[] = $officeRow['hex_color'].' '.number_format($start, 3, '.', '').'% '.number_format($end, 3, '.', '').'%';
+            }
+
+            if (! empty($pieSegments)) {
+                $officeAccommodatedPieStyle = 'conic-gradient('.implode(', ', $pieSegments).')';
+            }
+        }
+
+        return [
             'officeAccommodatedSummary' => $officeAccommodatedSummary,
             'officeAccommodatedChartSeries' => $officeAccommodatedChartSeries,
             'officeAccommodatedPieStyle' => $officeAccommodatedPieStyle,
             'officeAccommodatedHasData' => $officeAccommodatedHasData,
             'officeAccommodatedTotal' => $officeAccommodatedTotal,
             'officeAccommodatedMax' => $officeAccommodatedMax,
-            'queueReportDailyCounts' => $queueReportDailyCounts,
-            'queueReportWeeklyCounts' => $queueReportWeeklyCounts,
-            'queueReportStatusSummary' => $queueReportStatusSummary,
-            'queueReportAverageProcessingTime' => $queueReportAverageProcessingTime,
-            'queueReportScopeLabel' => $queueReportScopeLabel,
-            'userManagementRows' => $userManagementRows,
-            'userManagementStatusSummary' => $userManagementStatusSummary,
-        ]);
+        ];
     }
 
-    private function resolveReportOfficeIds()
+    private function statusMetadata(): array
+    {
+        return [
+            ['key' => QueueEntry::STATUS_COMPLETED, 'label' => 'Completed', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500', 'hex_color' => '#10b981'],
+            ['key' => QueueEntry::STATUS_SERVING, 'label' => 'Serving', 'bar_class' => 'bg-sky-500', 'chip_class' => 'bg-sky-500', 'hex_color' => '#0ea5e9'],
+            ['key' => QueueEntry::STATUS_WAITING, 'label' => 'Waiting', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500', 'hex_color' => '#f59e0b'],
+            ['key' => QueueEntry::STATUS_NOT_SERVED, 'label' => 'Not Served', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500', 'hex_color' => '#f43f5e'],
+            ['key' => QueueEntry::STATUS_CANCELLED, 'label' => 'Cancelled', 'bar_class' => 'bg-slate-400', 'chip_class' => 'bg-slate-400', 'hex_color' => '#94a3b8'],
+        ];
+    }
+
+    private function resolveReportOfficeIds(): Collection
     {
         if ($this->shouldUseAllOfficesReportScope()) {
             return Office::query()->pluck('id');
@@ -749,7 +833,24 @@ class Dashboard extends Component
 
     private function shouldUseAllOfficesReportScope(): bool
     {
-        return auth()->user()?->isSuperAdmin() && $this->office->slug === 'hrmo';
+        return $this->isSuperAdmin() && $this->office->slug === 'hrmo';
+    }
+
+    private function currentUser(): ?User
+    {
+        $user = Auth::user();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    private function authenticatedUserId(): int|string|null
+    {
+        return Auth::id();
+    }
+
+    private function isSuperAdmin(): bool
+    {
+        return $this->currentUser()?->isSuperAdmin() ?? false;
     }
 
     private function supportsAdvancedQueueDashboard(): bool

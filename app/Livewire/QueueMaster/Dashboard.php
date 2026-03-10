@@ -41,12 +41,14 @@ class Dashboard extends Component
     public function render()
     {
         $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
 
         $officeQuery = Office::query();
         if ($isSuperAdmin) {
             $officeQuery->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
         }
 
+<<<<<<< HEAD
         $offices = $officeQuery
             ->addSelect([
                 'serving_ticket' => QueueEntry::query()
@@ -67,10 +69,18 @@ class Dashboard extends Component
             }])
             ->orderBy('name')
             ->get();
+=======
+        $offices = $officeQuery->withCount(['queueEntries as waiting_count' => function ($q) use ($dayStart, $dayEnd) {
+            $q->where('status', QueueEntry::STATUS_WAITING)
+                ->whereBetween('created_at', [$dayStart, $dayEnd]);
+        }])->orderBy('name')->get();
+>>>>>>> 075fc08e90970ffd60e4fcc02273a393032bba0a
 
         $recentEntriesQuery = QueueEntry::with('office')
             ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
-            ->orderByDesc('created_at');
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         if ($isSuperAdmin) {
             $recentEntriesQuery->whereIn('office_id', $offices->pluck('id'));
