@@ -1,10 +1,12 @@
 <div>
-    @php($superAdminOfficeNames = [
-        'accounting' => 'Accounting Office',
-        'hrmo' => 'Human Resource',
-        'mho' => 'Health Office',
-        'treasury' => 'Treasury Office',
-    ])
+    @php
+        $superAdminOfficeNames = [
+            'accounting' => 'Accounting Office',
+            'hrmo' => 'Human Resource',
+            'mho' => 'Health Office',
+            'treasury' => 'Treasury Office',
+        ];
+    @endphp
 
     <div class="mb-8">
         <h1 class="lgu-page-title mb-1">{{ auth()->user()?->isSuperAdmin() ? 'Super Admin Dashboard' : 'Dashboard' }}</h1>

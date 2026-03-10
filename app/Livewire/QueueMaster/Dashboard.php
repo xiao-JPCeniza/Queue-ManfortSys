@@ -48,33 +48,31 @@ class Dashboard extends Component
             $officeQuery->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
         }
 
-<<<<<<< HEAD
         $offices = $officeQuery
             ->addSelect([
                 'serving_ticket' => QueueEntry::query()
                     ->select('queue_number')
                     ->whereColumn('office_id', 'offices.id')
                     ->where('status', QueueEntry::STATUS_SERVING)
-                    ->orderBy('created_at')
+                    ->whereBetween('created_at', [$dayStart, $dayEnd])
+                    ->orderBy('called_at')
+                    ->orderBy('id')
                     ->limit(1),
                 'next_waiting_ticket' => QueueEntry::query()
                     ->select('queue_number')
                     ->whereColumn('office_id', 'offices.id')
                     ->where('status', QueueEntry::STATUS_WAITING)
+                    ->whereBetween('created_at', [$dayStart, $dayEnd])
                     ->orderBy('created_at')
+                    ->orderBy('id')
                     ->limit(1),
             ])
-            ->withCount(['queueEntries as waiting_count' => function ($q) {
-                $q->where('status', QueueEntry::STATUS_WAITING);
+            ->withCount(['queueEntries as waiting_count' => function ($q) use ($dayStart, $dayEnd) {
+                $q->where('status', QueueEntry::STATUS_WAITING)
+                    ->whereBetween('created_at', [$dayStart, $dayEnd]);
             }])
             ->orderBy('name')
             ->get();
-=======
-        $offices = $officeQuery->withCount(['queueEntries as waiting_count' => function ($q) use ($dayStart, $dayEnd) {
-            $q->where('status', QueueEntry::STATUS_WAITING)
-                ->whereBetween('created_at', [$dayStart, $dayEnd]);
-        }])->orderBy('name')->get();
->>>>>>> 075fc08e90970ffd60e4fcc02273a393032bba0a
 
         $recentEntriesQuery = QueueEntry::with('office')
             ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
