@@ -162,7 +162,7 @@
                 radial-gradient(circle at 16% 14%, rgba(255, 255, 255, 0.42), transparent 34%),
                 linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0 24%, rgba(255, 255, 255, 0) 24%) 0 0 / 340px 340px,
                 linear-gradient(315deg, rgba(0, 0, 0, 0.12) 0 28%, rgba(0, 0, 0, 0) 28%) 170px 24px / 360px 360px,
-                linear-gradient(128deg, #b55a35 0%, #ca6028 24%, #e07b2a 43%, #efaa31 54%, #215c95 55%, #133f6b 77%, #082744 100%),
+                linear-gradient(128deg, #3539b5 0%, #ca6028 24%, #e07b2a 43%, #efaa31 54%, #215c95 55%, #133f6b 77%, #082744 100%),
                 var(--municipal-bg-image);
             background-repeat: no-repeat;
             background-size: auto, auto, auto, cover, cover;

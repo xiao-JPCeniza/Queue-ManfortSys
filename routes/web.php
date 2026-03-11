@@ -12,10 +12,13 @@ use App\Livewire\QueueJoin;
 use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
 use App\Livewire\QueueMaster\OfficeManage as QueueMasterOfficeManage;
 use App\Models\Office;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -60,19 +63,107 @@ Route::post('/logout', function () {
         return view('profile', ['user' => $user]);
     })->name('profile');
 
-    Route::post('/profile/photo', function (Request $request) {
+    Route::post('/profile/name', function (Request $request) {
         $validated = $request->validate([
-            'photo' => ['required', 'image', 'max:2048'],
+            'name' => ['required', 'string', 'max:255'],
         ]);
 
-        $user = $request->user();
+        $name = trim($validated['name']);
 
-        if ($user->profile_photo_path && Storage::disk('public')->exists($user->profile_photo_path)) {
-            Storage::disk('public')->delete($user->profile_photo_path);
+        if ($name === '') {
+            throw ValidationException::withMessages([
+                'name' => 'The full name field is required.',
+            ]);
         }
 
-        $path = $validated['photo']->store('profile-photos', 'public');
+        $request->user()->update(['name' => $name]);
+
+        return back()->with('success', 'Full name updated.');
+    })->name('profile.name.update');
+
+    Route::post('/profile/password', function (Request $request) {
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', 'different:current_password', Password::min(8)],
+        ], [
+            'current_password.current_password' => 'The current password is incorrect.',
+            'password.different' => 'The new password must be different from the current password.',
+        ]);
+
+        $request->user()->update([
+            'password' => $validated['password'],
+        ]);
+
+        return back()->with('success', 'Password updated.');
+    })->name('profile.password.update');
+
+    Route::get('/profile/photo/{user}', function (User $user) {
+        abort_unless($user->profile_photo_path, 404);
+        $relativePath = str_replace(['../', '..\\'], '', $user->profile_photo_path);
+        $absolutePath = storage_path('app/public/'.str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath));
+
+        abort_unless(is_file($absolutePath), 404);
+
+        $extension = strtolower(pathinfo($user->profile_photo_path, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            'bmp' => 'image/bmp',
+        ];
+
+        return response(file_get_contents($absolutePath), 200, [
+            'Content-Type' => $mimeTypes[$extension] ?? 'application/octet-stream',
+            'Cache-Control' => 'private, max-age=3600',
+        ]);
+    })->name('profile.photo.show');
+
+    Route::post('/profile/photo', function (Request $request) {
+        $validated = $request->validate([
+            'photo' => ['required', 'file', 'max:2048', 'extensions:jpg,jpeg,png,gif,webp,bmp'],
+        ]);
+
+        if (@getimagesize($validated['photo']->getRealPath()) === false) {
+            throw ValidationException::withMessages([
+                'photo' => 'The photo must be a valid JPG, PNG, GIF, WEBP, or BMP image.',
+            ]);
+        }
+
+        $user = $request->user();
+        $previousPath = $user->profile_photo_path;
+        $storageRoot = storage_path('app/public');
+        $destinationDirectory = $storageRoot.DIRECTORY_SEPARATOR.'profile-photos';
+
+        if (! is_dir($destinationDirectory) && ! mkdir($destinationDirectory, 0755, true) && ! is_dir($destinationDirectory)) {
+            throw ValidationException::withMessages([
+                'photo' => 'Unable to prepare storage for the uploaded photo.',
+            ]);
+        }
+
+        $extension = strtolower($validated['photo']->getClientOriginalExtension() ?: 'jpg');
+        $filename = Str::uuid().'.'.$extension;
+        $path = 'profile-photos/'.$filename;
+
+        try {
+            $validated['photo']->move($destinationDirectory, $filename);
+        } catch (\Throwable) {
+            throw ValidationException::withMessages([
+                'photo' => 'Unable to save the uploaded photo.',
+            ]);
+        }
+
         $user->update(['profile_photo_path' => $path]);
+
+        if ($previousPath) {
+            $previousRelativePath = str_replace(['../', '..\\'], '', $previousPath);
+            $previousAbsolutePath = $storageRoot.DIRECTORY_SEPARATOR.str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $previousRelativePath);
+
+            if (is_file($previousAbsolutePath)) {
+                @unlink($previousAbsolutePath);
+            }
+        }
 
         return back()->with('success', 'Profile photo updated.');
     })->name('profile.photo.update');
