@@ -88,15 +88,19 @@
                                     <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium
                                         @if($entry->status === 'waiting') bg-amber-100 text-amber-800
                                         @elseif($entry->status === 'serving') bg-blue-100 text-blue-800
+                                        @elseif($entry->status === 'completed') bg-emerald-100 text-emerald-800
+                                        @elseif($entry->status === 'not_served') bg-rose-100 text-rose-800
                                         @else bg-slate-100 text-slate-600 @endif">
-                                        {{ $entry->status }}
+                                        {{ \Illuminate\Support\Str::headline($entry->status) }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-slate-500">{{ $entry->created_at->diffForHumans() }}</td>
+                                <td class="px-4 py-3 text-slate-500">{{ ($entry->activityAt ?? $entry->created_at)->diffForHumans() }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">No active queue entries.</td>
+                                <td colspan="4" class="px-4 py-8 text-center text-slate-500">
+                                    {{ auth()->user()?->isSuperAdmin() ? 'No queue activity yet today.' : 'No active queue entries.' }}
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -90,7 +90,9 @@
                     <section class="gov-monitor-panel gov-panel-recent" aria-labelledby="recent-{{ $featuredOfficeRow['office']->slug }}">
                         <div class="gov-panel-head">
                             <h3 id="recent-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Recent Transactions Today</h3>
-                            <span class="gov-recent-count">{{ $featuredOfficeRow['recentTransactions']->count() }} records</span>
+                            @if($featuredOfficeRow['recentTransactions']->isNotEmpty())
+                                <span class="gov-recent-count">{{ $featuredOfficeRow['recentTransactions']->count() }} records</span>
+                            @endif
                         </div>
 
                         <div class="gov-panel-body">
