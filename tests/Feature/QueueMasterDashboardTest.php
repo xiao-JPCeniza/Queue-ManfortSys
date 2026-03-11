@@ -78,6 +78,22 @@ class QueueMasterDashboardTest extends TestCase
             ->assertSee('Completed');
     }
 
+    public function test_super_admin_office_cards_include_new_public_queue_offices_but_exclude_hidden_ones(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+
+        $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+        $this->createOffice('Citizen Center', 'citizen-center', 'CCEN', true);
+        $this->createOffice('OBO', 'obo', 'OBO', false);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(QueueMasterDashboard::class)
+            ->assertSee('HRMO')
+            ->assertSee('Citizen Center')
+            ->assertDontSee('OBO');
+    }
+
     private function createSuperAdminUser(): User
     {
         $role = Role::create([
@@ -92,7 +108,7 @@ class QueueMasterDashboardTest extends TestCase
         ]);
     }
 
-    private function createOffice(string $name, string $slug, string $prefix): Office
+    private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue = false): Office
     {
         return Office::create([
             'name' => $name,
@@ -102,6 +118,7 @@ class QueueMasterDashboardTest extends TestCase
             'next_number' => 1,
             'tickets_accommodated_total' => 0,
             'is_active' => true,
+            'show_in_public_queue' => $showInPublicQueue,
         ]);
     }
 

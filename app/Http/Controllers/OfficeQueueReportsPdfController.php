@@ -22,8 +22,7 @@ class OfficeQueueReportsPdfController extends Controller
         $reportScopeLabel = $officeModel->name;
         if ($request->user()?->isSuperAdmin()) {
             $reportOfficeIds = Office::query()
-                ->where('is_active', true)
-                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                ->activePublicQueue()
                 ->pluck('id');
             $reportScopeLabel = 'All Offices';
         }

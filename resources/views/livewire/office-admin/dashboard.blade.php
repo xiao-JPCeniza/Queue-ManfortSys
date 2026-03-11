@@ -60,7 +60,7 @@
                                         </div>
                                         <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
                                             <p class="text-xs uppercase tracking-wide text-indigo-700">
-                                                {{ $isAllOfficesReportScope ? 'Total Accommodated (All Offices)' : 'Total Accommodated (' . $reportOfficeLabel . ')' }}
+                                                {{ $isAllOfficesReportScope ? 'Total Accommodated (Completed, All Offices)' : 'Total Accommodated (Completed, ' . $reportOfficeLabel . ')' }}
                                             </p>
                                             <p class="text-3xl font-bold text-indigo-700 mt-2">{{ $summary['overall_accommodated'] }}</p>
                                         </div>
@@ -461,54 +461,241 @@
                         @if($hrmoTab === 'queue-management')
                             @if(auth()->user()?->isSuperAdmin())
                                 <div class="space-y-6">
-                                    @foreach($overallTicketsByOffice as $officeActivity)
-                                        <section class="lgu-card p-6" aria-labelledby="overall-activity-{{ $officeActivity['office']->slug }}">
-                                            <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-                                                <h2 id="overall-activity-{{ $officeActivity['office']->slug }}" class="lgu-section-title">
-                                                    Overall Ticket Activity (Today) - {{ $officeActivity['office']->name }}
-                                                </h2>
-                                                <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                                                    {{ $officeActivity['entries']->count() }} ticket(s)
-                                                </span>
+                                    <section class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-gradient-to-r from-slate-900 via-blue-900 to-cyan-800 p-1 shadow-sm" aria-labelledby="queue-management-mega-menu-heading">
+                                        <div class="rounded-[calc(1.75rem-1px)] bg-white/95 p-5 sm:p-6">
+                                            <div class="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                                                <div class="max-w-2xl">
+                                                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">Queue Management</p>
+                                                    <h2 id="queue-management-mega-menu-heading" class="mt-2 text-2xl font-semibold text-slate-900">Records</h2>
+                                                    <p class="mt-2 text-sm text-slate-600">
+                                                        Switch between today&apos;s office queue activity and the overall ticket data accommodated by each office.
+                                                    </p>
+                                                </div>
+
+                                                <div class="grid w-full gap-2 rounded-2xl bg-slate-100 p-2 sm:grid-cols-2 xl:max-w-2xl">
+                                                    <button
+                                                        type="button"
+                                                        wire:click="setQueueManagementSection('queued-today')"
+                                                        class="rounded-2xl border px-4 py-4 text-left transition {{ $queueManagementSection === 'queued-today' ? 'border-blue-600 bg-blue-600 text-white shadow-sm' : 'border-transparent bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50' }}"
+                                                    >
+                                                        <span class="block text-sm font-semibold">Queued Today</span>
+                                                        <span class="mt-1 block text-xs {{ $queueManagementSection === 'queued-today' ? 'text-blue-100' : 'text-slate-500' }}">
+                                                            Today&apos;s grouped office ticket activity, based on the current queue flow.
+                                                        </span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="setQueueManagementSection('overall-data')"
+                                                        class="rounded-2xl border px-4 py-4 text-left transition {{ $queueManagementSection === 'overall-data' ? 'border-slate-900 bg-slate-900 text-white shadow-sm' : 'border-transparent bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50' }}"
+                                                    >
+                                                        <span class="block text-sm font-semibold">Overall Data</span>
+                                                        <span class="mt-1 block text-xs {{ $queueManagementSection === 'overall-data' ? 'text-slate-300' : 'text-slate-500' }}">
+                                                            Overall queued tickets and accommodated totals, with office filtering.
+                                                        </span>
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div class="overflow-x-auto">
+                                        </div>
+                                    </section>
+
+                                    @if($queueManagementSection === 'queued-today')
+                                        <section class="lgu-card p-6" aria-labelledby="queued-today-heading">
+                                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                                <div>
+                                                    <h2 id="queued-today-heading" class="lgu-section-title">Queued Today</h2>
+                                                    <p class="mt-1 text-sm text-slate-500">Today&apos;s ticket activity grouped by office.</p>
+                                                </div>
+
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="text-xs font-medium text-slate-500">
+                                                        Page {{ $queuedTodayPagination['current_page'] }} of {{ $queuedTodayPagination['last_page'] }}
+                                                        | Showing {{ $queuedTodayPagination['from'] }}-{{ $queuedTodayPagination['to'] }} of {{ $queuedTodayPagination['total'] }} offices
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="previousQueuedTodayPage"
+                                                        @disabled(!$queuedTodayPagination['has_previous'])
+                                                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="nextQueuedTodayPage"
+                                                        @disabled(!$queuedTodayPagination['has_next'])
+                                                        class="rounded-lg border border-blue-600 bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:border-blue-300 disabled:bg-blue-300"
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        @forelse($queuedTodayOfficeActivity as $officeActivity)
+                                            <section class="lgu-card p-6" aria-labelledby="overall-activity-{{ $officeActivity['office']->slug }}">
+                                                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+                                                    <h2 id="overall-activity-{{ $officeActivity['office']->slug }}" class="lgu-section-title">
+                                                        Overall Ticket Activity (Today) - {{ $officeActivity['office']->name }}
+                                                    </h2>
+                                                    <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                                                        {{ $officeActivity['entries']->count() }} ticket(s)
+                                                    </span>
+                                                </div>
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-sm">
+                                                        <thead>
+                                                            <tr class="border-b border-slate-200 text-left text-slate-500">
+                                                                <th class="py-2 pr-4 font-medium">Ticket #</th>
+                                                                <th class="py-2 pr-4 font-medium">Status</th>
+                                                                <th class="py-2 pr-4 font-medium">Issued</th>
+                                                                <th class="py-2 pr-4 font-medium">Called</th>
+                                                                <th class="py-2 pr-4 font-medium">Completed</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @forelse($officeActivity['entries'] as $entry)
+                                                                <tr class="border-b border-slate-100">
+                                                                    <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
+                                                                    <td class="py-2 pr-4">
+                                                                        <span class="rounded-full px-2 py-1 text-xs font-medium
+                                                                            {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                            {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
+                                                                            {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                                                            {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
+                                                                            {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
+                                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
+                                                                </tr>
+                                                            @empty
+                                                                <tr>
+                                                                    <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for {{ $officeActivity['office']->name }} today.</td>
+                                                                </tr>
+                                                            @endforelse
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </section>
+                                        @empty
+                                            <section class="lgu-card p-6">
+                                                <p class="text-sm text-slate-500">No active offices are available for today&apos;s queue activity.</p>
+                                            </section>
+                                        @endforelse
+                                    @else
+                                        <section class="lgu-card p-6" aria-labelledby="overall-data-heading">
+                                            <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                                                <div>
+                                                    <h2 id="overall-data-heading" class="lgu-section-title">Overall Data</h2>
+                                                    <p class="mt-1 text-sm text-slate-500">
+                                                        Review overall queued tickets and accommodated totals per office, then narrow the list using the office dropdown.
+                                                    </p>
+                                                </div>
+
+                                                <div class="w-full max-w-sm">
+                                                    <label for="queue-management-office-filter" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                                        Filter by Office
+                                                    </label>
+                                                    <select
+                                                        id="queue-management-office-filter"
+                                                        wire:model.live="queueManagementOfficeFilter"
+                                                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                                    >
+                                                        <option value="all">All Offices</option>
+                                                        @foreach($queueManagementOfficeOptions as $filterOffice)
+                                                            <option value="{{ $filterOffice->slug }}">{{ $filterOffice->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                                                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Offices in Scope</p>
+                                                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($overallDataSummary['office_count']) }}</p>
+                                                    <p class="mt-1 text-xs text-slate-500">{{ $queueManagementSelectedOfficeLabel }}</p>
+                                                </div>
+                                                <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Overall Queued Tickets</p>
+                                                    <p class="mt-2 text-3xl font-bold text-blue-700">{{ number_format($overallDataSummary['overall_queued_total']) }}</p>
+                                                    <p class="mt-1 text-xs text-blue-600">All recorded queue entries in the selected scope.</p>
+                                                </div>
+                                                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                                                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Accommodated Tickets</p>
+                                                    <p class="mt-2 text-3xl font-bold text-emerald-700">{{ number_format($overallDataSummary['accommodated_total']) }}</p>
+                                                    <p class="mt-1 text-xs text-emerald-600">Completed queue numbers marked accommodated by office admins.</p>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <section class="lgu-card p-6" aria-labelledby="overall-data-table-heading">
+                                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                                <div>
+                                                    <h2 id="overall-data-table-heading" class="lgu-section-title">Overall Ticket Totals by Office</h2>
+                                                    <p class="mt-1 text-sm text-slate-500">Showing {{ $queueManagementSelectedOfficeLabel }}.</p>
+                                                </div>
+
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="text-xs font-medium text-slate-500">
+                                                        Page {{ $overallDataPagination['current_page'] }} of {{ $overallDataPagination['last_page'] }}
+                                                        | Showing {{ $overallDataPagination['from'] }}-{{ $overallDataPagination['to'] }} of {{ $overallDataPagination['total'] }} row(s)
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="previousOverallDataPage"
+                                                        @disabled(!$overallDataPagination['has_previous'])
+                                                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        Previous
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        wire:click="nextOverallDataPage"
+                                                        @disabled(!$overallDataPagination['has_next'])
+                                                        class="rounded-lg border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300"
+                                                    >
+                                                        Next
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-5 overflow-x-auto">
                                                 <table class="w-full text-sm">
                                                     <thead>
-                                                        <tr class="text-left border-b border-slate-200 text-slate-500">
-                                                            <th class="py-2 pr-4 font-medium">Ticket #</th>
-                                                            <th class="py-2 pr-4 font-medium">Status</th>
-                                                            <th class="py-2 pr-4 font-medium">Issued</th>
-                                                            <th class="py-2 pr-4 font-medium">Called</th>
-                                                            <th class="py-2 pr-4 font-medium">Completed</th>
+                                                        <tr class="border-b border-slate-200 text-left text-slate-500">
+                                                            <th class="w-56 px-3 py-2.5 font-semibold">Office</th>
+                                                            <th class="px-3 py-2.5 font-semibold">Queue Ticket #</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @forelse($officeActivity['entries'] as $entry)
-                                                            <tr class="border-b border-slate-100">
-                                                                <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
-                                                                <td class="py-2 pr-4">
-                                                                    <span class="px-2 py-1 rounded-full text-xs font-medium
-                                                                        {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                        {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                                                        {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                                                        {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
-                                                                        {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
-                                                                    </span>
+                                                        @forelse($overallDataRows as $row)
+                                                            <tr class="border-b border-slate-100 last:border-b-0">
+                                                                <td class="px-3 py-3 font-medium text-slate-800">{{ $row['office_name'] }}</td>
+                                                                <td class="px-3 py-3 align-top">
+                                                                    @php($completedQueueNumbers = collect($row['completed_queue_numbers'])->unique()->values())
+
+                                                                    <div class="flex flex-wrap gap-2">
+                                                                        @forelse($completedQueueNumbers as $queueNumber)
+                                                                            <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700">
+                                                                                {{ $queueNumber }}
+                                                                            </span>
+                                                                        @empty
+                                                                            <p class="text-xs text-slate-400">No completed queue numbers yet.</p>
+                                                                        @endforelse
+                                                                    </div>
                                                                 </td>
-                                                                <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
-                                                                <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                                <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
                                                             </tr>
                                                         @empty
                                                             <tr>
-                                                                <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for {{ $officeActivity['office']->name }} today.</td>
+                                                                <td colspan="2" class="px-3 py-6 text-center text-slate-500">No overall data found for the selected office.</td>
                                                             </tr>
                                                         @endforelse
                                                     </tbody>
                                                 </table>
                                             </div>
                                         </section>
-                                    @endforeach
+                                    @endif
                                 </div>
                             @else
                                 <section class="lgu-card p-6" aria-labelledby="overall-activity-heading">

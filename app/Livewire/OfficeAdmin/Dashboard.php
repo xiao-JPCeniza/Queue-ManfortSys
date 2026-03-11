@@ -8,7 +8,6 @@ use App\Models\QueueEntry;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -64,9 +63,26 @@ class Dashboard extends Component
         "Vice Mayor's Office",
     ];
 
+    private const QUEUE_MANAGEMENT_SECTIONS = [
+        'queued-today',
+        'overall-data',
+    ];
+
+    private const QUEUED_TODAY_OFFICES_PER_PAGE = 3;
+
+    private const OVERALL_DATA_ROWS_PER_PAGE = 6;
+
     public Office $office;
 
     public string $hrmoTab = 'dashboard';
+
+    public string $queueManagementSection = 'queued-today';
+
+    public string $queueManagementOfficeFilter = 'all';
+
+    public int $queuedTodayPage = 1;
+
+    public int $overallDataPage = 1;
 
     public function mount(Office $office): void
     {
@@ -114,6 +130,50 @@ class Dashboard extends Component
         }
 
         $this->hrmoTab = $tab;
+    }
+
+    public function setQueueManagementSection(string $section): void
+    {
+        if (! $this->isSuperAdmin() || $this->hrmoTab !== 'queue-management') {
+            return;
+        }
+
+        if (! in_array($section, self::QUEUE_MANAGEMENT_SECTIONS, true)) {
+            return;
+        }
+
+        $this->queueManagementSection = $section;
+    }
+
+    public function updatedQueueManagementOfficeFilter(string $officeSlug): void
+    {
+        $availableOfficeSlugs = $this->queueManagementOffices()->pluck('slug');
+
+        if ($officeSlug !== 'all' && ! $availableOfficeSlugs->contains($officeSlug)) {
+            $this->queueManagementOfficeFilter = 'all';
+        }
+
+        $this->overallDataPage = 1;
+    }
+
+    public function previousQueuedTodayPage(): void
+    {
+        $this->queuedTodayPage = max(1, $this->queuedTodayPage - 1);
+    }
+
+    public function nextQueuedTodayPage(): void
+    {
+        $this->queuedTodayPage++;
+    }
+
+    public function previousOverallDataPage(): void
+    {
+        $this->overallDataPage = max(1, $this->overallDataPage - 1);
+    }
+
+    public function nextOverallDataPage(): void
+    {
+        $this->overallDataPage++;
     }
 
     public function callNext()
@@ -241,6 +301,17 @@ class Dashboard extends Component
             'summary' => null,
             'overallTickets' => collect(),
             'overallTicketsByOffice' => collect(),
+            'queuedTodayOfficeActivity' => collect(),
+            'queueManagementOfficeOptions' => collect(),
+            'queueManagementSelectedOfficeLabel' => 'All Offices',
+            'queuedTodayPagination' => $this->emptyPaginationState(self::QUEUED_TODAY_OFFICES_PER_PAGE),
+            'overallDataRows' => collect(),
+            'overallDataSummary' => [
+                'office_count' => 0,
+                'overall_queued_total' => 0,
+                'accommodated_total' => 0,
+            ],
+            'overallDataPagination' => $this->emptyPaginationState(self::OVERALL_DATA_ROWS_PER_PAGE),
             'statusBreakdown' => [],
             'statusPieStyle' => 'conic-gradient(#e2e8f0 0 100%)',
             'statusPieHasData' => false,
@@ -281,25 +352,24 @@ class Dashboard extends Component
         $manilaNow = now('Asia/Manila');
         $dbTimezone = (string) config('app.timezone', 'UTC');
         $reportOfficeIds = $this->resolveReportOfficeIds();
-        $hasAccommodatedTotalColumn = Schema::hasColumn('offices', 'tickets_accommodated_total');
         $statusMetadata = $this->statusMetadata();
 
         $todayEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->whereBetween('created_at', [$dayStart, $dayEnd])
             ->get();
 
-        $data['summary'] = $this->buildSummary($reportOfficeIds, $todayEntries, $hasAccommodatedTotalColumn);
+        $data['summary'] = $this->buildSummary($reportOfficeIds, $todayEntries);
         $data = array_merge($data, $this->buildStatusBreakdownData($todayEntries, $statusMetadata));
         $data = array_merge($data, $this->buildMonthlyChartData($reportOfficeIds, $manilaNow, $dbTimezone, $statusMetadata));
         $data = array_merge($data, $this->buildHourlyChartData($todayEntries));
         $data['overallTickets'] = $this->buildOverallTickets($dayStart, $dayEnd);
 
         if ($this->isSuperAdmin() && $this->hrmoTab === 'reports') {
-            $data = array_merge($data, $this->buildOfficeAccommodatedData($reportOfficeIds, $hasAccommodatedTotalColumn));
+            $data = array_merge($data, $this->buildOfficeAccommodatedData($reportOfficeIds));
         }
 
         if ($this->isSuperAdmin() && $this->hrmoTab === 'queue-management') {
-            $data['overallTicketsByOffice'] = $this->buildOverallTicketsByOffice($dayStart, $dayEnd);
+            $data = array_merge($data, $this->buildQueueManagementData($dayStart, $dayEnd));
         }
 
         if ($this->isSuperAdmin() && $this->hrmoTab === 'user-management') {
@@ -313,13 +383,12 @@ class Dashboard extends Component
         return $data;
     }
 
-    private function buildSummary(Collection $reportOfficeIds, Collection $todayEntries, bool $hasAccommodatedTotalColumn): array
+    private function buildSummary(Collection $reportOfficeIds, Collection $todayEntries): array
     {
-        $overallAccommodated = $hasAccommodatedTotalColumn
-            ? (int) Office::query()
-                ->whereIn('id', $reportOfficeIds)
-                ->sum('tickets_accommodated_total')
-            : QueueEntry::whereIn('office_id', $reportOfficeIds)->count();
+        $overallAccommodated = QueueEntry::query()
+            ->whereIn('office_id', $reportOfficeIds)
+            ->where('status', QueueEntry::STATUS_COMPLETED)
+            ->count();
 
         return [
             'total_today' => $todayEntries->count(),
@@ -501,11 +570,7 @@ class Dashboard extends Component
 
     private function buildOverallTicketsByOffice($dayStart, $dayEnd): Collection
     {
-        $officeList = Office::query()
-            ->where('is_active', true)
-            ->whereNotIn('name', self::HIDDEN_OVERALL_ACTIVITY_OFFICES)
-            ->orderBy('name')
-            ->get(['id', 'name', 'slug']);
+        $officeList = $this->queueManagementOffices();
 
         $entriesByOffice = QueueEntry::query()
             ->with('office:id,name,slug')
@@ -525,6 +590,136 @@ class Dashboard extends Component
         })->values();
     }
 
+    private function buildQueueManagementData($dayStart, $dayEnd): array
+    {
+        $this->normalizeQueueManagementSection();
+
+        $queueManagementOfficeOptions = $this->queueManagementOffices();
+        $this->normalizeQueueManagementOfficeFilter($queueManagementOfficeOptions);
+
+        $overallTicketsByOffice = $this->buildOverallTicketsByOffice($dayStart, $dayEnd);
+        $queuedTodayPagination = $this->paginateCollection(
+            $overallTicketsByOffice,
+            $this->queuedTodayPage,
+            self::QUEUED_TODAY_OFFICES_PER_PAGE
+        );
+        $this->queuedTodayPage = $queuedTodayPagination['current_page'];
+
+        $overallDataRows = $this->buildQueueManagementOverallDataRows($queueManagementOfficeOptions);
+        $filteredOverallDataRows = $this->filterQueueManagementOverallDataRows($overallDataRows);
+        $overallDataPagination = $this->paginateCollection(
+            $filteredOverallDataRows,
+            $this->overallDataPage,
+            self::OVERALL_DATA_ROWS_PER_PAGE
+        );
+        $this->overallDataPage = $overallDataPagination['current_page'];
+
+        $selectedOffice = $this->queueManagementOfficeFilter === 'all'
+            ? null
+            : $queueManagementOfficeOptions->firstWhere('slug', $this->queueManagementOfficeFilter);
+
+        return [
+            'overallTicketsByOffice' => $overallTicketsByOffice,
+            'queuedTodayOfficeActivity' => $queuedTodayPagination['items'],
+            'queueManagementOfficeOptions' => $queueManagementOfficeOptions,
+            'queueManagementSelectedOfficeLabel' => $selectedOffice?->name ?? 'All Offices',
+            'queuedTodayPagination' => $queuedTodayPagination,
+            'overallDataRows' => $overallDataPagination['items'],
+            'overallDataSummary' => [
+                'office_count' => $filteredOverallDataRows->count(),
+                'overall_queued_total' => (int) $filteredOverallDataRows->sum('overall_queued_total'),
+                'accommodated_total' => (int) $filteredOverallDataRows->sum('accommodated_total'),
+            ],
+            'overallDataPagination' => $overallDataPagination,
+        ];
+    }
+
+    private function queueManagementOffices(): Collection
+    {
+        return Office::query()
+            ->where('is_active', true)
+            ->whereNotIn('name', self::HIDDEN_OVERALL_ACTIVITY_OFFICES)
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug']);
+    }
+
+    private function buildQueueManagementOverallDataRows(Collection $officeList): Collection
+    {
+        $officeIds = $officeList->pluck('id');
+        $overallQueuedCounts = QueueEntry::query()
+            ->selectRaw('office_id, COUNT(*) as total')
+            ->whereIn('office_id', $officeIds)
+            ->groupBy('office_id')
+            ->pluck('total', 'office_id');
+
+        $accommodatedCounts = $this->completedQueueCountsByOffice($officeIds);
+        $completedQueueNumbers = $this->completedQueueNumbersByOffice($officeIds);
+
+        return $officeList
+            ->map(function (Office $office) use ($overallQueuedCounts, $accommodatedCounts, $completedQueueNumbers) {
+                return [
+                    'office_id' => $office->id,
+                    'office_slug' => $office->slug,
+                    'office_name' => $office->name,
+                    'overall_queued_total' => (int) ($overallQueuedCounts->get($office->id, 0)),
+                    'accommodated_total' => (int) ($accommodatedCounts->get($office->id, 0)),
+                    'completed_queue_numbers' => $completedQueueNumbers->get($office->id, []),
+                ];
+            })
+            ->sortBy([
+                ['overall_queued_total', 'desc'],
+                ['office_name', 'asc'],
+            ])
+            ->values();
+    }
+
+    private function filterQueueManagementOverallDataRows(Collection $overallDataRows): Collection
+    {
+        if ($this->queueManagementOfficeFilter === 'all') {
+            return $overallDataRows->values();
+        }
+
+        return $overallDataRows
+            ->where('office_slug', $this->queueManagementOfficeFilter)
+            ->values();
+    }
+
+    private function paginateCollection(Collection $items, int $page, int $perPage): array
+    {
+        $perPage = max(1, $perPage);
+        $total = $items->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $currentPage = min(max(1, $page), $lastPage);
+        $from = $total === 0 ? 0 : (($currentPage - 1) * $perPage) + 1;
+        $to = $total === 0 ? 0 : min($total, $currentPage * $perPage);
+
+        return [
+            'items' => $items->slice($from > 0 ? $from - 1 : 0, $perPage)->values(),
+            'current_page' => $currentPage,
+            'last_page' => $lastPage,
+            'per_page' => $perPage,
+            'total' => $total,
+            'from' => $from,
+            'to' => $to,
+            'has_previous' => $currentPage > 1,
+            'has_next' => $currentPage < $lastPage,
+        ];
+    }
+
+    private function emptyPaginationState(int $perPage): array
+    {
+        return [
+            'current_page' => 1,
+            'last_page' => 1,
+            'per_page' => $perPage,
+            'total' => 0,
+            'from' => 0,
+            'to' => 0,
+            'has_previous' => false,
+            'has_next' => false,
+        ];
+    }
+
     private function activityWithinDayScope($dayStart, $dayEnd): \Closure
     {
         return function ($query) use ($dayStart, $dayEnd) {
@@ -539,10 +734,10 @@ class Dashboard extends Component
     private function buildUserManagementData($dayStart, $dayEnd): array
     {
         $managedOffices = Office::query()
-            ->where('is_active', true)
-            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-            ->orderBy('name')
+            ->activePublicQueue()
             ->get(['id', 'name', 'slug']);
+
+        $managedOffices = Office::sortPublicQueueOffices($managedOffices);
 
         $activeOfficeIds = QueueEntry::query()
             ->whereIn('office_id', $managedOffices->pluck('id'))
@@ -601,8 +796,7 @@ class Dashboard extends Component
 
         if ($this->isSuperAdmin()) {
             $queueReportOfficeIds = Office::query()
-                ->where('is_active', true)
-                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+                ->activePublicQueue()
                 ->pluck('id');
             $queueReportScopeLabel = 'All Offices';
         }
@@ -701,47 +895,30 @@ class Dashboard extends Component
         ];
     }
 
-    private function buildOfficeAccommodatedData(Collection $reportOfficeIds, bool $hasAccommodatedTotalColumn): array
+    private function buildOfficeAccommodatedData(Collection $reportOfficeIds): array
     {
-        if ($hasAccommodatedTotalColumn) {
-            $officeAccommodatedSummary = Office::query()
+        $reportOffices = Office::sortPublicQueueOffices(
+            Office::query()
                 ->whereIn('id', $reportOfficeIds)
-                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-                ->orderBy('name')
-                ->get(['id', 'name', 'tickets_accommodated_total'])
-                ->map(function (Office $office) {
-                    return [
-                        'office_name' => $office->name,
-                        'accommodated_total' => (int) $office->tickets_accommodated_total,
-                    ];
-                })
-                ->sortByDesc('accommodated_total')
-                ->values()
-                ->all();
-        } else {
-            $reportOffices = Office::query()
-                ->whereIn('id', $reportOfficeIds)
-                ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-                ->orderBy('name')
-                ->get(['id', 'name']);
+                ->activePublicQueue()
+                ->get(['id', 'name'])
+        );
 
-            $fallbackCounts = QueueEntry::query()
-                ->selectRaw('office_id, COUNT(*) as total')
-                ->whereIn('office_id', $reportOffices->pluck('id'))
-                ->groupBy('office_id')
-                ->pluck('total', 'office_id');
+        $completedCounts = $this->completedQueueCountsByOffice($reportOffices->pluck('id'));
 
-            $officeAccommodatedSummary = $reportOffices
-                ->map(function (Office $office) use ($fallbackCounts) {
-                    return [
-                        'office_name' => $office->name,
-                        'accommodated_total' => (int) ($fallbackCounts->get($office->id, 0)),
-                    ];
-                })
-                ->sortByDesc('accommodated_total')
-                ->values()
-                ->all();
-        }
+        $officeAccommodatedSummary = $reportOffices
+            ->map(function (Office $office) use ($completedCounts) {
+                return [
+                    'office_name' => $office->name,
+                    'accommodated_total' => (int) ($completedCounts->get($office->id, 0)),
+                ];
+            })
+            ->sortBy([
+                ['accommodated_total', 'desc'],
+                ['office_name', 'asc'],
+            ])
+            ->values()
+            ->all();
 
         $officeChartPalette = [
             ['hex_color' => '#3b82f6', 'bar_class' => 'bg-blue-500', 'chip_class' => 'bg-blue-500'],
@@ -811,6 +988,37 @@ class Dashboard extends Component
         ];
     }
 
+    private function completedQueueCountsByOffice(Collection $officeIds): Collection
+    {
+        if ($officeIds->isEmpty()) {
+            return collect();
+        }
+
+        return QueueEntry::query()
+            ->selectRaw('office_id, COUNT(*) as total')
+            ->whereIn('office_id', $officeIds)
+            ->where('status', QueueEntry::STATUS_COMPLETED)
+            ->groupBy('office_id')
+            ->pluck('total', 'office_id');
+    }
+
+    private function completedQueueNumbersByOffice(Collection $officeIds): Collection
+    {
+        if ($officeIds->isEmpty()) {
+            return collect();
+        }
+
+        return QueueEntry::query()
+            ->select(['office_id', 'queue_number'])
+            ->whereIn('office_id', $officeIds)
+            ->where('status', QueueEntry::STATUS_COMPLETED)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('office_id')
+            ->map(fn (Collection $entries) => $entries->pluck('queue_number')->values()->all());
+    }
+
     private function statusMetadata(): array
     {
         return [
@@ -851,6 +1059,22 @@ class Dashboard extends Component
     private function isSuperAdmin(): bool
     {
         return $this->currentUser()?->isSuperAdmin() ?? false;
+    }
+
+    private function normalizeQueueManagementSection(): void
+    {
+        if (! in_array($this->queueManagementSection, self::QUEUE_MANAGEMENT_SECTIONS, true)) {
+            $this->queueManagementSection = 'queued-today';
+        }
+    }
+
+    private function normalizeQueueManagementOfficeFilter(Collection $officeList): void
+    {
+        $availableOfficeSlugs = $officeList->pluck('slug');
+
+        if ($this->queueManagementOfficeFilter !== 'all' && ! $availableOfficeSlugs->contains($this->queueManagementOfficeFilter)) {
+            $this->queueManagementOfficeFilter = 'all';
+        }
     }
 
     private function supportsAdvancedQueueDashboard(): bool

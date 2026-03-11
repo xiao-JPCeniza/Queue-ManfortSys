@@ -16,37 +16,29 @@ class ClientDashboard extends Component
 
     public function getOfficeOptions()
     {
-        $orderMap = array_flip(Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
-
-        return Office::where('is_active', true)
-            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
-            ->get()
-            ->sortBy(fn (Office $office) => $orderMap[$office->slug] ?? PHP_INT_MAX)
-            ->values();
+        return Office::sortPublicQueueOffices(
+            Office::query()
+                ->activePublicQueue()
+                ->get()
+        );
     }
 
     public function getOffices()
     {
-        $orderMap = array_flip(Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
-
-        $query = Office::where('is_active', true)
-            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
+        $query = Office::query()->activePublicQueue();
 
         if ($this->selectedOfficeSlug !== '') {
             $query->where('slug', $this->selectedOfficeSlug);
         }
 
-        return $query
-            ->get()
-            ->sortBy(fn (Office $office) => $orderMap[$office->slug] ?? PHP_INT_MAX)
-            ->values();
+        return Office::sortPublicQueueOffices($query->get());
     }
 
     public function selectOffice(int $officeId): void
     {
-        $office = Office::where('id', $officeId)
-            ->where('is_active', true)
-            ->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS)
+        $office = Office::query()
+            ->activePublicQueue()
+            ->where('id', $officeId)
             ->first();
 
         if (! $office) {
@@ -60,9 +52,6 @@ class ClientDashboard extends Component
             'queue_number' => $queueNumber,
             'status' => QueueEntry::STATUS_WAITING,
         ]);
-
-        $office->increment('tickets_accommodated_total');
-        $office->refresh();
 
         $issuedAt = ($entry->created_at ?? now())->copy()->timezone('Asia/Manila');
 

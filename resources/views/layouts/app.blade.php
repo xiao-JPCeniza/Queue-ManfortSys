@@ -39,6 +39,7 @@
             $isSuperAdminReports = request()->routeIs('super-admin.reports');
             $isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports');
             $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
+            $isSuperAdminOffices = request()->routeIs('super-admin.offices');
             $isSuperAdminUserManagement = request()->routeIs('super-admin.user-management');
             $sidebarMenuLabel = $isSuperAdmin ? 'Super Admin Panel' : 'Office Menu';
             $sidebarMenuItems = [];
@@ -59,6 +60,11 @@
                         'label' => 'Queue Management',
                         'href' => route('super-admin.queue-management'),
                         'active' => $isSuperAdminQueueManagement,
+                    ],
+                    [
+                        'label' => 'Offices',
+                        'href' => route('super-admin.offices'),
+                        'active' => $isSuperAdminOffices,
                     ],
                     [
                         'label' => 'User Management',

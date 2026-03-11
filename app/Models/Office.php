@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class Office extends Model
@@ -19,6 +21,18 @@ class Office extends Model
         'mswdo',
     ];
 
+    public const DISPLAY_NAME_MAP = [
+        'accounting' => 'Municipal Accounting Office',
+        'assessors-office' => "Municipal Assessor's Office",
+        'business-permits' => 'Business Permits and Licensing Office',
+        'civil-registry' => 'Local Civil Registry Office',
+        'hrmo' => 'Human Resource Management Office',
+        'mho' => 'Municipal Health Office',
+        'mswdo' => 'Municipal Social Welfare and Development Office',
+        'obo' => 'Office of the Building Official',
+        'treasury' => "Municipal Treasurer's Office",
+    ];
+
     protected $fillable = [
         'name',
         'slug',
@@ -27,12 +41,50 @@ class Office extends Model
         'next_number',
         'tickets_accommodated_total',
         'is_active',
+        'show_in_public_queue',
     ];
 
     protected $casts = [
         'tickets_accommodated_total' => 'integer',
         'is_active' => 'boolean',
+        'show_in_public_queue' => 'boolean',
     ];
+
+    public function scopePublicQueueVisible(Builder $query): Builder
+    {
+        return $query->where('show_in_public_queue', true);
+    }
+
+    public function scopeActivePublicQueue(Builder $query): Builder
+    {
+        return $query->where('is_active', true)->publicQueueVisible();
+    }
+
+    public static function sortPublicQueueOffices(iterable $offices): Collection
+    {
+        $orderMap = array_flip(self::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
+        $collection = $offices instanceof Collection ? $offices : collect($offices);
+
+        return $collection
+            ->sortBy(function (Office $office) use ($orderMap) {
+                $legacyOrder = $orderMap[$office->slug] ?? null;
+
+                return sprintf(
+                    '%d-%05d-%s',
+                    $legacyOrder === null ? 1 : 0,
+                    $legacyOrder ?? 99999,
+                    strtolower((string) $office->name)
+                );
+            })
+            ->values();
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        return self::DISPLAY_NAME_MAP[$this->slug]
+            ?? trim((string) $this->description)
+            ?: $this->name;
+    }
 
     public function queueEntries(): HasMany
     {

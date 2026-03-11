@@ -31,6 +31,7 @@ class OfficeSeeder extends Seeder
                 'prefix' => $office['prefix'],
                 'description' => $office['description'],
                 'is_active' => true,
+                'show_in_public_queue' => in_array($office['slug'], Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS, true),
             ]);
 
             if (!$officeModel->exists) {

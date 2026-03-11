@@ -75,7 +75,7 @@ class Dashboard extends Component
 
         $officeQuery = Office::query();
         if ($isSuperAdmin) {
-            $officeQuery->whereIn('slug', Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS);
+            $officeQuery->activePublicQueue();
         }
 
         $offices = $officeQuery
@@ -101,8 +101,11 @@ class Dashboard extends Component
                 $q->where('status', QueueEntry::STATUS_WAITING)
                     ->whereBetween('created_at', [$dayStart, $dayEnd]);
             }])
-            ->orderBy('name')
             ->get();
+
+        $offices = $isSuperAdmin
+            ? Office::sortPublicQueueOffices($offices)
+            : $offices->sortBy('name')->values();
 
         $recentEntriesQuery = QueueEntry::with('office')->whereHas('office');
 

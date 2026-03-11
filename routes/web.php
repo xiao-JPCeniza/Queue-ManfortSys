@@ -95,6 +95,9 @@ Route::post('/logout', function () {
 
             return view('office.dashboard', ['office' => $officeModel]);
         })->name('queue-management');
+        Route::get('/offices', function () {
+            return view('super-admin.offices');
+        })->name('offices');
         Route::get('/user-management', function () {
             $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
 
