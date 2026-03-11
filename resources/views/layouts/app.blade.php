@@ -67,12 +67,6 @@
                     ],
                 ];
             } elseif ($isOfficeDashboard) {
-                $sidebarMenuItems[] = [
-                    'label' => 'Dashboard',
-                    'href' => route('office.dashboard', $sidebarOfficeSlug),
-                    'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'dashboard',
-                ];
-
                 if ($supportsAdvancedOfficeMenu) {
                     $sidebarMenuItems[] = [
                         'label' => 'Reports',

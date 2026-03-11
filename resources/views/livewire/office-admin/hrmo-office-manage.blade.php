@@ -83,7 +83,9 @@
             <section class="gov-monitor-panel gov-panel-recent" aria-labelledby="recent-transaction-heading">
                 <div class="gov-panel-head">
                     <h2 id="recent-transaction-heading" class="gov-font-heading gov-panel-title">Recent Transactions Today</h2>
-                    <span class="gov-recent-count">{{ $recentTransactions->count() }} records</span>
+                    @if($recentTransactions->isNotEmpty())
+                        <span class="gov-recent-count">{{ $recentTransactions->count() }} records</span>
+                    @endif
                 </div>
 
                 <div class="gov-panel-body">

@@ -5,6 +5,7 @@ namespace App\Livewire\QueueMaster;
 use App\Models\Office;
 use App\Models\QueueEntry;
 use App\Models\User;
+use Closure;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -47,6 +48,26 @@ class Dashboard extends Component
         return $user instanceof User ? $user : null;
     }
 
+    private function activityWithinDayScope($dayStart, $dayEnd): Closure
+    {
+        return function ($query) use ($dayStart, $dayEnd) {
+            $query->where(function ($activityQuery) use ($dayStart, $dayEnd) {
+                $activityQuery->whereBetween('created_at', [$dayStart, $dayEnd])
+                    ->orWhereBetween('called_at', [$dayStart, $dayEnd])
+                    ->orWhereBetween('served_at', [$dayStart, $dayEnd]);
+            });
+        };
+    }
+
+    private function resolveRecentEntryActivityAt(QueueEntry $entry): mixed
+    {
+        return match ($entry->status) {
+            QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED => $entry->served_at ?? $entry->created_at,
+            QueueEntry::STATUS_SERVING => $entry->called_at ?? $entry->created_at,
+            default => $entry->created_at,
+        };
+    }
+
     public function render()
     {
         $isSuperAdmin = $this->currentUser()?->isSuperAdmin() ?? false;
@@ -83,19 +104,27 @@ class Dashboard extends Component
             ->orderBy('name')
             ->get();
 
-        $recentEntriesQuery = QueueEntry::with('office')
-            ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
-            ->whereBetween('created_at', [$dayStart, $dayEnd])
-            ->orderByDesc('created_at')
-            ->orderByDesc('id');
+        $recentEntriesQuery = QueueEntry::with('office')->whereHas('office');
 
         if ($isSuperAdmin) {
-            $recentEntriesQuery->whereIn('office_id', $offices->pluck('id'));
+            $recentEntriesQuery
+                ->where($this->activityWithinDayScope($dayStart, $dayEnd))
+                ->orderByRaw('COALESCE(served_at, called_at, created_at) DESC')
+                ->orderByDesc('id');
+        } else {
+            $recentEntriesQuery
+                ->whereIn('status', [QueueEntry::STATUS_WAITING, QueueEntry::STATUS_SERVING])
+                ->whereBetween('created_at', [$dayStart, $dayEnd])
+                ->orderByDesc('created_at')
+                ->orderByDesc('id');
         }
 
         $recentEntries = $recentEntriesQuery
             ->limit(20)
-            ->get();
+            ->get()
+            ->each(function (QueueEntry $entry) {
+                $entry->activityAt = $this->resolveRecentEntryActivityAt($entry);
+            });
 
         return view('livewire.queue-master.dashboard', [
             'offices' => $offices,

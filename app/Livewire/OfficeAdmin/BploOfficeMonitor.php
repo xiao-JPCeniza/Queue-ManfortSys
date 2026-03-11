@@ -108,7 +108,7 @@ class BploOfficeMonitor extends Component
 
         $manilaNow = now('Asia/Manila');
 
-        return view('livewire.office-admin.bplo-office-manage', [
+        return view('livewire.office-admin.general-office-live-monitor', [
             'serving' => $serving,
             'nextInline' => $nextInline,
             'recentTransactions' => $recentTransactions,

@@ -106,7 +106,6 @@ class HrmoOfficeMonitor extends Component
 
         $view = match (true) {
             $this->office->slug === 'hrmo' => 'livewire.office-admin.hrmo-office-manage',
-            in_array($this->office->slug, ['business-permits', 'bplo'], true) => 'livewire.office-admin.bplo-office-manage',
             default => 'livewire.office-admin.general-office-live-monitor',
         };
 
