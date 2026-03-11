@@ -9,7 +9,6 @@
             <div class="gov-banner-content">
                 <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich official seal" class="gov-seal">
                 <div class="gov-banner-copy">
-                    <p class="gov-republic-label">Republic of the Philippines</p>
                     <h1 id="admin-login-title" class="gov-font-heading gov-municipality-title">Municipality of Manolo Fortich</h1>
                     <p class="gov-system-name">LGU Queue Management System</p>
                 </div>
@@ -151,7 +150,7 @@
             position: relative;
             padding: 1.5rem 1.5rem 1.1rem;
             background:
-                linear-gradient(120deg, #f77b00, #1d3883),
+                linear-gradient(120deg, #1d3883, #8b9cca),
                 linear-gradient(45deg, rgb(255 255 255 / 0.07), transparent 50%);
             color: #fff;
         }
@@ -382,7 +381,7 @@
             min-height: 3rem;
             border: 0;
             border-radius: 0.9rem;
-            background: linear-gradient(180deg, #147a57 0%, #0d694a 100%);
+            background: linear-gradient(180deg, #d6a050 0%, #cf8701 100%);
             color: #fff;
             font-size: 0.95rem;
             font-weight: 600;

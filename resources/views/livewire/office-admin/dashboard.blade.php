@@ -44,6 +44,7 @@
                         @endif
 
                         @if($hrmoTab === 'reports' && $summary)
+<<<<<<< HEAD
                             <div class="space-y-6">
                                 <section class="lgu-card p-6" aria-labelledby="summary-heading">
                                     <h2 id="summary-heading" class="lgu-section-title mb-4">
@@ -333,129 +334,13 @@
                                     </div>
                                 @endif
                             </div>
+=======
+                            @include('livewire.office-admin.partials.reports-dashboard-panel')
+>>>>>>> d398d9293b8321be14f0b82fc8d6fffc844ca04d
                         @endif
 
                         @if($hrmoTab === 'queue-reports')
-                            <div class="space-y-6">
-                                <section id="queue-reports-printable" class="lgu-card p-6" aria-labelledby="queue-reports-heading">
-                                    <div class="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <h2 id="queue-reports-heading" class="lgu-section-title inline-flex items-center gap-2">
-                                                <svg class="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 20h16" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16v-5" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V8" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16v-9" />
-                                                </svg>
-                                                Queue Reports
-                                            </h2>
-                                            <p class="mt-1 text-xs text-slate-500">Scope: {{ $queueReportScopeLabel }}</p>
-                                        </div>
-                                        @php($queueReportsPdfUrl = auth()->user()?->isSuperAdmin() ? route('super-admin.queue-reports.pdf') : route('office.queue-reports.pdf', $office->slug))
-                                        <a href="{{ $queueReportsPdfUrl }}"
-                                           data-no-print="true"
-                                           class="lgu-btn inline-flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18h12v3H6z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 14H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
-                                            </svg>
-                                            Print PDF
-                                        </a>
-                                    </div>
-
-                                    <div class="mt-5 space-y-5">
-                                        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                            <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                                                <h3 class="text-sm font-semibold text-slate-700">Daily Queue Counts (Last 7 Days)</h3>
-                                            </div>
-                                            <div class="overflow-x-auto">
-                                                <table class="w-full text-sm">
-                                                    <thead>
-                                                        <tr class="text-left text-slate-500">
-                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Date</th>
-                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Total Tickets</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse($queueReportDailyCounts as $row)
-                                                            <tr class="border-b border-slate-100 last:border-b-0">
-                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['date'] }}</td>
-                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['total_tickets'] }}</td>
-                                                            </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td colspan="2" class="px-4 py-4 text-center text-slate-500">No queue activity in the last 7 days.</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </section>
-
-                                        <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                            <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                                                <h3 class="text-sm font-semibold text-slate-700">Weekly Queue Counts (Last 5 Weeks)</h3>
-                                            </div>
-                                            <div class="overflow-x-auto">
-                                                <table class="w-full text-sm">
-                                                    <thead>
-                                                        <tr class="text-left text-slate-500">
-                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Week #</th>
-                                                            <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Total Tickets</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse($queueReportWeeklyCounts as $row)
-                                                            <tr class="border-b border-slate-100 last:border-b-0">
-                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['week'] }}</td>
-                                                                <td class="px-4 py-2.5 text-center font-semibold text-slate-700">{{ $row['total_tickets'] }}</td>
-                                                            </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td colspan="2" class="px-4 py-4 text-center text-slate-500">No queue activity in the last 5 weeks.</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </section>
-
-                                        <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                                            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                                                    <h3 class="text-sm font-semibold text-slate-700">Status Summary</h3>
-                                                </div>
-                                                <div class="overflow-x-auto">
-                                                    <table class="w-full text-sm">
-                                                        <thead>
-                                                            <tr class="text-slate-500">
-                                                                <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Served</th>
-                                                                <th class="border-b border-slate-200 px-4 py-3 font-semibold text-center">Skipped</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            <tr>
-                                                                <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ $queueReportStatusSummary['served'] }}</td>
-                                                                <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ $queueReportStatusSummary['skipped'] }}</td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </section>
-
-                                            <section class="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                                                <div class="border-b border-slate-200 bg-slate-50 px-4 py-3">
-                                                    <h3 class="text-sm font-semibold text-slate-700">Average Processing Time</h3>
-                                                </div>
-                                                <div class="flex h-[94px] items-center justify-center px-4">
-                                                    <p class="text-2xl font-bold text-slate-700">{{ $queueReportAverageProcessingTime }}</p>
-                                                </div>
-                                            </section>
-                                        </div>
-                                    </div>
-                                </section>
-                            </div>
+                            @include('livewire.office-admin.partials.queue-reports-dashboard-panel')
                         @endif
 
                         @if($hrmoTab === 'queue-management')

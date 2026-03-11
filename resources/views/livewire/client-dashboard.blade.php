@@ -6,7 +6,7 @@
                 <div class="flex items-center gap-3 min-w-0">
                     <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich logo" class="queue-header-logo">
                     <div class="min-w-0">
-                        <p class="queue-header-kicker">Republic of the Philippines</p>
+                  
                         <h1 class="queue-header-title">Municipality Queue Services</h1>
                         <p class="queue-header-subtitle">Municipality of Manolo Fortich - Citizen Service Portal</p>
                     </div>
