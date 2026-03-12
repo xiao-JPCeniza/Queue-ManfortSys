@@ -390,11 +390,19 @@
         @endphp
         <nav class="lgu-topbar text-white" role="navigation" aria-label="Main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<<<<<<< HEAD
                 <div class="lgu-topbar-shell">
                     <div class="lgu-topbar-start">
                         @if($showAdminSidebarMenu)
                             <details class="lgu-topbar-menu">
                                 <summary class="lgu-topbar-trigger list-none cursor-pointer [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
+=======
+                <div class="flex flex-col gap-3 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+                    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+                        @if($showAdminSidebarMenu)
+                            <details class="relative order-3 w-full sm:order-1 sm:w-auto">
+                                <summary class="lgu-btn w-full justify-center list-none cursor-pointer px-3 py-2 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto sm:justify-start [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                     <span class="inline-flex items-center gap-2">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -402,8 +410,13 @@
                                         Menu
                                     </span>
                                 </summary>
+<<<<<<< HEAD
                                 <div class="lgu-topbar-panel lgu-topbar-menu-panel">
                                     <div class="lgu-topbar-panel-label">
+=======
+                                <div class="mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:absolute sm:left-0 sm:z-30 sm:w-60">
+                                    <div class="border-b border-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                         {{ $sidebarMenuLabel }}
                                     </div>
                                     <nav class="py-1 text-sm" aria-label="Office Queue Navigation">
@@ -417,6 +430,7 @@
                                 </div>
                             </details>
                         @endif
+<<<<<<< HEAD
 
                         <div class="lgu-brand-lockup">
                             <p class="lgu-brand-kicker">Municipal Service Console</p>
@@ -462,14 +476,43 @@
                                             <span class="lgu-identity-avatar h-8 w-8 text-[0.72rem]">{{ $authUser->initials }}</span>
                                         @endif
                                         <span>Account</span>
+=======
+                        <a href="{{ url('/') }}" class="order-1 min-w-0 flex-1 truncate rounded px-1 text-lg font-bold text-white hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:order-2 sm:flex-none sm:text-xl">LGU Queue System</a>
+                        @auth
+                            <span class="order-2 min-w-0 truncate py-1 text-sm text-blue-200 sm:order-3 sm:py-2">{{ auth()->user()->name }} <span class="text-blue-300">({{ auth()->user()->role?->name }})</span></span>
+                        @endauth
+                    </div>
+                    <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                        @auth
+                            @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
+                                @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
+                                <a href="{{ $mainDashboardRoute }}" class="lgu-btn w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto">Dashboard</a>
+                            @endif
+                            @if($showDashboardShortcut)
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
+                                   class="lgu-btn w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'bg-blue-700' : 'hover:bg-blue-700' }}">
+                                    Dashboard
+                                </a>
+                            @endif
+                            <details class="relative w-full sm:w-auto">
+                                <summary class="lgu-btn w-full justify-center list-none cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto [&::-webkit-details-marker]:hidden" aria-label="Open account menu">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        Account
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                                         </svg>
                                     </span>
                                 </summary>
+<<<<<<< HEAD
                                 <div class="lgu-topbar-panel lgu-topbar-account-panel">
                                     @php($accountUser = $authUser)
                                     <div class="lgu-topbar-panel-account">
+=======
+                                <div class="mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:absolute sm:right-0 sm:z-30 sm:w-44">
+                                    @php($accountUser = auth()->user())
+                                    <div class="border-b border-slate-100 px-4 py-2.5">
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                         <div class="flex items-center gap-2">
                                             @if($accountUser->profile_photo_url)
                                                 <img src="{{ $accountUser->profile_photo_url }}"
@@ -494,7 +537,11 @@
                                 </div>
                             </details>
                         @else
+<<<<<<< HEAD
                             <a href="{{ route('login') }}" class="lgu-topbar-login">Log in</a>
+=======
+                            <a href="{{ route('login') }}" class="lgu-btn w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto">Log in</a>
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                         @endauth
                     </div>
                 </div>

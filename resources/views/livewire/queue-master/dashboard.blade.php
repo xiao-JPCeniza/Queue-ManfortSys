@@ -21,6 +21,7 @@
                     <img src="{{ asset('images/lgu-logo.png') }}" alt="" class="gov-admin-seal">
                 </div>
 
+<<<<<<< HEAD
                 <div>
                     <p class="gov-admin-kicker">Municipal Queue Oversight</p>
                     <h1 id="dashboard-heading" class="gov-font-heading gov-admin-title">
@@ -98,6 +99,22 @@
                             <div class="gov-office-actions">
                                 <a href="{{ route('queue-master.office', $office->slug) }}"
                                    class="lgu-btn gov-office-action gov-office-action-primary">
+=======
+    <section class="mb-8" aria-labelledby="offices-heading">
+        <h2 id="offices-heading" class="lgu-section-title mb-4">Offices</h2>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            @foreach($offices as $office)
+                @php($officeDisplayName = $superAdminOfficeNames[$office->slug] ?? $office->name)
+                @php($manageRoute = auth()->user()?->isSuperAdmin() ? route('office.dashboard', $office->slug) : route('queue-master.office', $office->slug))
+                <article class="lgu-card p-5 transition hover:shadow-md">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <h3 class="text-lg font-semibold text-slate-800">{{ $officeDisplayName }}</h3>
+
+                            <div class="flex shrink-0 flex-wrap gap-2">
+                                <a href="{{ $manageRoute }}"
+                                   class="lgu-btn rounded-lg bg-blue-800 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                     Manage
                                 </a>
                                 <button wire:click="resetNumbering({{ $office->id }})"
@@ -108,10 +125,21 @@
                             </div>
                         </div>
 
+<<<<<<< HEAD
                         <div class="gov-office-panel-grid">
                             <section class="gov-queue-panel gov-queue-panel-serving" aria-label="Now serving">
                                 <p class="gov-queue-panel-label">Serving Now</p>
                                 <p class="gov-queue-panel-value">
+=======
+                        <p class="mt-0.5 text-sm text-slate-500">
+                            {{ auth()->user()?->isSuperAdmin() ? 'Queue Status' : $office->prefix . ' | Next #' . $office->next_number }}
+                        </p>
+
+                        <div class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+                            <section class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Serving</p>
+                                <p class="mt-1 text-xl font-bold leading-none text-emerald-700">
+>>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                     {{ $office->serving_ticket ?: 'No active ticket' }}
                                 </p>
                                 <p class="gov-queue-panel-note">Current transaction being handled at the office counter.</p>
