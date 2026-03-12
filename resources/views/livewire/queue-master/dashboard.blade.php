@@ -18,13 +18,14 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             @foreach($offices as $office)
                 @php($officeDisplayName = $superAdminOfficeNames[$office->slug] ?? $office->name)
+                @php($manageRoute = auth()->user()?->isSuperAdmin() ? route('office.dashboard', $office->slug) : route('queue-master.office', $office->slug))
                 <article class="lgu-card p-5 transition hover:shadow-md">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <h3 class="text-lg font-semibold text-slate-800">{{ $officeDisplayName }}</h3>
 
                             <div class="flex shrink-0 flex-wrap gap-2">
-                                <a href="{{ route('queue-master.office', $office->slug) }}"
+                                <a href="{{ $manageRoute }}"
                                    class="lgu-btn rounded-lg bg-blue-800 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                     Manage
                                 </a>
@@ -36,7 +37,9 @@
                             </div>
                         </div>
 
-                        <p class="mt-0.5 text-sm text-slate-500">{{ $office->prefix }} | Next #{{ $office->next_number }}</p>
+                        <p class="mt-0.5 text-sm text-slate-500">
+                            {{ auth()->user()?->isSuperAdmin() ? 'Queue Status' : $office->prefix . ' | Next #' . $office->next_number }}
+                        </p>
 
                         <div class="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
                             <section class="rounded-xl border border-emerald-100 bg-emerald-50/70 px-4 py-3">

@@ -324,7 +324,14 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center;
+            box-sizing: border-box;
             display: block;
+        }
+
+        .gov-slide img.gov-slide-image--contain {
+            object-fit: contain;
+            padding: clamp(0.75rem, 2vw, 1.5rem);
         }
 
         .gov-slider-dots {
@@ -469,12 +476,22 @@
     @php
         $municipalBgPath = public_path('images/municipal-building.jpg');
         $municipalBgAsset = file_exists($municipalBgPath) ? asset('images/municipal-building.jpg') : null;
-        $slideAssets = collect(['slide1', 'slide2', 'slide3'])
-            ->map(function (string $name) {
+        $slideAssets = collect([
+            ['name' => 'slide1', 'alt' => 'Municipality of Manolo Fortich commemorative feature slide'],
+            ['name' => 'slide2', 'alt' => 'Municipality of Manolo Fortich public service feature slide'],
+            ['name' => 'slide3', 'alt' => 'Municipality of Manolo Fortich local government feature slide'],
+            ['name' => 'MTO', 'alt' => 'Municipal Treasurer\'s Office service information slide', 'fit' => 'contain'],
+            ['name' => 'MSWDO', 'alt' => 'Municipal Social Welfare and Development Office service information slide', 'fit' => 'contain'],
+        ])
+            ->map(function (array $slide) {
                 foreach (['png', 'jpg', 'jpeg', 'webp'] as $extension) {
-                    $path = public_path("images/{$name}.{$extension}");
+                    $path = public_path("images/{$slide['name']}.{$extension}");
                     if (file_exists($path)) {
-                        return asset("images/{$name}.{$extension}");
+                        return [
+                            'src' => asset("images/{$slide['name']}.{$extension}"),
+                            'alt' => $slide['alt'],
+                            'fit' => $slide['fit'] ?? 'cover',
+                        ];
                     }
                 }
 
@@ -566,7 +583,11 @@
                                 <div class="gov-slider-track">
                                     @foreach($slideAssets as $slideAsset)
                                         <figure class="gov-slide {{ $loop->first ? 'is-active' : '' }}" data-gov-slide>
-                                            <img src="{{ $slideAsset }}" alt="Municipality of Manolo Fortich feature slide {{ $loop->iteration }}">
+                                            <img
+                                                src="{{ $slideAsset['src'] }}"
+                                                alt="{{ $slideAsset['alt'] }}"
+                                                class="{{ $slideAsset['fit'] === 'contain' ? 'gov-slide-image--contain' : '' }}"
+                                            >
                                         </figure>
                                     @endforeach
                                 </div>
