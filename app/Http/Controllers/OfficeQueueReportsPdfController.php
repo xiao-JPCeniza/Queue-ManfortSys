@@ -92,28 +92,6 @@ class OfficeQueueReportsPdfController extends Controller
             ->where('status', QueueEntry::STATUS_NOT_SERVED)
             ->count();
 
-        $processedEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
-            ->where('status', QueueEntry::STATUS_COMPLETED)
-            ->whereNotNull('called_at')
-            ->whereNotNull('served_at')
-            ->get(['called_at', 'served_at']);
-
-        $processedCount = $processedEntries->count();
-        $averageSeconds = 0;
-
-        if ($processedCount > 0) {
-            $totalSeconds = $processedEntries->sum(function (QueueEntry $entry) {
-                return max(0, $entry->called_at->diffInSeconds($entry->served_at));
-            });
-
-            $averageSeconds = (int) round($totalSeconds / $processedCount);
-        }
-
-        $hours = intdiv($averageSeconds, 3600);
-        $minutes = intdiv($averageSeconds % 3600, 60);
-        $seconds = $averageSeconds % 60;
-        $averageProcessingTime = sprintf('%02dh %02dm %02ds', $hours, $minutes, $seconds);
-
         $filename = sprintf(
             'queue-reports-%s-%s.pdf',
             $request->user()?->isSuperAdmin() ? 'municipality-services' : $officeModel->slug,
@@ -128,7 +106,6 @@ class OfficeQueueReportsPdfController extends Controller
             'weeklyCounts' => $weeklyCounts,
             'servedCount' => $servedCount,
             'skippedCount' => $skippedCount,
-            'averageProcessingTime' => $averageProcessingTime,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download($filename);

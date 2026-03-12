@@ -15,6 +15,300 @@
             font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
             letter-spacing: -0.015em;
         }
+        .lgu-topbar {
+            position: relative;
+            overflow: visible;
+            z-index: 40;
+            background:
+                radial-gradient(circle at top left, rgb(96 165 250 / 0.18), transparent 30%),
+                linear-gradient(180deg, #102d68 0%, #12367c 100%);
+            border-bottom: 1px solid rgb(148 163 184 / 0.16);
+        }
+        .lgu-topbar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(90deg, transparent 0%, rgb(255 255 255 / 0.08) 50%, transparent 100%);
+            opacity: 0.55;
+            pointer-events: none;
+        }
+        .lgu-topbar-shell {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 5.25rem;
+            margin: 0;
+            padding: 1rem 0;
+            overflow: visible;
+        }
+        .lgu-topbar-shell::after {
+            content: '';
+            position: absolute;
+            inset: auto 0 0.35rem;
+            height: 0.2rem;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #f8fafc 0%, #93c5fd 38%, #fbbf24 100%);
+            opacity: 0.95;
+            pointer-events: none;
+        }
+        .lgu-topbar-start,
+        .lgu-topbar-end {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            min-width: 0;
+        }
+        .lgu-topbar-start {
+            flex: 1 1 auto;
+            flex-wrap: wrap;
+        }
+        .lgu-topbar-end {
+            flex: 0 0 auto;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .lgu-topbar-trigger,
+        .lgu-topbar-link,
+        .lgu-topbar-account-trigger,
+        .lgu-topbar-login {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            min-height: 2.9rem;
+            padding: 0.7rem 1rem;
+            border-radius: 999px;
+            border: 1px solid rgb(255 255 255 / 0.16);
+            background: rgb(9 25 59 / 0.18);
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1;
+            transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+        }
+        .lgu-topbar-trigger:hover,
+        .lgu-topbar-link:hover,
+        .lgu-topbar-account-trigger:hover,
+        .lgu-topbar-login:hover {
+            transform: translateY(-1px);
+            background: rgb(255 255 255 / 0.16);
+            border-color: rgb(255 255 255 / 0.24);
+        }
+        .lgu-topbar-trigger:focus,
+        .lgu-topbar-link:focus,
+        .lgu-topbar-account-trigger:focus,
+        .lgu-topbar-login:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgb(255 255 255 / 0.18), 0 0 0 6px rgb(147 197 253 / 0.28);
+        }
+        .lgu-topbar-link-active {
+            background: #f8fafc;
+            border-color: rgb(255 255 255 / 0.3);
+            color: #163574;
+            box-shadow: 0 12px 24px -22px rgb(15 23 42 / 0.75);
+        }
+        .lgu-topbar-link-active:hover {
+            background: #ffffff;
+            color: #163574;
+        }
+        .lgu-topbar-menu {
+            position: relative;
+        }
+        .lgu-topbar-menu[open] > summary,
+        .lgu-topbar-account[open] > summary {
+            background: rgb(255 255 255 / 0.16);
+            border-color: rgb(255 255 255 / 0.24);
+        }
+        .lgu-brand-lockup {
+            min-width: 0;
+            display: grid;
+            gap: 0.18rem;
+        }
+        .lgu-brand-kicker {
+            margin: 0;
+            color: rgb(219 234 254 / 0.78);
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .lgu-brand-title {
+            color: #fff;
+            font-size: clamp(1.35rem, 2vw, 1.9rem);
+            font-weight: 800;
+            line-height: 1;
+        }
+        .lgu-brand-title:hover {
+            color: #fff;
+        }
+        .lgu-brand-subtitle {
+            margin: 0;
+            color: rgb(191 219 254 / 0.88);
+            font-size: 0.9rem;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        .lgu-identity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            max-width: 100%;
+            padding: 0.55rem 0.85rem;
+            border-radius: 999px;
+            border: 1px solid rgb(255 255 255 / 0.14);
+            background: rgb(255 255 255 / 0.1);
+            color: #fff;
+        }
+        .lgu-identity-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.1rem;
+            height: 2.1rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgb(255 255 255 / 0.26), rgb(255 255 255 / 0.08));
+            border: 1px solid rgb(255 255 255 / 0.18);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .lgu-identity-copy {
+            min-width: 0;
+            display: grid;
+            gap: 0.1rem;
+        }
+        .lgu-identity-name,
+        .lgu-identity-role {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .lgu-identity-name {
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        .lgu-identity-role {
+            color: rgb(191 219 254 / 0.82);
+            font-size: 0.74rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .lgu-topbar-panel {
+            position: absolute;
+            z-index: 30;
+            margin-top: 0.7rem;
+            overflow: hidden;
+            border-radius: 1rem;
+            border: 1px solid rgb(226 232 240);
+            background: rgb(255 255 255 / 0.98);
+            box-shadow: 0 24px 44px -28px rgb(15 23 42 / 0.35);
+            backdrop-filter: blur(12px);
+        }
+        .lgu-topbar-panel-label {
+            border-bottom: 1px solid rgb(241 245 249);
+            padding: 0.75rem 1rem;
+            color: rgb(100 116 139);
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .lgu-topbar-menu-panel {
+            left: 0;
+            width: 17rem;
+        }
+        .lgu-topbar-account-panel {
+            right: 0;
+            width: 16rem;
+        }
+        .lgu-topbar-panel-link,
+        .lgu-topbar-panel-button {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.82rem 1rem;
+            color: rgb(51 65 85);
+            font-size: 0.92rem;
+            font-weight: 600;
+            text-align: left;
+            transition: background-color 140ms ease, color 140ms ease;
+        }
+        .lgu-topbar-panel-link:hover,
+        .lgu-topbar-panel-button:hover {
+            background: rgb(248 250 252);
+        }
+        .lgu-topbar-panel-link-active {
+            background: rgb(239 246 255);
+            color: rgb(30 64 175);
+        }
+        .lgu-topbar-panel-account {
+            border-bottom: 1px solid rgb(241 245 249);
+            padding: 0.85rem 1rem;
+        }
+        .lgu-topbar-panel-account-copy {
+            min-width: 0;
+        }
+        .lgu-topbar-panel-account-meta {
+            margin: 0;
+            color: rgb(100 116 139);
+            font-size: 0.72rem;
+        }
+        .lgu-topbar-panel-account-name {
+            margin: 0.15rem 0 0;
+            color: rgb(30 41 59);
+            font-size: 0.94rem;
+            font-weight: 700;
+        }
+        @media (max-width: 1024px) {
+            .lgu-topbar-shell {
+                align-items: flex-start;
+                padding-bottom: 1.15rem;
+            }
+            .lgu-topbar-end {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+        @media (max-width: 720px) {
+            .lgu-topbar-shell {
+                padding: 0.85rem 0;
+            }
+            .lgu-brand-kicker,
+            .lgu-brand-subtitle {
+                display: none;
+            }
+            .lgu-identity-badge {
+                max-width: 100%;
+            }
+            .lgu-topbar-end {
+                gap: 0.65rem;
+            }
+            .lgu-topbar-panel {
+                width: min(18rem, calc(100vw - 2.5rem));
+            }
+        }
+        @media (max-width: 560px) {
+            .lgu-topbar-trigger,
+            .lgu-topbar-link,
+            .lgu-topbar-account-trigger,
+            .lgu-topbar-login {
+                padding-inline: 0.9rem;
+            }
+            .lgu-identity-badge {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen">
@@ -94,13 +388,13 @@
 
             $showAdminSidebarMenu = ! empty($sidebarMenuItems);
         @endphp
-        <nav class="bg-blue-800 text-white shadow-md" role="navigation" aria-label="Main">
+        <nav class="lgu-topbar text-white" role="navigation" aria-label="Main">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16 items-center">
-                    <div class="flex items-center gap-3 flex-wrap">
+                <div class="lgu-topbar-shell">
+                    <div class="lgu-topbar-start">
                         @if($showAdminSidebarMenu)
-                            <details class="relative">
-                                <summary class="lgu-btn list-none cursor-pointer px-3 py-2 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
+                            <details class="lgu-topbar-menu">
+                                <summary class="lgu-topbar-trigger list-none cursor-pointer [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
                                     <span class="inline-flex items-center gap-2">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -108,14 +402,14 @@
                                         Menu
                                     </span>
                                 </summary>
-                                <div class="absolute left-0 z-30 mt-2 w-60 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-                                    <div class="border-b border-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <div class="lgu-topbar-panel lgu-topbar-menu-panel">
+                                    <div class="lgu-topbar-panel-label">
                                         {{ $sidebarMenuLabel }}
                                     </div>
                                     <nav class="py-1 text-sm" aria-label="Office Queue Navigation">
                                         @foreach($sidebarMenuItems as $menuItem)
                                             <a href="{{ $menuItem['href'] }}"
-                                               class="flex items-center gap-2 px-4 py-2.5 {{ $menuItem['active'] ? 'bg-blue-50 text-blue-800 font-semibold' : 'text-slate-700 hover:bg-slate-50' }}">
+                                               class="lgu-topbar-panel-link {{ $menuItem['active'] ? 'lgu-topbar-panel-link-active' : '' }}">
                                                 {{ $menuItem['label'] }}
                                             </a>
                                         @endforeach
@@ -123,35 +417,59 @@
                                 </div>
                             </details>
                         @endif
-                        <a href="{{ url('/') }}" class="text-xl font-bold text-white hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">LGU Queue System</a>
+
+                        <div class="lgu-brand-lockup">
+                            <p class="lgu-brand-kicker">Municipal Service Console</p>
+                            <a href="{{ url('/') }}" class="lgu-brand-title focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">
+                                LGU Queue System
+                            </a>
+                            @auth
+                                <p class="lgu-brand-subtitle">Operations dashboard for queue monitoring and office coordination.</p>
+                            @endauth
+                        </div>
+
                         @auth
-                            <span class="text-blue-200 text-sm py-2">{{ auth()->user()->name }} <span class="text-blue-300">({{ auth()->user()->role?->name }})</span></span>
+                            <div class="lgu-identity-badge" title="{{ $authUser->name }}">
+                                <span class="lgu-identity-avatar">{{ $authUser->initials }}</span>
+                                <span class="lgu-identity-copy">
+                                    <span class="lgu-identity-name">{{ $authUser->name }}</span>
+                                    <span class="lgu-identity-role">{{ $authUser->role?->name ?? 'User' }}</span>
+                                </span>
+                            </div>
                         @endauth
                     </div>
-                    <div class="flex items-center gap-2">
+
+                    <div class="lgu-topbar-end">
                         @auth
                             @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
                                 @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
-                                <a href="{{ $mainDashboardRoute }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Dashboard</a>
+                                <a href="{{ $mainDashboardRoute }}" class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
                             @endif
                             @if($showDashboardShortcut)
                                 <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
-                                   class="lgu-btn px-4 py-2.5 rounded-lg {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'bg-blue-700' : 'hover:bg-blue-700' }} text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'lgu-topbar-link-active' : '' }}">
                                     Dashboard
                                 </a>
                             @endif
-                            <details class="relative">
-                                <summary class="lgu-btn list-none cursor-pointer px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 [&::-webkit-details-marker]:hidden" aria-label="Open account menu">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        Account
+                            <details class="relative lgu-topbar-account">
+                                <summary class="lgu-topbar-account-trigger list-none cursor-pointer [&::-webkit-details-marker]:hidden" aria-label="Open account menu">
+                                    <span class="inline-flex items-center gap-2">
+                                        @if($authUser->profile_photo_url)
+                                            <img src="{{ $authUser->profile_photo_url }}"
+                                                 alt="{{ $authUser->name }} profile photo"
+                                                 class="h-8 w-8 rounded-full border border-white/20 object-cover">
+                                        @else
+                                            <span class="lgu-identity-avatar h-8 w-8 text-[0.72rem]">{{ $authUser->initials }}</span>
+                                        @endif
+                                        <span>Account</span>
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                                         </svg>
                                     </span>
                                 </summary>
-                                <div class="absolute right-0 z-30 mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-                                    @php($accountUser = auth()->user())
-                                    <div class="border-b border-slate-100 px-4 py-2.5">
+                                <div class="lgu-topbar-panel lgu-topbar-account-panel">
+                                    @php($accountUser = $authUser)
+                                    <div class="lgu-topbar-panel-account">
                                         <div class="flex items-center gap-2">
                                             @if($accountUser->profile_photo_url)
                                                 <img src="{{ $accountUser->profile_photo_url }}"
@@ -162,21 +480,21 @@
                                                     {{ $accountUser->initials }}
                                                 </span>
                                             @endif
-                                            <div class="min-w-0">
-                                                <p class="text-[11px] text-slate-500">Signed in as</p>
-                                                <p class="truncate text-sm font-medium text-slate-700">{{ $accountUser->name }}</p>
+                                            <div class="lgu-topbar-panel-account-copy">
+                                                <p class="lgu-topbar-panel-account-meta">Signed in as</p>
+                                                <p class="lgu-topbar-panel-account-name">{{ $accountUser->name }}</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <a href="{{ route('profile') }}" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Profile</a>
+                                    <a href="{{ route('profile') }}" class="lgu-topbar-panel-link">Profile</a>
                                     <form action="{{ route('logout') }}" method="POST">
                                         @csrf
-                                        <button type="submit" class="w-full px-4 py-2.5 text-left text-sm font-medium text-slate-700 hover:bg-slate-50">Logout</button>
+                                        <button type="submit" class="lgu-topbar-panel-button">Logout</button>
                                     </form>
                                 </div>
                             </details>
                         @else
-                            <a href="{{ route('login') }}" class="lgu-btn px-4 py-2.5 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">Log in</a>
+                            <a href="{{ route('login') }}" class="lgu-topbar-login">Log in</a>
                         @endauth
                     </div>
                 </div>

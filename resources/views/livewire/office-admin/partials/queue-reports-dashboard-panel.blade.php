@@ -34,16 +34,15 @@
                 <span class="gov-queue-report-chip gov-queue-report-chip-strong">Official Record</span>
                 <span class="gov-queue-report-chip">Scope: {{ $queueReportScopeLabel }}</span>
                 <span class="gov-queue-report-chip gov-queue-report-chip-accent">{{ $manilaNow->format('F j, Y') }}</span>
+                <a href="{{ $queueReportsPdfUrl }}" data-no-print="true" class="gov-queue-report-btn">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18h12v3H6z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 14H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
+                    </svg>
+                    Print PDF
+                </a>
             </div>
-
-            <a href="{{ $queueReportsPdfUrl }}" data-no-print="true" class="gov-queue-report-btn">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18h12v3H6z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 14H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
-                </svg>
-                Print PDF
-            </a>
         </div>
     </section>
 
@@ -75,11 +74,6 @@
                 <p class="gov-queue-report-stat-note">{{ number_format($servedShare, 1) }}% of processed tickets were completed.</p>
             </article>
 
-            <article class="gov-queue-report-stat gov-queue-report-stat-gold">
-                <p class="gov-queue-report-stat-label">Avg. Processing Time</p>
-                <p class="gov-queue-report-stat-value gov-queue-report-stat-value-tight">{{ $queueReportAverageProcessingTime }}</p>
-                <p class="gov-queue-report-stat-note">Average handling time per completed queue transaction.</p>
-            </article>
         </div>
     </section>
 
@@ -189,56 +183,38 @@
         </section>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section class="gov-queue-report-card p-6" aria-labelledby="status-summary-heading">
-            <div class="gov-queue-report-head">
-                <div>
-                    <p class="gov-queue-report-card-kicker">Completion Ledger</p>
-                    <h3 id="status-summary-heading" class="gov-font-heading gov-queue-report-card-title">Status Summary</h3>
-                </div>
-                <p class="gov-queue-report-card-meta">{{ number_format($serviceOutcomeTotal) }} processed ticket(s) recorded in this scope.</p>
+    <section class="gov-queue-report-card p-6" aria-labelledby="status-summary-heading">
+        <div class="gov-queue-report-head">
+            <div>
+                <p class="gov-queue-report-card-kicker">Completion Ledger</p>
+                <h3 id="status-summary-heading" class="gov-font-heading gov-queue-report-card-title">Status Summary</h3>
             </div>
+            <p class="gov-queue-report-card-meta">{{ number_format($serviceOutcomeTotal) }} processed ticket(s) recorded in this scope.</p>
+        </div>
 
-            <div class="gov-queue-report-status-grid mt-5">
-                <article class="gov-queue-report-status-stat gov-queue-report-status-stat-served">
-                    <p class="gov-queue-report-status-label">Served</p>
-                    <p class="gov-queue-report-status-value">{{ number_format($servedTotal) }}</p>
-                    <p class="gov-queue-report-status-note">{{ number_format($servedShare, 1) }}% completion share</p>
-                </article>
+        <div class="gov-queue-report-status-grid mt-5">
+            <article class="gov-queue-report-status-stat gov-queue-report-status-stat-served">
+                <p class="gov-queue-report-status-label">Served</p>
+                <p class="gov-queue-report-status-value">{{ number_format($servedTotal) }}</p>
+                <p class="gov-queue-report-status-note">{{ number_format($servedShare, 1) }}% completion share</p>
+            </article>
 
-                <article class="gov-queue-report-status-stat gov-queue-report-status-stat-skipped">
-                    <p class="gov-queue-report-status-label">Skipped</p>
-                    <p class="gov-queue-report-status-value">{{ number_format($skippedTotal) }}</p>
-                    <p class="gov-queue-report-status-note">{{ number_format($skippedShare, 1) }}% non-service share</p>
-                </article>
-            </div>
+            <article class="gov-queue-report-status-stat gov-queue-report-status-stat-skipped">
+                <p class="gov-queue-report-status-label">Skipped</p>
+                <p class="gov-queue-report-status-value">{{ number_format($skippedTotal) }}</p>
+                <p class="gov-queue-report-status-note">{{ number_format($skippedShare, 1) }}% non-service share</p>
+            </article>
+        </div>
 
-            <div class="gov-queue-report-status-bar mt-5" aria-hidden="true">
-                @if($serviceOutcomeTotal > 0)
-                    <span class="gov-queue-report-status-bar-served" style="width: {{ $servedShare }}%;"></span>
-                    @if($skippedTotal > 0)
-                        <span class="gov-queue-report-status-bar-skipped" style="width: {{ $skippedShare }}%;"></span>
-                    @endif
+        <div class="gov-queue-report-status-bar mt-5" aria-hidden="true">
+            @if($serviceOutcomeTotal > 0)
+                <span class="gov-queue-report-status-bar-served" style="width: {{ $servedShare }}%;"></span>
+                @if($skippedTotal > 0)
+                    <span class="gov-queue-report-status-bar-skipped" style="width: {{ $skippedShare }}%;"></span>
                 @endif
-            </div>
-        </section>
-
-        <section class="gov-queue-report-card gov-queue-report-time-card p-6" aria-labelledby="average-processing-heading">
-            <div class="gov-queue-report-head">
-                <div>
-                    <p class="gov-queue-report-card-kicker">Service Efficiency</p>
-                    <h3 id="average-processing-heading" class="gov-font-heading gov-queue-report-card-title">Average Processing Time</h3>
-                </div>
-                <p class="gov-queue-report-card-meta">Computed from completed tickets with valid call and completion timestamps.</p>
-            </div>
-
-            <div class="gov-queue-report-time-panel mt-5">
-                <p class="gov-queue-report-time-label">Current Average</p>
-                <p class="gov-queue-report-time-value">{{ $queueReportAverageProcessingTime }}</p>
-                <p class="gov-queue-report-time-note">Average elapsed handling time per completed queue transaction in the selected reporting scope.</p>
-            </div>
-        </section>
-    </div>
+            @endif
+        </div>
+    </section>
 </div>
 
 @once
@@ -348,8 +324,7 @@
         .gov-queue-report-kicker,
         .gov-queue-report-card-kicker,
         .gov-queue-report-stat-label,
-        .gov-queue-report-status-label,
-        .gov-queue-report-time-label {
+        .gov-queue-report-status-label {
             margin: 0;
             font-size: 0.72rem;
             font-weight: 800;
@@ -379,7 +354,6 @@
         .gov-queue-report-masthead-side {
             display: grid;
             justify-items: end;
-            gap: 0.85rem;
         }
 
         .gov-queue-report-chip-row {
@@ -413,7 +387,7 @@
         }
 
         .gov-queue-report-btn {
-            min-height: 2.9rem;
+            min-height: 2.75rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -421,10 +395,12 @@
             border-radius: 0.9rem;
             border: 1px solid rgb(255 255 255 / 0.22);
             background: linear-gradient(180deg, #1d4ed8 0%, #1840b3 100%);
-            padding: 0.7rem 1rem;
+            padding: 0.62rem 1rem;
             color: #fff;
             font-size: 0.9rem;
             font-weight: 700;
+            line-height: 1;
+            white-space: nowrap;
             transition: transform 160ms ease, filter 160ms ease;
         }
 
@@ -469,7 +445,6 @@
         .gov-queue-report-card-meta,
         .gov-queue-report-stat-note,
         .gov-queue-report-status-note,
-        .gov-queue-report-time-note,
         .gov-queue-report-table-sub {
             color: var(--gov-queue-report-ink-500);
         }
@@ -488,7 +463,7 @@
         }
 
         .gov-queue-report-summary-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         .gov-queue-report-status-grid {
@@ -497,7 +472,6 @@
 
         .gov-queue-report-stat,
         .gov-queue-report-status-stat,
-        .gov-queue-report-time-panel,
         .gov-queue-report-table-wrap {
             border: 1px solid #dbe5f0;
             border-radius: 1.1rem;
@@ -533,23 +507,13 @@
             border-color: rgb(173 218 202 / 0.9);
         }
 
-        .gov-queue-report-stat-gold,
-        .gov-queue-report-time-card {
-            background:
-                radial-gradient(circle at top right, rgb(246 236 209 / 0.8), transparent 42%),
-                linear-gradient(180deg, #ffffff 0%, #fffcf4 100%);
-            border-color: rgb(234 211 163 / 0.85);
-        }
-
         .gov-queue-report-stat-label,
-        .gov-queue-report-status-label,
-        .gov-queue-report-time-label {
+        .gov-queue-report-status-label {
             color: var(--gov-queue-report-ink-500);
         }
 
         .gov-queue-report-stat-value,
-        .gov-queue-report-status-value,
-        .gov-queue-report-time-value {
+        .gov-queue-report-status-value {
             margin: 0.55rem 0 0;
             font-weight: 800;
             line-height: 1;
@@ -558,11 +522,6 @@
 
         .gov-queue-report-stat-value {
             font-size: 2.15rem;
-        }
-
-        .gov-queue-report-stat-value-tight {
-            font-size: clamp(1.5rem, 2vw, 2rem);
-            line-height: 1.12;
         }
 
         .gov-queue-report-stat-note,
@@ -674,35 +633,6 @@
         .gov-queue-report-table-empty {
             text-align: center;
             color: var(--gov-queue-report-ink-500);
-        }
-
-        .gov-queue-report-time-panel {
-            min-height: 15rem;
-            display: grid;
-            align-content: center;
-            gap: 0.6rem;
-            padding: 1.4rem;
-            text-align: center;
-            background:
-                radial-gradient(circle at center, rgb(255 255 255 / 0.8), transparent 62%),
-                linear-gradient(180deg, #fffef9 0%, #fcf6e8 100%);
-        }
-
-        .gov-queue-report-time-label {
-            color: #936a1a;
-        }
-
-        .gov-queue-report-time-value {
-            font-size: clamp(2rem, 4vw, 3rem);
-            line-height: 1.08;
-        }
-
-        .gov-queue-report-time-note {
-            margin: 0 auto;
-            max-width: 25rem;
-            font-size: 0.92rem;
-            line-height: 1.7;
-            color: var(--gov-queue-report-ink-700);
         }
 
         @media (max-width: 1180px) {

@@ -62,29 +62,6 @@
             color: #64748b;
             font-style: italic;
         }
-        .row {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 12px 0;
-            table-layout: fixed;
-        }
-        .row-cell {
-            vertical-align: top;
-            width: 50%;
-        }
-        .metric-box {
-            min-height: 92px;
-            display: table;
-            width: 100%;
-        }
-        .metric-value {
-            display: table-cell;
-            vertical-align: middle;
-            text-align: center;
-            font-size: 28px;
-            font-weight: 700;
-            color: #334155;
-        }
     </style>
 </head>
 <body>
@@ -142,37 +119,23 @@
             </table>
         </section>
 
-        <table class="row">
-            <tr>
-                <td class="row-cell">
-                    <section class="block">
-                        <div class="block-title">Status Summary</div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Served</th>
-                                    <th>Skipped</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>{{ $servedCount }}</td>
-                                    <td>{{ $skippedCount }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </section>
-                </td>
-                <td class="row-cell">
-                    <section class="block">
-                        <div class="block-title">Average Processing Time</div>
-                        <div class="metric-box">
-                            <div class="metric-value">{{ $averageProcessingTime }}</div>
-                        </div>
-                    </section>
-                </td>
-            </tr>
-        </table>
+        <section class="block">
+            <div class="block-title">Status Summary</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Served</th>
+                        <th>Skipped</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ $servedCount }}</td>
+                        <td>{{ $skippedCount }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
     </main>
 </body>
 </html>

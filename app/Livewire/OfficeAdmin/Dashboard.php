@@ -335,7 +335,6 @@ class Dashboard extends Component
                 'served' => 0,
                 'skipped' => 0,
             ],
-            'queueReportAverageProcessingTime' => '00h 00m 00s',
             'queueReportScopeLabel' => $this->office->name,
             'userManagementRows' => [],
             'userManagementStatusSummary' => [
@@ -864,33 +863,10 @@ class Dashboard extends Component
                 ->count(),
         ];
 
-        $processedEntries = QueueEntry::whereIn('office_id', $queueReportOfficeIds)
-            ->where('status', QueueEntry::STATUS_COMPLETED)
-            ->whereNotNull('called_at')
-            ->whereNotNull('served_at')
-            ->get(['called_at', 'served_at']);
-
-        $processedCount = $processedEntries->count();
-        $averageSeconds = 0;
-
-        if ($processedCount > 0) {
-            $totalSeconds = $processedEntries->sum(function (QueueEntry $entry) {
-                return max(0, $entry->called_at->diffInSeconds($entry->served_at));
-            });
-
-            $averageSeconds = (int) round($totalSeconds / $processedCount);
-        }
-
         return [
             'queueReportDailyCounts' => $queueReportDailyCounts,
             'queueReportWeeklyCounts' => $queueReportWeeklyCounts,
             'queueReportStatusSummary' => $queueReportStatusSummary,
-            'queueReportAverageProcessingTime' => sprintf(
-                '%02dh %02dm %02ds',
-                intdiv($averageSeconds, 3600),
-                intdiv($averageSeconds % 3600, 60),
-                $averageSeconds % 60
-            ),
             'queueReportScopeLabel' => $queueReportScopeLabel,
         ];
     }
