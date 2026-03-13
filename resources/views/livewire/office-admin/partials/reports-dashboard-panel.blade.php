@@ -147,40 +147,6 @@
             </section>
         </div>
 
-        <section class="gov-report-card p-6" aria-labelledby="office-accommodated-summary-heading">
-            <div class="gov-report-card-head gov-report-card-head-wide">
-                <div>
-                    <p class="gov-report-card-kicker">Office Summary</p>
-                    <h2 id="office-accommodated-summary-heading" class="gov-font-heading gov-report-card-title">Accommodated Tickets by Office</h2>
-                </div>
-                <p class="gov-report-card-meta">{{ count($officeAccommodatedChartSeries) }} office records included in this summary.</p>
-            </div>
-
-            <div class="gov-report-table-wrap mt-5 overflow-x-auto">
-                <table class="gov-report-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Office</th>
-                            <th class="text-right">Accommodated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($officeAccommodatedChartSeries as $index => $row)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td class="gov-report-table-primary">{{ $row['office_name'] }}</td>
-                                <td class="gov-report-table-value text-right">{{ number_format($row['accommodated_total']) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="gov-report-table-empty">No office accommodation data found.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
     @else
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <section class="gov-report-card p-6" aria-labelledby="status-distribution-heading">
