@@ -1,7 +1,7 @@
 <div>
     <div class="mb-6">
         @php($mainDashboardRoute = auth()->user()?->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
-        <a href="{{ $mainDashboardRoute }}" class="lgu-btn inline-flex items-center gap-1 text-blue-800 font-medium text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1">
+        <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-btn inline-flex items-center gap-1 text-blue-800 font-medium text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1">
             &larr; Dashboard
         </a>
         <h1 class="lgu-page-title mt-1">{{ $office->name }}</h1>
@@ -37,19 +37,19 @@
             <h2 id="queue-heading" class="lgu-section-title mb-4">Office queue</h2>
             <p class="text-sm text-slate-600 mb-4">Manage this office's queue or open as Office Admin view.</p>
             <div class="flex flex-wrap gap-3">
-                <a href="{{ route('office.dashboard', $office->slug) }}" class="lgu-btn inline-flex px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+                <a href="{{ route('office.dashboard', $office->slug) }}" wire:navigate class="lgu-btn inline-flex px-5 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
                     Open office queue dashboard
                 </a>
                 @if($office->slug === 'hrmo')
-                    <a href="{{ route('office.hrmo.monitor', $office->slug) }}" class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <a href="{{ route('office.hrmo.monitor', $office->slug) }}" wire:navigate class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                         Open HRMO live monitor
                     </a>
                 @elseif(in_array($office->slug, ['business-permits', 'bplo'], true))
-                    <a href="{{ route('office.bplo.monitor', $office->slug) }}" class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <a href="{{ route('office.bplo.monitor', $office->slug) }}" wire:navigate class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                         Open BPLO live monitor
                     </a>
                 @else
-                    <a href="{{ route('office.hrmo.monitor', $office->slug) }}" class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <a href="{{ route('office.hrmo.monitor', $office->slug) }}" wire:navigate class="lgu-btn inline-flex px-5 py-2.5 bg-blue-700 text-white rounded-xl hover:bg-blue-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                         Open live monitor
                     </a>
                 @endif

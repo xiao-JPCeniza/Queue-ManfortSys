@@ -11,6 +11,10 @@ class OfficeQueueReportsPdfController extends Controller
 {
     public function __invoke(Request $request, ?string $office = null)
     {
+        if (!$request->user()?->isSuperAdmin()) {
+            abort(403, 'Queue reports PDF is only available to the super admin.');
+        }
+
         $officeSlug = $office ?? 'hrmo';
         $officeModel = $request->attributes->get('office') ?? Office::where('slug', $officeSlug)->firstOrFail();
 

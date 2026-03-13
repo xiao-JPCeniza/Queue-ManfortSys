@@ -104,10 +104,7 @@ class Dashboard extends Component
         }
 
         $requestedTab = (string) request()->query('tab', 'dashboard');
-        $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
-        if ($this->isSuperAdmin()) {
-            $allowedTabs[] = 'user-management';
-        }
+        $allowedTabs = $this->allowedHrmoTabs();
 
         if ($this->supportsAdvancedQueueDashboard() && in_array($requestedTab, $allowedTabs, true)) {
             $this->hrmoTab = $requestedTab;
@@ -120,10 +117,7 @@ class Dashboard extends Component
             return;
         }
 
-        $allowedTabs = ['dashboard', 'reports', 'queue-reports', 'queue-management'];
-        if ($this->isSuperAdmin()) {
-            $allowedTabs[] = 'user-management';
-        }
+        $allowedTabs = $this->allowedHrmoTabs();
 
         if (! in_array($tab, $allowedTabs, true)) {
             return;
@@ -375,11 +369,23 @@ class Dashboard extends Component
             $data = array_merge($data, $this->buildUserManagementData($dayStart, $dayEnd));
         }
 
-        if ($this->hrmoTab === 'queue-reports') {
+        if ($this->isSuperAdmin() && $this->hrmoTab === 'queue-reports') {
             $data = array_merge($data, $this->buildQueueReportData($manilaNow, $dbTimezone));
         }
 
         return $data;
+    }
+
+    private function allowedHrmoTabs(): array
+    {
+        $allowedTabs = ['dashboard', 'reports', 'queue-management'];
+
+        if ($this->isSuperAdmin()) {
+            $allowedTabs[] = 'queue-reports';
+            $allowedTabs[] = 'user-management';
+        }
+
+        return $allowedTabs;
     }
 
     private function buildSummary(Collection $reportOfficeIds, Collection $todayEntries): array
@@ -1001,8 +1007,6 @@ class Dashboard extends Component
             ['key' => QueueEntry::STATUS_COMPLETED, 'label' => 'Completed', 'bar_class' => 'bg-emerald-500', 'chip_class' => 'bg-emerald-500', 'hex_color' => '#10b981'],
             ['key' => QueueEntry::STATUS_SERVING, 'label' => 'Serving', 'bar_class' => 'bg-sky-500', 'chip_class' => 'bg-sky-500', 'hex_color' => '#0ea5e9'],
             ['key' => QueueEntry::STATUS_WAITING, 'label' => 'Waiting', 'bar_class' => 'bg-amber-500', 'chip_class' => 'bg-amber-500', 'hex_color' => '#f59e0b'],
-            ['key' => QueueEntry::STATUS_NOT_SERVED, 'label' => 'Not Served', 'bar_class' => 'bg-rose-500', 'chip_class' => 'bg-rose-500', 'hex_color' => '#f43f5e'],
-            ['key' => QueueEntry::STATUS_CANCELLED, 'label' => 'Cancelled', 'bar_class' => 'bg-slate-400', 'chip_class' => 'bg-slate-400', 'hex_color' => '#94a3b8'],
         ];
     }
 

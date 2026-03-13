@@ -97,7 +97,11 @@
 
                             @php($manageRoute = $isSuperAdmin ? route('office.dashboard', $office->slug) : route('queue-master.office', $office->slug))
                             <div class="gov-office-actions">
+<<<<<<< HEAD
                                 <a href="{{ $manageRoute }}"
+=======
+                                <a href="{{ $manageRoute }}" wire:navigate
+>>>>>>> 788a1f44be7887e18d5412ed8c905fed9807e530
                                    class="lgu-btn gov-office-action gov-office-action-primary">
                                     Manage
                                 </a>
