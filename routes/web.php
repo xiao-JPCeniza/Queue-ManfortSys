@@ -4,7 +4,6 @@ use App\Http\Controllers\BploOfficeController;
 use App\Http\Controllers\HrmoOfficeController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\OfficeQueueReportsPdfController;
-use App\Http\Controllers\SuperAdminQueueReportsController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
 use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
@@ -202,7 +201,6 @@ Route::post('/logout', function () {
 
             return view('office.dashboard', ['office' => $officeModel]);
         })->name('user-management');
-        Route::get('/queue-reports', SuperAdminQueueReportsController::class)->name('queue-reports');
         Route::get('/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('queue-reports.pdf');
     });
 

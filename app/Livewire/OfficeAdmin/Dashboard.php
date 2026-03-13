@@ -90,7 +90,6 @@ class Dashboard extends Component
 
         $superAdminTabByRoute = [
             'super-admin.reports' => 'reports',
-            'super-admin.queue-reports' => 'queue-reports',
             'super-admin.queue-management' => 'queue-management',
             'super-admin.user-management' => 'user-management',
         ];
@@ -359,6 +358,7 @@ class Dashboard extends Component
 
         if ($this->isSuperAdmin() && $this->hrmoTab === 'reports') {
             $data = array_merge($data, $this->buildOfficeAccommodatedData($reportOfficeIds));
+            $data = array_merge($data, $this->buildQueueReportData($manilaNow, $dbTimezone));
         }
 
         if ($this->isSuperAdmin() && $this->hrmoTab === 'queue-management') {
@@ -369,10 +369,6 @@ class Dashboard extends Component
             $data = array_merge($data, $this->buildUserManagementData($dayStart, $dayEnd));
         }
 
-        if ($this->isSuperAdmin() && $this->hrmoTab === 'queue-reports') {
-            $data = array_merge($data, $this->buildQueueReportData($manilaNow, $dbTimezone));
-        }
-
         return $data;
     }
 
@@ -381,7 +377,6 @@ class Dashboard extends Component
         $allowedTabs = ['dashboard', 'reports', 'queue-management'];
 
         if ($this->isSuperAdmin()) {
-            $allowedTabs[] = 'queue-reports';
             $allowedTabs[] = 'user-management';
         }
 

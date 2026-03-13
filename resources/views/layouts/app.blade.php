@@ -114,7 +114,7 @@
         }
         .lgu-topbar-link-active:hover {
             background: #ffffff;
-            color: #163574;
+            color: #162174;
         }
         .lgu-topbar-menu {
             position: relative;
@@ -275,6 +275,7 @@
     <a href="#main-content" class="lgu-skip-link">Skip to main content</a>
     @php
         $hideNav = trim((string) $__env->yieldContent('hide_nav')) === '1';
+        $fullWidth = trim((string) $__env->yieldContent('full_width')) === '1';
     @endphp
     @if(!$hideNav)
         @php
@@ -291,7 +292,6 @@
             $currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office');
             $activeOfficeTab = (string) request()->query('tab', 'dashboard');
             $isSuperAdminReports = request()->routeIs('super-admin.reports');
-            $isSuperAdminQueueReports = request()->routeIs('super-admin.queue-reports');
             $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
             $isSuperAdminOffices = request()->routeIs('super-admin.offices');
             $isSuperAdminUserManagement = request()->routeIs('super-admin.user-management');
@@ -304,11 +304,6 @@
                         'label' => 'Reports',
                         'href' => route('super-admin.reports'),
                         'active' => $isSuperAdminReports,
-                    ],
-                    [
-                        'label' => 'Queue Reports',
-                        'href' => route('super-admin.queue-reports'),
-                        'active' => $isSuperAdminQueueReports,
                     ],
                     [
                         'label' => 'Queue Management',
@@ -445,7 +440,7 @@
             </div>
         </nav>
     @endif
-    <main id="main-content" class="{{ $hideNav ? 'h-dvh overflow-hidden p-0' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' }}" role="main">
+    <main id="main-content" class="{{ $hideNav ? 'h-dvh overflow-hidden p-0' : ($fullWidth ? 'w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-8' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8') }}" role="main">
         @if(!$hideNav && session('success'))
             <div class="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl text-sm" role="status">{{ session('success') }}</div>
         @endif

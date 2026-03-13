@@ -4,7 +4,6 @@
             <div class="gov-monitor-brand">
                 <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich official seal" class="gov-monitor-seal">
                 <div class="gov-monitor-brand-copy">
-                    <p class="gov-monitor-kicker">Republic of the Philippines</p>
                     <h1 class="gov-font-heading gov-monitor-title">Live Queue Monitor</h1>
                     <p class="gov-monitor-subtitle">{{ $office->name }} Office | Municipality of Manolo Fortich</p>
                 </div>

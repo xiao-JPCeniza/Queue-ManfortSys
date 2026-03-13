@@ -3,6 +3,12 @@
 @php($reportDescription = $isAllOfficesReportScope
     ? 'Validated service-delivery analytics for all municipal offices within the LGU queue operations workflow.'
     : 'Validated service-delivery analytics for the ' . $reportOfficeLabel . ' office within the LGU queue operations workflow.')
+@php($dailyQueueCounts = collect($queueReportDailyCounts ?? []))
+@php($weeklyQueueCounts = collect($queueReportWeeklyCounts ?? []))
+@php($dailyMax = max(1, (int) $dailyQueueCounts->max('total_tickets')))
+@php($weeklyMax = max(1, (int) $weeklyQueueCounts->max('total_tickets')))
+@php($dailyPeak = $dailyQueueCounts->sortByDesc('total_tickets')->first())
+@php($weeklyPeak = $weeklyQueueCounts->sortByDesc('total_tickets')->first())
 
 <div class="gov-report-shell space-y-6">
     <section class="gov-report-masthead" aria-labelledby="reports-overview-heading">
@@ -147,40 +153,110 @@
             </section>
         </div>
 
-        <section class="gov-report-card p-6" aria-labelledby="office-accommodated-summary-heading">
-            <div class="gov-report-card-head gov-report-card-head-wide">
-                <div>
-                    <p class="gov-report-card-kicker">Office Summary</p>
-                    <h2 id="office-accommodated-summary-heading" class="gov-font-heading gov-report-card-title">Accommodated Tickets by Office</h2>
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <section class="gov-report-card p-6" aria-labelledby="daily-queue-counts-heading">
+                <div class="gov-report-card-head gov-report-card-head-wide">
+                    <div>
+                        <p class="gov-report-card-kicker">Seven-Day Log</p>
+                        <h2 id="daily-queue-counts-heading" class="gov-font-heading gov-report-card-title">Daily Queue Counts</h2>
+                    </div>
+                    <p class="gov-report-card-meta">
+                        @if($dailyPeak)
+                            Peak day: {{ \Carbon\Carbon::createFromFormat('Y-m-d', $dailyPeak['date'], 'Asia/Manila')->format('F j, Y') }} ({{ number_format($dailyPeak['total_tickets']) }} tickets)
+                        @else
+                            No queue activity recorded in the last 7 days.
+                        @endif
+                    </p>
                 </div>
-                <p class="gov-report-card-meta">{{ count($officeAccommodatedChartSeries) }} office records included in this summary.</p>
-            </div>
 
-            <div class="gov-report-table-wrap mt-5 overflow-x-auto">
-                <table class="gov-report-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Office</th>
-                            <th class="text-right">Accommodated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($officeAccommodatedChartSeries as $index => $row)
+                <div class="gov-report-table-wrap mt-5 overflow-x-auto">
+                    <table class="gov-report-table">
+                        <thead>
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td class="gov-report-table-primary">{{ $row['office_name'] }}</td>
-                                <td class="gov-report-table-value text-right">{{ number_format($row['accommodated_total']) }}</td>
+                                <th>Date</th>
+                                <th>Activity Load</th>
+                                <th class="text-right">Total Tickets</th>
                             </tr>
-                        @empty
+                        </thead>
+                        <tbody>
+                            @forelse($dailyQueueCounts as $row)
+                                @php($dailyDate = \Carbon\Carbon::createFromFormat('Y-m-d', $row['date'], 'Asia/Manila'))
+                                @php($dailyBarWidth = $row['total_tickets'] > 0 ? max(8, round(($row['total_tickets'] / $dailyMax) * 100, 1)) : 0)
+                                <tr>
+                                    <td>
+                                        <div class="gov-report-table-primary">{{ $dailyDate->format('F j, Y') }}</div>
+                                        <div class="gov-report-table-sub">{{ $dailyDate->format('l') }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="gov-report-activity-track" aria-hidden="true">
+                                            @if($dailyBarWidth > 0)
+                                                <span class="gov-report-activity-fill gov-report-activity-fill-daily" style="width: {{ $dailyBarWidth }}%;"></span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="gov-report-table-value text-right">{{ number_format($row['total_tickets']) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="gov-report-table-empty">No queue activity in the last 7 days.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="gov-report-card p-6" aria-labelledby="weekly-queue-counts-heading">
+                <div class="gov-report-card-head gov-report-card-head-wide">
+                    <div>
+                        <p class="gov-report-card-kicker">Five-Week Ledger</p>
+                        <h2 id="weekly-queue-counts-heading" class="gov-font-heading gov-report-card-title">Weekly Queue Counts</h2>
+                    </div>
+                    <p class="gov-report-card-meta">
+                        @if($weeklyPeak)
+                            Peak week: {{ 'Week ' . ltrim(substr($weeklyPeak['week'], 4), '0') . ', ' . substr($weeklyPeak['week'], 0, 4) }} ({{ number_format($weeklyPeak['total_tickets']) }} tickets)
+                        @else
+                            No queue activity recorded in the last 5 weeks.
+                        @endif
+                    </p>
+                </div>
+
+                <div class="gov-report-table-wrap mt-5 overflow-x-auto">
+                    <table class="gov-report-table">
+                        <thead>
                             <tr>
-                                <td colspan="3" class="gov-report-table-empty">No office accommodation data found.</td>
+                                <th>Week</th>
+                                <th>Activity Load</th>
+                                <th class="text-right">Total Tickets</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                        </thead>
+                        <tbody>
+                            @forelse($weeklyQueueCounts as $row)
+                                @php($weekLabel = 'Week ' . ltrim(substr($row['week'], 4), '0') . ', ' . substr($row['week'], 0, 4))
+                                @php($weeklyBarWidth = $row['total_tickets'] > 0 ? max(8, round(($row['total_tickets'] / $weeklyMax) * 100, 1)) : 0)
+                                <tr>
+                                    <td>
+                                        <div class="gov-report-table-primary">{{ $weekLabel }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="gov-report-activity-track" aria-hidden="true">
+                                            @if($weeklyBarWidth > 0)
+                                                <span class="gov-report-activity-fill gov-report-activity-fill-weekly" style="width: {{ $weeklyBarWidth }}%;"></span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td class="gov-report-table-value text-right">{{ number_format($row['total_tickets']) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="gov-report-table-empty">No queue activity in the last 5 weeks.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     @else
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <section class="gov-report-card p-6" aria-labelledby="status-distribution-heading">
@@ -779,6 +855,29 @@
             border-radius: 999px;
         }
 
+        .gov-report-activity-track {
+            display: flex;
+            height: 0.95rem;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e7eef7;
+            box-shadow: inset 0 1px 2px rgb(15 63 115 / 0.08);
+        }
+
+        .gov-report-activity-fill {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .gov-report-activity-fill-daily {
+            background: linear-gradient(90deg, #285f96 0%, #1d4ed8 100%);
+        }
+
+        .gov-report-activity-fill-weekly {
+            background: linear-gradient(90deg, #a9771d 0%, #d4a335 100%);
+        }
+
         .gov-report-progress-track {
             display: flex;
             height: 0.9rem;
@@ -961,6 +1060,12 @@
         .gov-report-table-primary {
             color: var(--gov-report-ink-900);
             font-weight: 700;
+        }
+
+        .gov-report-table-sub {
+            margin-top: 0.18rem;
+            color: var(--gov-report-ink-500);
+            font-size: 0.75rem;
         }
 
         .gov-report-table-value {

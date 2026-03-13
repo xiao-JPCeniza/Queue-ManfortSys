@@ -47,10 +47,6 @@
                             @include('livewire.office-admin.partials.reports-dashboard-panel')
                         @endif
 
-                        @if($hrmoTab === 'queue-reports' && auth()->user()?->isSuperAdmin())
-                            @include('livewire.office-admin.partials.queue-reports-dashboard-panel')
-                        @endif
-
                         @if($hrmoTab === 'queue-management')
                             @if(auth()->user()?->isSuperAdmin())
                                 <div class="space-y-6">
@@ -139,51 +135,6 @@
                                             </section>
                                         @endforelse
                                     @else
-                                        <section class="lgu-card p-6" aria-labelledby="overall-data-heading">
-                                            <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                                                <div>
-                                                    <h2 id="overall-data-heading" class="lgu-section-title">Overall Data</h2>
-                                                    <p class="mt-1 text-sm text-slate-500">
-                                                        Review overall queued tickets and accommodated totals per office, then narrow the list using the office dropdown.
-                                                    </p>
-                                                </div>
-
-                                                <div class="w-full max-w-sm">
-                                                    <label for="queue-management-office-filter" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                                        Filter by Office
-                                                    </label>
-                                                    <select
-                                                        id="queue-management-office-filter"
-                                                        wire:model.live="queueManagementOfficeFilter"
-                                                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                                    >
-                                                        <option value="all">All Offices</option>
-                                                        @foreach($queueManagementOfficeOptions as $filterOffice)
-                                                            <option value="{{ $filterOffice->slug }}">{{ $filterOffice->name }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                                                <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Offices in Scope</p>
-                                                    <p class="mt-2 text-3xl font-bold text-slate-900">{{ number_format($overallDataSummary['office_count']) }}</p>
-                                                    <p class="mt-1 text-xs text-slate-500">{{ $queueManagementSelectedOfficeLabel }}</p>
-                                                </div>
-                                                <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                                                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-700">Overall Queued Tickets</p>
-                                                    <p class="mt-2 text-3xl font-bold text-blue-700">{{ number_format($overallDataSummary['overall_queued_total']) }}</p>
-                                                    <p class="mt-1 text-xs text-blue-600">All recorded queue entries in the selected scope.</p>
-                                                </div>
-                                                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                                                    <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Accommodated Tickets</p>
-                                                    <p class="mt-2 text-3xl font-bold text-emerald-700">{{ number_format($overallDataSummary['accommodated_total']) }}</p>
-                                                    <p class="mt-1 text-xs text-emerald-600">Completed queue numbers marked accommodated by office admins.</p>
-                                                </div>
-                                            </div>
-                                        </section>
-
                                         <section class="lgu-card p-6" aria-labelledby="overall-data-table-heading">
                                             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                                                 <div>

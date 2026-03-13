@@ -1,3 +1,5 @@
+@section('full_width', '1')
+
 <div>
     @php
         $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
@@ -24,10 +26,10 @@
                 <div>
                     <p class="gov-admin-kicker">Municipal Queue Oversight</p>
                     <h1 id="dashboard-heading" class="gov-font-heading gov-admin-title">
-                        {{ $isSuperAdmin ? 'Super Admin Dashboard' : 'Dashboard' }}
+                        {{ $isSuperAdmin ? 'Admin Dashboard' : 'Dashboard' }}
                     </h1>
                     <p class="gov-admin-subtitle">
-                        Monitor queue activity across all offices using an official operations view designed for daily LGU service supervision.
+                        Monitor queue activity across all offices.
                     </p>
 
                     <div class="gov-admin-chip-row" aria-label="Dashboard context">
@@ -265,8 +267,7 @@
                 linear-gradient(135deg, var(--gov-blue-950), var(--gov-blue-900));
             color: #fff;
             display: grid;
-            grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 1fr);
-            gap: 1.4rem;
+            gap: 1.25rem;
             box-shadow: 0 28px 42px -36px rgb(10 45 85 / 0.55);
             animation: gov-admin-rise 420ms ease-out both;
         }
@@ -369,7 +370,7 @@
 
         .gov-admin-stat-grid {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.85rem;
             align-content: start;
         }
@@ -737,9 +738,9 @@
             color: var(--gov-ink-500);
         }
 
-        @media (max-width: 1180px) {
-            .gov-admin-briefing {
-                grid-template-columns: 1fr;
+        @media (max-width: 1280px) {
+            .gov-admin-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
