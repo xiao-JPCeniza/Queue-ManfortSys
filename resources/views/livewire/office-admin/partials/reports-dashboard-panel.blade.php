@@ -153,7 +153,6 @@
             </section>
         </div>
 
-<<<<<<< HEAD
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <section class="gov-report-card p-6" aria-labelledby="daily-queue-counts-heading">
                 <div class="gov-report-card-head gov-report-card-head-wide">
@@ -258,8 +257,6 @@
                 </div>
             </section>
         </div>
-=======
->>>>>>> a10c1b29e21ce63ef11aefe6c23a38caee1776f9
     @else
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <section class="gov-report-card p-6" aria-labelledby="status-distribution-heading">
