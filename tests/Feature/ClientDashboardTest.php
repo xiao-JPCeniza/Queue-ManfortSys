@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\ClientDashboard;
 use App\Models\Office;
+use App\Models\QueueEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -35,6 +36,27 @@ class ClientDashboardTest extends TestCase
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,
             'queue_number' => 'CCEN-001',
+            'client_type' => QueueEntry::TYPE_REGULAR,
+        ]);
+    }
+
+    public function test_confirming_the_senior_pregnant_option_generates_a_priority_ticket(): void
+    {
+        $office = $this->createOffice('Citizen Center', 'citizen-center', 'CCEN', true);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Ticket Option')
+            ->assertSee('Senior / Pregnant')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_SENIOR_PREGNANT)
+            ->assertSee('Citizen Center')
+            ->assertSee('CCEN-001')
+            ->assertSee('Senior / Pregnant');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'CCEN-001',
+            'client_type' => QueueEntry::TYPE_SENIOR_PREGNANT,
         ]);
     }
 

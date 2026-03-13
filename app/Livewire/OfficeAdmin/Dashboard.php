@@ -173,8 +173,7 @@ class Dashboard extends Component
     {
         $next = $this->todayOfficeQueueEntries()
             ->waiting()
-            ->orderBy('created_at')
-            ->orderBy('id')
+            ->orderedForService()
             ->first();
 
         if (! $next) {
@@ -270,8 +269,7 @@ class Dashboard extends Component
         $viewData = [
             'waiting' => $this->todayOfficeQueueEntries()
                 ->waiting()
-                ->orderBy('created_at')
-                ->orderBy('id')
+                ->orderedForService()
                 ->get(),
             'serving' => $this->todayOfficeQueueEntries()
                 ->serving()

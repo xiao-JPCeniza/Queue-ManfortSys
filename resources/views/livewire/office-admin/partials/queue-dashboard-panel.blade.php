@@ -37,6 +37,9 @@
                         <p class="gov-ticket-number" aria-label="Current queue number {{ $serving->queue_number }}">
                             {{ $serving->queue_number }}
                         </p>
+                        <p class="gov-client-type-chip {{ $serving->isPriorityClient() ? 'gov-client-type-chip-priority' : 'gov-client-type-chip-regular' }}">
+                            {{ $serving->client_type_label }}
+                        </p>
                         <p class="gov-ticket-meta">Called at {{ $serving->called_at?->timezone('Asia/Manila')?->format('h:i A') }}</p>
                     </div>
                 @else
@@ -123,6 +126,9 @@
                         <div class="gov-waiting-row">
                             <div>
                                 <span class="gov-waiting-ticket">{{ $entry->queue_number }}</span>
+                                <p class="gov-waiting-type {{ $entry->isPriorityClient() ? 'gov-waiting-type-priority' : 'gov-waiting-type-regular' }}">
+                                    {{ $entry->client_type_label }}
+                                </p>
                                 <p class="gov-waiting-time">Joined {{ $entry->created_at->timezone('Asia/Manila')->format('h:i A') }}</p>
                             </div>
                             <span class="gov-waiting-order">#{{ $loop->iteration }}</span>
@@ -327,6 +333,37 @@
             font-size: 0.9rem;
         }
 
+        .gov-client-type-chip,
+        .gov-waiting-type {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            border: 1px solid;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .gov-client-type-chip {
+            margin-top: 0.55rem;
+            padding: 0.34rem 0.7rem;
+        }
+
+        .gov-client-type-chip-regular,
+        .gov-waiting-type-regular {
+            background: #eef4ff;
+            border-color: #bfd5f6;
+            color: #1d4ed8;
+        }
+
+        .gov-client-type-chip-priority,
+        .gov-waiting-type-priority {
+            background: #fff4db;
+            border-color: #f4d28f;
+            color: #9a5d06;
+        }
+
         .gov-ticket-empty {
             border-radius: 0.95rem;
             border: 1px dashed #bcc9da;
@@ -444,6 +481,11 @@
             margin: 0.28rem 0 0;
             color: var(--gov-ink-500);
             font-size: 0.8rem;
+        }
+
+        .gov-waiting-type {
+            margin-top: 0.34rem;
+            padding: 0.28rem 0.58rem;
         }
 
         .gov-waiting-order {

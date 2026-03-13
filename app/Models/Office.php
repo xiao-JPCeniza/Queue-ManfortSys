@@ -88,7 +88,7 @@ class Office extends Model
 
     public function queueEntries(): HasMany
     {
-        return $this->hasMany(QueueEntry::class)->orderBy('created_at');
+        return $this->hasMany(QueueEntry::class);
     }
 
     public function users(): HasMany

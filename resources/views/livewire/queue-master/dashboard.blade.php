@@ -173,7 +173,12 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="gov-admin-table-ticket">{{ $entry->queue_number }}</span>
+                                        <div class="gov-admin-table-ticket-stack">
+                                            <span class="gov-admin-table-ticket">{{ $entry->queue_number }}</span>
+                                            <span class="gov-admin-client-type-chip {{ $entry->isPriorityClient() ? 'gov-admin-client-type-chip-priority' : 'gov-admin-client-type-chip-regular' }}">
+                                                {{ $entry->client_type_label }}
+                                            </span>
+                                        </div>
                                     </td>
                                     <td>
                                         <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold tracking-[0.08em] uppercase
@@ -725,6 +730,37 @@
             color: var(--gov-blue-900);
             background: var(--gov-blue-100);
             border: 1px solid #bfd1e6;
+        }
+
+        .gov-admin-table-ticket-stack {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.42rem;
+        }
+
+        .gov-admin-client-type-chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            border: 1px solid;
+            padding: 0.32rem 0.62rem;
+            font-size: 0.66rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .gov-admin-client-type-chip-regular {
+            background: #eef4ff;
+            border-color: #bfd5f6;
+            color: #1d4ed8;
+        }
+
+        .gov-admin-client-type-chip-priority {
+            background: #fff4db;
+            border-color: #f4d28f;
+            color: #9a5d06;
         }
 
         .gov-admin-table-time {

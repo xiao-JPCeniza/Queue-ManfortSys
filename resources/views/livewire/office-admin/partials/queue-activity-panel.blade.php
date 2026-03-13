@@ -47,7 +47,12 @@
                         @php($statusMeta = $activityStatusStyles[$entry->status] ?? array_merge($activityStatusStyles['default'], ['label' => ucwords(str_replace('_', ' ', $entry->status ?? 'unknown'))]))
                         <tr class="gov-activity-row">
                             <td>
-                                <span class="gov-activity-ticket">{{ $entry->queue_number }}</span>
+                                <div class="gov-activity-ticket-stack">
+                                    <span class="gov-activity-ticket">{{ $entry->queue_number }}</span>
+                                    <span class="gov-activity-client-type {{ $entry->isPriorityClient() ? 'gov-activity-client-type-priority' : 'gov-activity-client-type-regular' }}">
+                                        {{ $entry->client_type_label }}
+                                    </span>
+                                </div>
                             </td>
                             <td>
                                 <span class="gov-activity-status {{ $statusMeta['badge'] }}">
@@ -231,6 +236,37 @@
             font-size: 0.84rem;
             font-weight: 800;
             letter-spacing: 0.04em;
+        }
+
+        .gov-activity-ticket-stack {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            align-items: flex-start;
+        }
+
+        .gov-activity-client-type {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            border: 1px solid;
+            padding: 0.34rem 0.65rem;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .gov-activity-client-type-regular {
+            background: #eef4ff;
+            border-color: #bfd5f6;
+            color: #1d4ed8;
+        }
+
+        .gov-activity-client-type-priority {
+            background: #fff4db;
+            border-color: #f4d28f;
+            color: #9a5d06;
         }
 
         .gov-activity-status {

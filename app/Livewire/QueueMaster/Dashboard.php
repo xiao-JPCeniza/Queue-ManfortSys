@@ -93,8 +93,7 @@ class Dashboard extends Component
                     ->whereColumn('office_id', 'offices.id')
                     ->where('status', QueueEntry::STATUS_WAITING)
                     ->whereBetween('created_at', [$dayStart, $dayEnd])
-                    ->orderBy('created_at')
-                    ->orderBy('id')
+                    ->orderedForService()
                     ->limit(1),
             ])
             ->withCount(['queueEntries as waiting_count' => function ($q) use ($dayStart, $dayEnd) {

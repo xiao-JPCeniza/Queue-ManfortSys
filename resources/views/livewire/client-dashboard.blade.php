@@ -49,14 +49,14 @@
         @if(!$ticket)
             <section class="queue-intro-card">
                 <h2 class="queue-intro-title">Select an Office to Get Your Queue Number</h2>
-                <p class="queue-intro-copy">Please choose the office you need to visit. A queue number will be generated instantly and announced through the public queue system.</p>
+                <p class="queue-intro-copy">Please choose the office you need to visit. You will be asked to choose either a regular ticket or a senior/pregnant ticket before the queue number is generated.</p>
             </section>
 
             <div class="gov-office-grid mt-5" role="list">
                 @foreach($offices as $office)
                     <button
                         type="button"
-                        wire:click="selectOffice({{ $office->id }})"
+                        wire:click="promptOfficeSelection({{ $office->id }})"
                         wire:loading.attr="disabled"
                         class="queue-office-card group relative p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none"
                         role="listitem"
@@ -75,10 +75,10 @@
 
                         <span class="queue-office-meta">Tap to continue</span>
 
-                        <span wire:loading wire:target="selectOffice({{ $office->id }})" class="absolute inset-0 flex items-center justify-center bg-white/90 rounded-[18px]">
+                        <span wire:loading wire:target="promptOfficeSelection({{ $office->id }})" class="absolute inset-0 flex items-center justify-center bg-white/90 rounded-[18px]">
                             <div class="flex flex-col items-center gap-2">
                                 <svg class="animate-spin h-8 w-8 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                <span class="text-xs font-semibold text-slate-700">Generating ticket number...</span>
+                                <span class="text-xs font-semibold text-slate-700">Opening ticket options...</span>
                             </div>
                         </span>
                     </button>
@@ -97,12 +97,14 @@
                     class="queue-ticket-card"
                     data-auto-print-ticket="{{ $ticket['entry_id'] }}"
                     data-redirect-url="{{ route('queue.client') }}"
+                    data-print-delay-ms="2000"
                 >
                     <div class="queue-ticket-head">
                         <p class="queue-ticket-kicker">Official Queue Ticket</p>
                         <h2 class="queue-ticket-office">{{ $ticket['office_name'] }}</h2>
                     </div>
                     <div class="queue-ticket-body">
+                        <p class="queue-ticket-type">{{ $ticket['client_type_label'] }}</p>
                         <p class="queue-ticket-label">Queue Number</p>
                         <p class="queue-ticket-number" id="ticket-number-display" aria-label="Your queue number is {{ $ticket['queue_number'] }}">{{ $ticket['queue_number'] }}</p>
                         <p class="queue-ticket-timestamp" aria-label="Ticket issue date and time">
@@ -111,7 +113,7 @@
                             <span>{{ $ticket['issued_time'] ?? '' }}</span>
                         </p>
                         <p class="queue-ticket-note">Please wait for your number to be called at the service desk.</p>
-                        <p class="queue-ticket-status" data-ticket-print-status aria-live="polite">Printing automatically in 3 seconds...</p>
+                        <p class="queue-ticket-status" data-ticket-print-status aria-live="polite">Printing automatically in 2 seconds...</p>
                         <button
                             type="button"
                             class="lgu-btn queue-print-btn"
@@ -124,6 +126,52 @@
             </section>
         @endif
     </main>
+
+    @if(!$ticket && $showClientTypeModal)
+        <div
+            class="queue-modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="queue-client-type-title"
+            wire:click.self="cancelOfficeSelection"
+        >
+            <div class="queue-modal-card">
+                <p class="queue-modal-kicker">Ticket Option</p>
+                <h2 id="queue-client-type-title" class="queue-modal-title">{{ $pendingOfficeName }}</h2>
+                <p class="queue-modal-copy">Choose the ticket type before generating the queue number.</p>
+
+                <div class="queue-modal-option-grid">
+                    @foreach($clientTypeOptions as $clientType => $option)
+                        @php($isPriorityType = $clientType === \App\Models\QueueEntry::TYPE_SENIOR_PREGNANT)
+                        <button
+                            type="button"
+                            wire:click="confirmOfficeSelection('{{ $clientType }}')"
+                            wire:loading.attr="disabled"
+                            wire:target="confirmOfficeSelection"
+                            class="queue-modal-option {{ $isPriorityType ? 'queue-modal-option-priority' : 'queue-modal-option-regular' }}"
+                        >
+                            <span class="queue-modal-option-title">{{ $option['label'] }}</span>
+                            <span class="queue-modal-option-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
+                                </svg>
+                            </span>
+                        </button>
+                    @endforeach
+                </div>
+
+                <button
+                    type="button"
+                    wire:click="cancelOfficeSelection"
+                    wire:loading.attr="disabled"
+                    wire:target="confirmOfficeSelection,cancelOfficeSelection"
+                    class="queue-modal-cancel"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    @endif
 
     <footer class="queue-footer py-4 text-sm">
         <div class="queue-shell-inner flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -448,6 +496,22 @@
         text-align: center;
     }
 
+    .queue-ticket-type {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 0 0.75rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid #bfd5f6;
+        background: #edf4ff;
+        color: #0c3b73;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
     .queue-ticket-label {
         margin: 0;
         color: #64748b;
@@ -530,6 +594,153 @@
         padding: 1.2rem;
     }
 
+    .queue-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.56);
+        backdrop-filter: blur(3px);
+    }
+
+    .queue-modal-card {
+        width: min(100%, 32rem);
+        border-radius: 1.35rem;
+        border: 1px solid #d4dfec;
+        background:
+            radial-gradient(circle at top right, rgba(219, 234, 254, 0.64), transparent 34%),
+            linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        box-shadow: 0 24px 44px rgba(15, 23, 42, 0.2);
+        padding: 1.35rem;
+    }
+
+    .queue-modal-kicker {
+        margin: 0;
+        color: #14539e;
+        font-size: 0.73rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .queue-modal-title {
+        margin: 0.45rem 0 0;
+        color: #0f2f57;
+        font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+        font-weight: 800;
+        line-height: 1.12;
+    }
+
+    .queue-modal-copy {
+        margin: 0.55rem 0 0;
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.55;
+    }
+
+    .queue-modal-option-grid {
+        display: grid;
+        gap: 0.85rem;
+        margin-top: 1.15rem;
+    }
+
+    .queue-modal-option {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+        text-align: left;
+        min-height: 5.25rem;
+        border-radius: 1.15rem;
+        border: 1px solid #d6e1ef;
+        padding: 1rem 1.1rem;
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .queue-modal-option:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 28px rgba(15, 23, 42, 0.12);
+    }
+
+    .queue-modal-option:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(20, 83, 158, 0.14);
+    }
+
+    .queue-modal-option-regular {
+        border-color: #c8d8ef;
+        background:
+            linear-gradient(135deg, rgba(20, 83, 158, 0.08), rgba(255, 255, 255, 0) 56%),
+            linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    }
+
+    .queue-modal-option-regular:hover,
+    .queue-modal-option-regular:focus {
+        border-color: #7ea7dd;
+    }
+
+    .queue-modal-option-priority {
+        border-color: #efcf90;
+        background:
+            linear-gradient(135deg, rgba(241, 187, 107, 0.34), rgba(255, 255, 255, 0) 58%),
+            linear-gradient(180deg, #fffdf7 0%, #fff6df 100%);
+    }
+
+    .queue-modal-option-priority:hover,
+    .queue-modal-option-priority:focus {
+        border-color: #d7a84d;
+    }
+
+    .queue-modal-option-title {
+        color: #0f172a;
+        font-size: 1.08rem;
+        font-weight: 800;
+    }
+
+    .queue-modal-option-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 999px;
+        flex-shrink: 0;
+    }
+
+    .queue-modal-option-regular .queue-modal-option-icon {
+        background: #e8f1ff;
+        color: #14539e;
+        border: 1px solid #bfd5f6;
+    }
+
+    .queue-modal-option-priority .queue-modal-option-icon {
+        background: #fff0c8;
+        color: #8a5204;
+        border: 1px solid #efcf90;
+    }
+
+    .queue-modal-option-icon svg {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .queue-modal-cancel {
+        margin-top: 0.95rem;
+        width: 100%;
+        border-radius: 0.9rem;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.92rem;
+        font-weight: 700;
+        padding: 0.8rem 1rem;
+    }
+
     @media (max-width: 1280px) {
         .gov-office-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -574,6 +785,10 @@
 
         .queue-office-meta {
             padding-top: 0.75rem;
+        }
+
+        .queue-modal-card {
+            padding: 1rem;
         }
     }
 
@@ -627,6 +842,7 @@
 
         .queue-ticket-office,
         .queue-ticket-kicker,
+        .queue-ticket-type,
         .queue-ticket-label,
         .queue-ticket-number,
         .queue-ticket-note,
@@ -786,6 +1002,16 @@
             scheduleTicketPrint(ticketElement);
         }
 
+        function handleTicketCreated() {
+            window.requestAnimationFrame(function () {
+                syncCurrentTicket();
+            });
+
+            window.setTimeout(function () {
+                syncCurrentTicket();
+            }, 120);
+        }
+
         function onPrintButtonClick(event) {
             const button = event.target.closest('[data-ticket-print-btn]');
             if (!button) {
@@ -803,6 +1029,8 @@
         }
 
         document.addEventListener('click', onPrintButtonClick);
+        window.addEventListener('queue-ticket-created', handleTicketCreated);
+        document.addEventListener('livewire:navigated', syncCurrentTicket);
 
         const observer = new MutationObserver(function () {
             syncCurrentTicket();

@@ -132,6 +132,46 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
+    public function test_call_next_prioritizes_senior_pregnant_tickets_before_regular_waiting_entries(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice();
+        $user = User::factory()->create(['office_id' => $office->id]);
+
+        $regularEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'ACCT-010',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 9, 9, 40, 0, 'Asia/Manila')
+        );
+
+        $priorityEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'ACCT-011',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 9, 9, 45, 0, 'Asia/Manila'),
+            clientType: QueueEntry::TYPE_SENIOR_PREGNANT
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class, ['office' => $office])
+            ->call('callNext')
+            ->assertSee($priorityEntry->queue_number)
+            ->assertSee('Senior / Pregnant');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $priorityEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $regularEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+        ]);
+    }
+
     public function test_clear_transaction_removes_only_todays_waiting_line_entries(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 9, 30, 0, 'Asia/Manila'));
@@ -230,11 +270,18 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
-    private function createQueueEntry(Office $office, string $queueNumber, string $status, Carbon $createdAt): QueueEntry
+    private function createQueueEntry(
+        Office $office,
+        string $queueNumber,
+        string $status,
+        Carbon $createdAt,
+        string $clientType = QueueEntry::TYPE_REGULAR
+    ): QueueEntry
     {
         $entry = QueueEntry::create([
             'office_id' => $office->id,
             'queue_number' => $queueNumber,
+            'client_type' => $clientType,
             'status' => $status,
         ]);
 

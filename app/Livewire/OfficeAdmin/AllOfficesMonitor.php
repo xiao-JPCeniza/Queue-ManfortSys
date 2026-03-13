@@ -74,11 +74,7 @@ class AllOfficesMonitor extends Component
 
         $waitingEntries = $officeEntries
             ->where('status', QueueEntry::STATUS_WAITING)
-            ->sortBy(fn (QueueEntry $entry) => sprintf(
-                '%020d-%010d',
-                $entry->created_at?->getTimestamp() ?? 0,
-                $entry->id
-            ))
+            ->sortBy(fn (QueueEntry $entry) => $entry->serviceOrderKey())
             ->values();
 
         $nextInline = $waitingEntries->first();

@@ -25,17 +25,19 @@ class QueueJoin extends Component
         }
     }
 
-    public function joinQueue()
+    public function joinQueue(string $clientType = QueueEntry::TYPE_REGULAR)
     {
         if (!$this->office) {
             return;
         }
 
+        $normalizedClientType = QueueEntry::normalizeClientType($clientType);
         $queueNumber = $this->office->generateNextQueueNumber();
 
         $this->entry = QueueEntry::create([
             'office_id' => $this->office->id,
             'queue_number' => $queueNumber,
+            'client_type' => $normalizedClientType,
             'status' => QueueEntry::STATUS_WAITING,
         ]);
 

@@ -91,8 +91,7 @@ class BploOfficeMonitor extends Component
 
         $nextInline = $this->todayOfficeQueueEntries()
             ->waiting()
-            ->orderBy('created_at')
-            ->orderBy('id')
+            ->orderedForService()
             ->first();
 
         $recentTransactions = QueueEntry::where('office_id', $this->office->id)
