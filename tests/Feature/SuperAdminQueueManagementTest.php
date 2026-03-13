@@ -112,6 +112,10 @@ class SuperAdminQueueManagementTest extends TestCase
         Livewire::test(Dashboard::class, ['office' => $hrmo])
             ->set('hrmoTab', 'queue-management')
             ->call('setQueueManagementSection', 'overall-data')
+            ->assertSee('Filter Office')
+            ->assertSee('All Offices')
+            ->assertSee('Accounting')
+            ->assertSee('Treasury')
             ->set('queueManagementOfficeFilter', 'accounting')
             ->assertViewHas('queueManagementSelectedOfficeLabel', 'Accounting')
             ->assertViewHas('overallDataSummary', function (array $summary) {

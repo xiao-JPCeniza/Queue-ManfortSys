@@ -136,33 +136,51 @@
                                         @endforelse
                                     @else
                                         <section class="lgu-card p-6" aria-labelledby="overall-data-table-heading">
-                                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                            <div class="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
                                                 <div>
                                                     <h2 id="overall-data-table-heading" class="lgu-section-title">Overall Ticket Totals by Office</h2>
                                                     <p class="mt-1 text-sm text-slate-500">Showing {{ $queueManagementSelectedOfficeLabel }}.</p>
                                                 </div>
 
-                                                <div class="flex flex-wrap items-center gap-2">
-                                                    <span class="text-xs font-medium text-slate-500">
-                                                        Page {{ $overallDataPagination['current_page'] }} of {{ $overallDataPagination['last_page'] }}
-                                                        | Showing {{ $overallDataPagination['from'] }}-{{ $overallDataPagination['to'] }} of {{ $overallDataPagination['total'] }} row(s)
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        wire:click="previousOverallDataPage"
-                                                        @disabled(!$overallDataPagination['has_previous'])
-                                                        class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        Previous
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        wire:click="nextOverallDataPage"
-                                                        @disabled(!$overallDataPagination['has_next'])
-                                                        class="rounded-lg border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300"
-                                                    >
-                                                        Next
-                                                    </button>
+                                                <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+                                                    <div class="min-w-[220px]">
+                                                        <label for="overall-data-office-filter" class="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                                            Filter Office
+                                                        </label>
+                                                        <select
+                                                            id="overall-data-office-filter"
+                                                            wire:model.live="queueManagementOfficeFilter"
+                                                            class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        >
+                                                            <option value="all">All Offices</option>
+                                                            @foreach($queueManagementOfficeOptions as $officeOption)
+                                                                <option value="{{ $officeOption->slug }}">{{ $officeOption->name }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="text-xs font-medium text-slate-500">
+                                                            Page {{ $overallDataPagination['current_page'] }} of {{ $overallDataPagination['last_page'] }}
+                                                            | Showing {{ $overallDataPagination['from'] }}-{{ $overallDataPagination['to'] }} of {{ $overallDataPagination['total'] }} row(s)
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            wire:click="previousOverallDataPage"
+                                                            @disabled(!$overallDataPagination['has_previous'])
+                                                            class="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            Previous
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            wire:click="nextOverallDataPage"
+                                                            @disabled(!$overallDataPagination['has_next'])
+                                                            class="rounded-lg border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300"
+                                                        >
+                                                            Next
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
 
