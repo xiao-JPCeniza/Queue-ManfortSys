@@ -1,10 +1,9 @@
-<div wire:poll.2s="tick" class="gov-monitor-root">
+<div wire:poll.keep-alive.2s="tick" data-session-keepalive="always" class="gov-monitor-root">
     <section class="gov-monitor-shell" aria-label="All offices live queue monitor">
         <header class="gov-monitor-header">
             <div class="gov-monitor-brand">
                 <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich official seal" class="gov-monitor-seal">
                 <div class="gov-monitor-brand-copy">
-                    <p class="gov-monitor-kicker">Republic of the Philippines</p>
                     <h1 class="gov-font-heading gov-monitor-title">Live Queue Monitor</h1>
                     <p class="gov-monitor-subtitle">All Offices | Municipality of Manolo Fortich</p>
                 </div>
@@ -160,7 +159,7 @@
             width: 100%;
             height: 100%;
             min-height: 100dvh;
-            overflow: hidden;
+            overflow: auto;
             background:
                 radial-gradient(circle at 10% 5%, rgb(255 255 255 / 0.66), transparent 34%),
                 linear-gradient(180deg, #e6edf5 0%, #dce5f1 100%);
@@ -168,11 +167,10 @@
 
         .gov-monitor-shell {
             width: 100%;
-            height: 100dvh;
+            min-height: 100%;
             display: flex;
             flex-direction: column;
             color: var(--gov-ink-900);
-            overflow: hidden;
         }
 
         .gov-monitor-header {
@@ -279,7 +277,7 @@
             flex-direction: column;
             gap: 0.95rem;
             padding: clamp(0.75rem, 1.8vw, 1.4rem);
-            overflow: hidden;
+            overflow: auto;
         }
 
         .gov-office-monitor-list {
@@ -301,9 +299,8 @@
         }
 
         .gov-office-monitor-card-featured {
-            flex: 1;
             min-height: 0;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .gov-office-monitor-head {
@@ -423,7 +420,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: clamp(0.7rem, 1vw, 1rem);
             min-height: 0;
         }
 
@@ -444,15 +442,21 @@
             font-size: clamp(0.64rem, 0.85vw, 0.8rem);
             font-weight: 700;
             color: #1f4f7f;
+            flex-shrink: 0;
         }
 
         .gov-ticket-number {
             margin: 0.5rem 0;
-            line-height: 0.95;
+            line-height: 0.88;
             text-align: center;
             font-weight: 800;
             letter-spacing: -0.03em;
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            word-break: keep-all;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
         }
 
         .gov-ticket-number-serving {
@@ -470,6 +474,8 @@
             background: rgb(255 255 255 / 0.58);
             border: 1px solid rgb(203 213 225 / 0.75);
             padding: 0.65rem 0.78rem;
+            margin-top: auto;
+            flex-shrink: 0;
         }
 
         .gov-ticket-meta-label {

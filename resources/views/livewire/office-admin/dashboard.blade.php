@@ -47,7 +47,7 @@
                             @include('livewire.office-admin.partials.reports-dashboard-panel')
                         @endif
 
-                        @if($hrmoTab === 'queue-reports')
+                        @if($hrmoTab === 'queue-reports' && auth()->user()?->isSuperAdmin())
                             @include('livewire.office-admin.partials.queue-reports-dashboard-panel')
                         @endif
 
@@ -125,52 +125,14 @@
                                         </section>
 
                                         @forelse($queuedTodayOfficeActivity as $officeActivity)
-                                            <section class="lgu-card p-6" aria-labelledby="overall-activity-{{ $officeActivity['office']->slug }}">
-                                                <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
-                                                    <h2 id="overall-activity-{{ $officeActivity['office']->slug }}" class="lgu-section-title">
-                                                        Overall Ticket Activity (Today) - {{ $officeActivity['office']->name }}
-                                                    </h2>
-                                                    <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                                                        {{ $officeActivity['entries']->count() }} ticket(s)
-                                                    </span>
-                                                </div>
-                                                <div class="overflow-x-auto">
-                                                    <table class="w-full text-sm">
-                                                        <thead>
-                                                            <tr class="border-b border-slate-200 text-left text-slate-500">
-                                                                <th class="py-2 pr-4 font-medium">Ticket #</th>
-                                                                <th class="py-2 pr-4 font-medium">Status</th>
-                                                                <th class="py-2 pr-4 font-medium">Issued</th>
-                                                                <th class="py-2 pr-4 font-medium">Called</th>
-                                                                <th class="py-2 pr-4 font-medium">Completed</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @forelse($officeActivity['entries'] as $entry)
-                                                                <tr class="border-b border-slate-100">
-                                                                    <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
-                                                                    <td class="py-2 pr-4">
-                                                                        <span class="rounded-full px-2 py-1 text-xs font-medium
-                                                                            {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                            {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                                                            {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                                                            {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
-                                                                            {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
-                                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                                    <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                                </tr>
-                                                            @empty
-                                                                <tr>
-                                                                    <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for {{ $officeActivity['office']->name }} today.</td>
-                                                                </tr>
-                                                            @endforelse
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </section>
+                                            @include('livewire.office-admin.partials.queue-activity-panel', [
+                                                'panelId' => 'overall-activity-' . $officeActivity['office']->slug,
+                                                'heading' => 'Overall Ticket Activity (Today)',
+                                                'kicker' => $officeActivity['office']->name,
+                                                'description' => 'Live record of issued tickets and service milestones for this office today.',
+                                                'entries' => $officeActivity['entries'],
+                                                'emptyMessage' => 'No tickets yet for ' . $officeActivity['office']->name . ' today.',
+                                            ])
                                         @empty
                                             <section class="lgu-card p-6">
                                                 <p class="text-sm text-slate-500">No active offices are available for today&apos;s queue activity.</p>
@@ -291,45 +253,14 @@
                                     @endif
                                 </div>
                             @else
-                                <section class="lgu-card p-6" aria-labelledby="overall-activity-heading">
-                                    <h2 id="overall-activity-heading" class="lgu-section-title mb-4">Overall Ticket Activity (Today)</h2>
-                                    <div class="overflow-x-auto">
-                                        <table class="w-full text-sm">
-                                            <thead>
-                                                <tr class="text-left border-b border-slate-200 text-slate-500">
-                                                    <th class="py-2 pr-4 font-medium">Ticket #</th>
-                                                    <th class="py-2 pr-4 font-medium">Status</th>
-                                                    <th class="py-2 pr-4 font-medium">Issued</th>
-                                                    <th class="py-2 pr-4 font-medium">Called</th>
-                                                    <th class="py-2 pr-4 font-medium">Completed</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @forelse($overallTickets as $entry)
-                                                    <tr class="border-b border-slate-100">
-                                                        <td class="py-2 pr-4 font-semibold text-slate-800">{{ $entry->queue_number }}</td>
-                                                        <td class="py-2 pr-4">
-                                                            <span class="px-2 py-1 rounded-full text-xs font-medium
-                                                                {{ $entry->status === 'serving' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                                {{ $entry->status === 'waiting' ? 'bg-amber-100 text-amber-700' : '' }}
-                                                                {{ $entry->status === 'completed' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                                                {{ $entry->status === 'not_served' ? 'bg-red-100 text-red-700' : '' }}">
-                                                                {{ strtoupper(str_replace('_', ' ', $entry->status)) }}
-                                                            </span>
-                                                        </td>
-                                                        <td class="py-2 pr-4 text-slate-600">{{ $entry->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</td>
-                                                        <td class="py-2 pr-4 text-slate-600">{{ $entry->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                        <td class="py-2 pr-4 text-slate-600">{{ $entry->served_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? '-' }}</td>
-                                                    </tr>
-                                                @empty
-                                                    <tr>
-                                                        <td colspan="5" class="py-6 text-center text-slate-500">No tickets yet for {{ $office->name }} today.</td>
-                                                    </tr>
-                                                @endforelse
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </section>
+                                @include('livewire.office-admin.partials.queue-activity-panel', [
+                                    'panelId' => 'overall-activity-heading',
+                                    'heading' => 'Overall Ticket Activity (Today)',
+                                    'kicker' => $office->name,
+                                    'description' => 'Live record of issued tickets, call times, and completed service milestones for today.',
+                                    'entries' => $overallTickets,
+                                    'emptyMessage' => 'No tickets yet for ' . $office->name . ' today.',
+                                ])
                             @endif
                         @endif
 

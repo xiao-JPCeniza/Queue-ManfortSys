@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="session-pulse-url" content="{{ route('session.pulse') }}">
     <title>@yield('title', 'Queue System') - {{ config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|source-serif-4:500,700" rel="stylesheet" />
@@ -21,7 +22,7 @@
             z-index: 40;
             background:
                 radial-gradient(circle at top left, rgb(96 165 250 / 0.18), transparent 30%),
-                linear-gradient(180deg, #102d68 0%, #12367c 100%);
+                linear-gradient(180deg, #566685 0%, #12367c 100%);
             border-bottom: 1px solid rgb(148 163 184 / 0.16);
         }
         .lgu-topbar::before {
@@ -152,17 +153,6 @@
             font-weight: 500;
             line-height: 1.3;
         }
-        .lgu-identity-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.7rem;
-            max-width: 100%;
-            padding: 0.55rem 0.85rem;
-            border-radius: 999px;
-            border: 1px solid rgb(255 255 255 / 0.14);
-            background: rgb(255 255 255 / 0.1);
-            color: #fff;
-        }
         .lgu-identity-avatar {
             display: inline-flex;
             align-items: center;
@@ -178,30 +168,6 @@
             letter-spacing: 0.08em;
             text-transform: uppercase;
             flex-shrink: 0;
-        }
-        .lgu-identity-copy {
-            min-width: 0;
-            display: grid;
-            gap: 0.1rem;
-        }
-        .lgu-identity-name,
-        .lgu-identity-role {
-            display: block;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .lgu-identity-name {
-            color: #fff;
-            font-size: 0.88rem;
-            font-weight: 700;
-        }
-        .lgu-identity-role {
-            color: rgb(191 219 254 / 0.82);
-            font-size: 0.74rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
         }
         .lgu-topbar-panel {
             position: absolute;
@@ -288,9 +254,6 @@
             .lgu-brand-subtitle {
                 display: none;
             }
-            .lgu-identity-badge {
-                max-width: 100%;
-            }
             .lgu-topbar-end {
                 gap: 0.65rem;
             }
@@ -304,9 +267,6 @@
             .lgu-topbar-account-trigger,
             .lgu-topbar-login {
                 padding-inline: 0.9rem;
-            }
-            .lgu-identity-badge {
-                width: 100%;
             }
         }
     </style>
@@ -374,11 +334,6 @@
                         'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'reports',
                     ];
                     $sidebarMenuItems[] = [
-                        'label' => 'Queue Reports',
-                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-reports',
-                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'queue-reports',
-                    ];
-                    $sidebarMenuItems[] = [
                         'label' => 'Queue Management',
                         'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management',
                         'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'queue-management',
@@ -389,20 +344,12 @@
             $showAdminSidebarMenu = ! empty($sidebarMenuItems);
         @endphp
         <nav class="lgu-topbar text-white" role="navigation" aria-label="Main">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-<<<<<<< HEAD
+            <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
                 <div class="lgu-topbar-shell">
                     <div class="lgu-topbar-start">
                         @if($showAdminSidebarMenu)
                             <details class="lgu-topbar-menu">
                                 <summary class="lgu-topbar-trigger list-none cursor-pointer [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
-=======
-                <div class="flex flex-col gap-3 py-3 sm:h-16 sm:flex-row sm:items-center sm:justify-between sm:py-0">
-                    <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-                        @if($showAdminSidebarMenu)
-                            <details class="relative order-3 w-full sm:order-1 sm:w-auto">
-                                <summary class="lgu-btn w-full justify-center list-none cursor-pointer px-3 py-2 rounded-lg hover:bg-blue-700 text-white font-medium text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto sm:justify-start [&::-webkit-details-marker]:hidden" aria-label="Open sidebar menu">
->>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                     <span class="inline-flex items-center gap-2">
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -410,18 +357,13 @@
                                         Menu
                                     </span>
                                 </summary>
-<<<<<<< HEAD
                                 <div class="lgu-topbar-panel lgu-topbar-menu-panel">
                                     <div class="lgu-topbar-panel-label">
-=======
-                                <div class="mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:absolute sm:left-0 sm:z-30 sm:w-60">
-                                    <div class="border-b border-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
->>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                         {{ $sidebarMenuLabel }}
                                     </div>
                                     <nav class="py-1 text-sm" aria-label="Office Queue Navigation">
                                         @foreach($sidebarMenuItems as $menuItem)
-                                            <a href="{{ $menuItem['href'] }}"
+                                            <a href="{{ $menuItem['href'] }}" wire:navigate
                                                class="lgu-topbar-panel-link {{ $menuItem['active'] ? 'lgu-topbar-panel-link-active' : '' }}">
                                                 {{ $menuItem['label'] }}
                                             </a>
@@ -430,37 +372,25 @@
                                 </div>
                             </details>
                         @endif
-<<<<<<< HEAD
 
                         <div class="lgu-brand-lockup">
-                            <p class="lgu-brand-kicker">Municipal Service Console</p>
-                            <a href="{{ url('/') }}" class="lgu-brand-title focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">
-                                LGU Queue System
+                            <a href="{{ url('/') }}" wire:navigate class="lgu-brand-title focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">
+                                Municipal Queue Services
                             </a>
                             @auth
                                 <p class="lgu-brand-subtitle">Operations dashboard for queue monitoring and office coordination.</p>
                             @endauth
                         </div>
-
-                        @auth
-                            <div class="lgu-identity-badge" title="{{ $authUser->name }}">
-                                <span class="lgu-identity-avatar">{{ $authUser->initials }}</span>
-                                <span class="lgu-identity-copy">
-                                    <span class="lgu-identity-name">{{ $authUser->name }}</span>
-                                    <span class="lgu-identity-role">{{ $authUser->role?->name ?? 'User' }}</span>
-                                </span>
-                            </div>
-                        @endauth
                     </div>
 
                     <div class="lgu-topbar-end">
                         @auth
                             @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
                                 @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
-                                <a href="{{ $mainDashboardRoute }}" class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
+                                <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
                             @endif
                             @if($showDashboardShortcut)
-                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}" wire:navigate
                                    class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'lgu-topbar-link-active' : '' }}">
                                     Dashboard
                                 </a>
@@ -476,43 +406,14 @@
                                             <span class="lgu-identity-avatar h-8 w-8 text-[0.72rem]">{{ $authUser->initials }}</span>
                                         @endif
                                         <span>Account</span>
-=======
-                        <a href="{{ url('/') }}" class="order-1 min-w-0 flex-1 truncate rounded px-1 text-lg font-bold text-white hover:text-blue-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:order-2 sm:flex-none sm:text-xl">LGU Queue System</a>
-                        @auth
-                            <span class="order-2 min-w-0 truncate py-1 text-sm text-blue-200 sm:order-3 sm:py-2">{{ auth()->user()->name }} <span class="text-blue-300">({{ auth()->user()->role?->name }})</span></span>
-                        @endauth
-                    </div>
-                    <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-                        @auth
-                            @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
-                                @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
-                                <a href="{{ $mainDashboardRoute }}" class="lgu-btn w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto">Dashboard</a>
-                            @endif
-                            @if($showDashboardShortcut)
-                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}"
-                                   class="lgu-btn w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'bg-blue-700' : 'hover:bg-blue-700' }}">
-                                    Dashboard
-                                </a>
-                            @endif
-                            <details class="relative w-full sm:w-auto">
-                                <summary class="lgu-btn w-full justify-center list-none cursor-pointer rounded-lg px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto [&::-webkit-details-marker]:hidden" aria-label="Open account menu">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        Account
->>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
                                         </svg>
                                     </span>
                                 </summary>
-<<<<<<< HEAD
                                 <div class="lgu-topbar-panel lgu-topbar-account-panel">
                                     @php($accountUser = $authUser)
                                     <div class="lgu-topbar-panel-account">
-=======
-                                <div class="mt-2 w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl sm:absolute sm:right-0 sm:z-30 sm:w-44">
-                                    @php($accountUser = auth()->user())
-                                    <div class="border-b border-slate-100 px-4 py-2.5">
->>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
                                         <div class="flex items-center gap-2">
                                             @if($accountUser->profile_photo_url)
                                                 <img src="{{ $accountUser->profile_photo_url }}"
@@ -529,7 +430,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <a href="{{ route('profile') }}" class="lgu-topbar-panel-link">Profile</a>
+                                    <a href="{{ route('profile') }}" wire:navigate class="lgu-topbar-panel-link">Profile</a>
                                     <form action="{{ route('logout') }}" method="POST">
                                         @csrf
                                         <button type="submit" class="lgu-topbar-panel-button">Logout</button>
@@ -537,11 +438,7 @@
                                 </div>
                             </details>
                         @else
-<<<<<<< HEAD
-                            <a href="{{ route('login') }}" class="lgu-topbar-login">Log in</a>
-=======
-                            <a href="{{ route('login') }}" class="lgu-btn w-full rounded-lg px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 sm:w-auto">Log in</a>
->>>>>>> e38d9f003eeb6b48e665b00d78d8583183d00324
+                            <a href="{{ route('login') }}" wire:navigate class="lgu-topbar-login">Log in</a>
                         @endauth
                     </div>
                 </div>

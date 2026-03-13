@@ -1,4 +1,4 @@
-@php($queueReportsPdfUrl = auth()->user()?->isSuperAdmin() ? route('super-admin.queue-reports.pdf') : route('office.queue-reports.pdf', $office->slug))
+@php($queueReportsPdfUrl = route('super-admin.queue-reports.pdf'))
 @php($manilaNow = now('Asia/Manila'))
 @php($dailyTotal = (int) collect($queueReportDailyCounts)->sum('total_tickets'))
 @php($weeklyTotal = (int) collect($queueReportWeeklyCounts)->sum('total_tickets'))

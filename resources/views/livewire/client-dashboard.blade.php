@@ -7,7 +7,7 @@
                     <img src="{{ asset('images/lgu-logo.png') }}" alt="Municipality of Manolo Fortich logo" class="queue-header-logo">
                     <div class="min-w-0">
                   
-                        <h1 class="queue-header-title">Municipality Queue Services</h1>
+                        <h1 class="queue-header-title">Municipal Queue Services</h1>
                         <p class="queue-header-subtitle">Municipality of Manolo Fortich - Citizen Service Portal</p>
                     </div>
                 </div>
@@ -22,7 +22,7 @@
                         </select>
                     @endif
 
-                    <a href="{{ route('welcome') }}" class="lgu-btn queue-home-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
+                    <a href="{{ route('welcome') }}" wire:navigate class="lgu-btn queue-home-btn px-5 py-2.5 rounded-xl font-semibold text-sm transition focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800">
                         Home
                     </a>
                 </div>

@@ -29,6 +29,14 @@ Route::get('/', function () {
 
 Route::view('/welcome', 'welcome')->name('welcome');
 Route::view('/live-monitor', 'office.all-offices-monitor')->name('live-monitor.public');
+Route::get('/session/pulse', function (Request $request) {
+    $request->session()->put('_session_pulse_at', now()->timestamp);
+
+    return response()->json([
+        'token' => csrf_token(),
+        'authenticated' => Auth::check(),
+    ]);
+})->name('session.pulse');
 
 Route::get('/login', Login::class)->name('login')->middleware('guest');
 
@@ -202,7 +210,6 @@ Route::post('/logout', function () {
         Route::get('/office/{office}', OfficeDashboardController::class)->name('office.dashboard');
         Route::get('/office/{office}/monitor', HrmoOfficeController::class)->name('office.hrmo.monitor');
         Route::get('/office/{office}/bplo-monitor', BploOfficeController::class)->name('office.bplo.monitor');
-        Route::get('/office/{office}/queue-reports/pdf', OfficeQueueReportsPdfController::class)->name('office.queue-reports.pdf');
     });
 });
 

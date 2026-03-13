@@ -1,4 +1,4 @@
-<div wire:poll.2s="tick" class="gov-monitor-root">
+<div wire:poll.keep-alive.2s="tick" data-session-keepalive="always" class="gov-monitor-root">
     <section class="gov-monitor-shell" aria-label="{{ $office->name }} live queue monitor">
         <header class="gov-monitor-header">
             <div class="gov-monitor-brand">
@@ -346,7 +346,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: clamp(0.7rem, 1vw, 1rem);
             min-height: 0;
         }
 
@@ -367,15 +368,21 @@
             font-size: clamp(0.64rem, 0.85vw, 0.8rem);
             font-weight: 700;
             color: #1f4f7f;
+            flex-shrink: 0;
         }
 
         .gov-ticket-number {
             margin: 0.5rem 0;
-            line-height: 0.95;
+            line-height: 0.88;
             text-align: center;
             font-weight: 800;
             letter-spacing: -0.03em;
             font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            word-break: keep-all;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
         }
 
         .gov-ticket-number-serving {
@@ -393,6 +400,8 @@
             background: rgb(255 255 255 / 0.58);
             border: 1px solid rgb(203 213 225 / 0.75);
             padding: 0.65rem 0.78rem;
+            margin-top: auto;
+            flex-shrink: 0;
         }
 
         .gov-ticket-meta-label {

@@ -273,7 +273,7 @@
             </section>
         </div>
 
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div class="gov-report-annual-layout grid grid-cols-1 xl:grid-cols-2 gap-6">
             <section class="gov-report-card p-6" aria-labelledby="monthly-volume-heading">
                 <div class="gov-report-card-head">
                     <div>
@@ -305,7 +305,7 @@
                 </div>
             </section>
 
-            <section class="gov-report-card p-6" aria-labelledby="monthly-status-heading">
+            <section class="gov-report-card gov-report-monthly-status-card p-6" aria-labelledby="monthly-status-heading">
                 <div class="gov-report-card-head gov-report-card-head-wide">
                     <div>
                         <p class="gov-report-card-kicker">Monthly Performance</p>
@@ -321,7 +321,7 @@
                     </div>
                 </div>
 
-                <div class="gov-report-month-list mt-5">
+                <div class="gov-report-month-list gov-report-month-list-landscape mt-5">
                     @foreach($monthlyStatusSeries as $monthRow)
                         <article class="gov-report-month-row">
                             <div class="gov-report-month-row-head">
@@ -709,8 +709,8 @@
 
         .gov-report-legend-item-head {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            align-items: flex-start;
+            justify-content: flex-start;
             gap: 0.8rem;
         }
 
@@ -721,12 +721,18 @@
             color: var(--gov-report-ink-700);
             font-size: 0.9rem;
             font-weight: 700;
+            min-width: 0;
+            flex: 1 1 auto;
+            line-height: 1.35;
         }
 
         .gov-report-legend-value {
             color: var(--gov-report-ink-900);
             font-size: 0.95rem;
             font-weight: 800;
+            flex: 0 0 auto;
+            margin-left: auto;
+            line-height: 1.2;
         }
 
         .gov-report-legend-meta {
@@ -879,6 +885,21 @@
             gap: 0.8rem;
         }
 
+        .gov-report-annual-layout {
+            align-items: start;
+        }
+
+        .gov-report-monthly-status-card {
+            background:
+                radial-gradient(circle at top right, rgb(220 232 246 / 0.5), transparent 44%),
+                linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+
+        .gov-report-month-list-landscape {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
+        }
+
         .gov-report-month-row {
             border: 1px solid #dbe5f0;
             border-radius: 1rem;
@@ -968,6 +989,12 @@
             .gov-report-pill-row {
                 text-align: left;
                 justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 1280px) {
+            .gov-report-month-list-landscape {
+                grid-template-columns: 1fr;
             }
         }
 

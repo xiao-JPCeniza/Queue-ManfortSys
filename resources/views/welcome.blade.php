@@ -3,10 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Queue System - Municipality of Manolo Fortich</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="session-pulse-url" content="{{ route('session.pulse') }}">
+    <title>Queue Services - Municipality of Manolo Fortich</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800|merriweather:700,900" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
     <style>
         body {
             font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
@@ -571,7 +574,7 @@
                         </p>
 
                         <div class="gov-hero-actions">
-                            <a href="{{ route('queue.client') }}" class="gov-cta">
+                            <a href="{{ route('queue.client') }}" wire:navigate class="gov-cta">
                                 Get your Queue Number
                             </a>
                         </div>
@@ -674,5 +677,6 @@
             }, 4000);
         })();
     </script>
+    @livewireScripts
 </body>
 </html>
