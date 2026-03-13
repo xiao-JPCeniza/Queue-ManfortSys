@@ -339,7 +339,11 @@
             $showAdminSidebarMenu = ! empty($sidebarMenuItems);
         @endphp
         <nav class="lgu-topbar text-white" role="navigation" aria-label="Main">
+<<<<<<< HEAD
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+=======
             <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12">
+>>>>>>> 788a1f44be7887e18d5412ed8c905fed9807e530
                 <div class="lgu-topbar-shell">
                     <div class="lgu-topbar-start">
                         @if($showAdminSidebarMenu)
@@ -367,7 +371,10 @@
                                 </div>
                             </details>
                         @endif
+<<<<<<< HEAD
+=======
 
+>>>>>>> 788a1f44be7887e18d5412ed8c905fed9807e530
                         <div class="lgu-brand-lockup">
                             <a href="{{ url('/') }}" wire:navigate class="lgu-brand-title focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-800 rounded px-1">
                                 Municipal Queue Services
@@ -433,7 +440,11 @@
                                 </div>
                             </details>
                         @else
+<<<<<<< HEAD
+                            <a href="{{ route('login') }}" class="lgu-topbar-login">Log in</a>
+=======
                             <a href="{{ route('login') }}" wire:navigate class="lgu-topbar-login">Log in</a>
+>>>>>>> 788a1f44be7887e18d5412ed8c905fed9807e530
                         @endauth
                     </div>
                 </div>
