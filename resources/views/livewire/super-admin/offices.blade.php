@@ -9,7 +9,7 @@
 
     @if(is_array($generatedOfficeAccount))
         <section class="rounded-2xl border border-blue-200 bg-blue-50/70 p-5 shadow-sm" aria-labelledby="generated-office-account-heading">
-            <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
                 <div>
                     <h2 id="generated-office-account-heading" class="text-base font-semibold text-blue-950">
                         {{ $generatedOfficeAccount['office_name'] }} account is ready
@@ -18,12 +18,6 @@
                         Use these credentials to sign in to the new office operation desk.
                     </p>
                 </div>
-                <a
-                    href="{{ $generatedOfficeAccount['dashboard_url'] }}"
-                    class="inline-flex items-center rounded-lg bg-blue-800 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                    Open Office Desk
-                </a>
             </div>
 
             <div class="mt-4 grid gap-3 md:grid-cols-2">
@@ -33,24 +27,9 @@
                 </div>
 
                 <div class="rounded-xl border border-blue-100 bg-white px-4 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">Temporary Password</p>
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">Password</p>
                     <p class="mt-1 break-all font-mono text-sm text-slate-800">{{ $generatedOfficeAccount['password'] }}</p>
                 </div>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-3 text-sm">
-                <a
-                    href="{{ $generatedOfficeAccount['login_url'] }}"
-                    class="inline-flex items-center rounded-lg border border-blue-200 px-3 py-2 font-semibold text-blue-800 hover:bg-white"
-                >
-                    Go to Login
-                </a>
-                <a
-                    href="{{ route('super-admin.offices') }}"
-                    class="inline-flex items-center rounded-lg border border-transparent px-3 py-2 font-medium text-slate-600 hover:text-slate-800"
-                >
-                    Back to Offices
-                </a>
             </div>
         </section>
     @endif
@@ -153,7 +132,7 @@
                 </button>
             </div>
 
-            <form wire:submit="createOffice" class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <form wire:submit="createOffice" autocomplete="off" class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                     <label for="office-name" class="mb-2 block text-sm font-medium text-slate-700">Office Name</label>
                     <input
@@ -202,6 +181,9 @@
                         id="office-admin-email"
                         type="email"
                         wire:model.live="officeAdminEmail"
+                        autocomplete="off"
+                        autocapitalize="off"
+                        spellcheck="false"
                         class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                         placeholder="e.g. citizen.center@manolofortich.gov.ph"
                     >
@@ -212,21 +194,28 @@
                 </div>
 
                 <div>
-                    <label for="office-admin-password" class="mb-2 block text-sm font-medium text-slate-700">Temporary Password</label>
-                    <div class="flex gap-2">
+                    <label for="office-admin-password" class="mb-2 block text-sm font-medium text-slate-700">Password</label>
+                    <div class="relative">
                         <input
                             id="office-admin-password"
-                            type="text"
+                            type="password"
                             wire:model="officeAdminPassword"
-                            class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                            placeholder="Create a temporary password"
+                            autocomplete="new-password"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-20 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="Create a password"
                         >
                         <button
                             type="button"
-                            wire:click="regenerateOfficeAdminPassword"
-                            class="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            data-password-toggle
+                            data-password-target="office-admin-password"
+                            aria-controls="office-admin-password"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                         >
-                            Generate
+                            Show
                         </button>
                     </div>
                     <p class="mt-2 text-xs text-slate-500">Use at least 8 characters. The office can change it later after logging in.</p>
@@ -236,14 +225,30 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <label for="office-admin-password-confirmation" class="mb-2 block text-sm font-medium text-slate-700">Confirm Temporary Password</label>
-                    <input
-                        id="office-admin-password-confirmation"
-                        type="text"
-                        wire:model="officeAdminPasswordConfirmation"
-                        class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                        placeholder="Retype the temporary password"
-                    >
+                    <label for="office-admin-password-confirmation" class="mb-2 block text-sm font-medium text-slate-700">Confirm Password</label>
+                    <div class="relative">
+                        <input
+                            id="office-admin-password-confirmation"
+                            type="password"
+                            wire:model="officeAdminPasswordConfirmation"
+                            autocomplete="new-password"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 pr-20 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="Retype the password"
+                        >
+                        <button
+                            type="button"
+                            data-password-toggle
+                            data-password-target="office-admin-password-confirmation"
+                            aria-controls="office-admin-password-confirmation"
+                            aria-label="Show password confirmation"
+                            aria-pressed="false"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                        >
+                            Show
+                        </button>
+                    </div>
                     @error('officeAdminPasswordConfirmation')
                         <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                     @enderror
@@ -290,6 +295,19 @@
                             <td class="px-6 py-4 text-slate-700">{{ $office->display_name }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
+<<<<<<< HEAD
+                             <td class="px-6 py-4">
+                                 <div class="flex flex-wrap gap-2">
+                                     <button
+                                         type="button"
+                                         wire:click="deleteOffice({{ $office->id }})"
+                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
+                                        class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+=======
                             <td class="px-6 py-4">
                                 <button
                                     type="button"
@@ -299,6 +317,7 @@
                                 >
                                     Delete
                                 </button>
+>>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd
                             </td>
                         </tr>
                     @empty
@@ -311,3 +330,29 @@
         </div>
     </section>
 </div>
+
+@once
+    <script>
+        document.addEventListener('click', (event) => {
+            const toggle = event.target.closest('[data-password-toggle]');
+
+            if (! toggle) {
+                return;
+            }
+
+            const targetId = toggle.getAttribute('data-password-target');
+            const input = targetId ? document.getElementById(targetId) : null;
+
+            if (! input) {
+                return;
+            }
+
+            const shouldShow = input.type === 'password';
+
+            input.type = shouldShow ? 'text' : 'password';
+            toggle.textContent = shouldShow ? 'Hide' : 'Show';
+            toggle.setAttribute('aria-label', shouldShow ? 'Hide password' : 'Show password');
+            toggle.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+        });
+    </script>
+@endonce

@@ -8,6 +8,7 @@ use App\Models\QueueEntry;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -848,15 +849,20 @@ class Dashboard extends Component
             ->values()
             ->map(function (User $user) use ($activeOfficeIds) {
                 $isQueueActive = $user->office_id !== null && $activeOfficeIds->contains($user->office_id);
+                $passwordInfo = $this->resolveUserManagementPasswordInfo($user);
 
                 return [
                     'name' => $user->name,
+                    'email' => $user->email,
                     'role' => $user->role?->name ?? 'Unassigned',
                     'office' => $user->office?->name ?? 'Unassigned',
                     'status_label' => $isQueueActive ? 'Active' : 'Not Active',
                     'status_badge_class' => $isQueueActive
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-slate-200 text-slate-600',
+                    'password_value' => $passwordInfo['value'],
+                    'password_help' => $passwordInfo['help'],
+                    'password_is_recoverable' => $passwordInfo['is_recoverable'],
                 ];
             })
             ->all();
@@ -1136,5 +1142,34 @@ class Dashboard extends Component
     private function supportsAdvancedQueueDashboard(): bool
     {
         return in_array($this->office->slug, self::ADVANCED_QUEUE_DASHBOARD_SLUGS, true);
+    }
+
+    private function resolveUserManagementPasswordInfo(User $user): array
+    {
+        $recoverablePassword = trim((string) $user->recoverable_password);
+
+        if ($recoverablePassword !== '') {
+            return [
+                'value' => $recoverablePassword,
+                'help' => 'This is the current password on file for this account.',
+                'is_recoverable' => true,
+            ];
+        }
+
+        $hashedPassword = (string) $user->getAuthPassword();
+
+        if ($hashedPassword !== '' && Hash::check('password', $hashedPassword)) {
+            return [
+                'value' => 'password',
+                'help' => 'This account is still using the default password.',
+                'is_recoverable' => true,
+            ];
+        }
+
+        return [
+            'value' => 'Unavailable',
+            'help' => 'This password was not stored for this account. Set or reset the password again to make it visible here.',
+            'is_recoverable' => false,
+        ];
     }
 }

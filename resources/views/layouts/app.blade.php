@@ -372,9 +372,14 @@
 
                     <div class="lgu-topbar-end">
                         @auth
+<<<<<<< HEAD
+                            @if(auth()->user()->isSuperAdmin())
+                                <a href="{{ route('super-admin.index') }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
+=======
                             @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
                                 @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
                                 <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('super-admin.reports') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
+>>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd
                             @endif
                             @if($showDashboardShortcut)
                                 <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=reports" wire:navigate

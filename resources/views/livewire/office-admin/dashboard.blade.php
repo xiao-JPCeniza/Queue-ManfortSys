@@ -260,9 +260,40 @@
                                                         <td class="px-3 py-3 text-slate-600">{{ $userRow['role'] }}</td>
                                                         <td class="px-3 py-3 text-slate-600">{{ $userRow['office'] }}</td>
                                                         <td class="px-3 py-3">
-                                                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $userRow['status_badge_class'] }}">
-                                                                {{ $userRow['status_label'] }}
-                                                            </span>
+                                                            <div class="flex flex-wrap items-center gap-2">
+                                                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $userRow['status_badge_class'] }}">
+                                                                    {{ $userRow['status_label'] }}
+                                                                </span>
+
+                                                                <details class="group relative">
+                                                                    <summary
+                                                                        class="list-none cursor-pointer rounded-full border border-slate-300 bg-white p-2 text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+                                                                        aria-label="View account info"
+                                                                        title="View account info"
+                                                                    >
+                                                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                            <circle cx="5" cy="12" r="1.75" />
+                                                                            <circle cx="12" cy="12" r="1.75" />
+                                                                            <circle cx="19" cy="12" r="1.75" />
+                                                                        </svg>
+                                                                    </summary>
+
+                                                                    <div class="mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
+                                                                        <div>
+                                                                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Login Email</p>
+                                                                            <p class="mt-1 break-all font-mono text-sm text-slate-800">{{ $userRow['email'] }}</p>
+                                                                        </div>
+
+                                                                        <div class="mt-3">
+                                                                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Password</p>
+                                                                            <p class="mt-1 font-mono text-sm {{ $userRow['password_is_recoverable'] ? 'text-slate-800' : 'text-slate-500' }}">
+                                                                                {{ $userRow['password_value'] }}
+                                                                            </p>
+                                                                            <p class="mt-1 text-xs text-slate-500">{{ $userRow['password_help'] }}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </details>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 @empty

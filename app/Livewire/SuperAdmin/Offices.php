@@ -77,14 +77,6 @@ class Offices extends Component
         $this->officeAdminEmailManuallyEdited = $normalizedEmail !== '' && $normalizedEmail !== $suggestedEmail;
     }
 
-    public function regenerateOfficeAdminPassword(): void
-    {
-        $generatedPassword = $this->generateTemporaryOfficeAdminPassword();
-
-        $this->officeAdminPassword = $generatedPassword;
-        $this->officeAdminPasswordConfirmation = $generatedPassword;
-    }
-
     public function createOffice(): void
     {
         $name = trim($this->officeName);
@@ -167,9 +159,9 @@ class Offices extends Component
                 'officePrefix.required' => 'Prefix ticket is required.',
                 'officeDescription.required' => 'Meaning or description of the office is required.',
                 'officeAdminEmail.required' => 'Office login email is required.',
-                'officeAdminPassword.required' => 'Temporary password is required.',
-                'officeAdminPassword.min' => 'Temporary password must be at least 8 characters.',
-                'officeAdminPasswordConfirmation.required' => 'Please confirm the temporary password.',
+                'officeAdminPassword.required' => 'Password is required.',
+                'officeAdminPassword.min' => 'Password must be at least 8 characters.',
+                'officeAdminPasswordConfirmation.required' => 'Please confirm the password.',
                 'officeAdminPasswordConfirmation.same' => 'The password confirmation does not match.',
             ]
         )->validate();
@@ -195,13 +187,13 @@ class Offices extends Component
                 'show_in_public_queue' => true,
             ]);
 
-            $officeAdminUser = User::create([
+            $officeAdminUser = User::create(User::withRecoverablePassword([
                 'name' => $office->name.' Office Admin',
                 'email' => $officeAdminEmail,
                 'password' => $officeAdminPassword,
                 'role_id' => $officeAdminRole->id,
                 'office_id' => $office->id,
-            ]);
+            ], $officeAdminPassword));
 
             return [$office, $officeAdminUser, $officeAdminPassword];
         });
@@ -215,8 +207,6 @@ class Offices extends Component
             'office_name' => $office->name,
             'email' => $officeAdminUser->email,
             'password' => $generatedPassword,
-            'dashboard_url' => route('office.dashboard', $office->slug),
-            'login_url' => route('login'),
         ]);
     }
 
@@ -229,7 +219,10 @@ class Offices extends Component
         }
 
         $officeName = $office->name;
-        $office->delete();
+        DB::transaction(function () use ($office): void {
+            $office->users()->delete();
+            $office->delete();
+        });
         $this->syncServiceWindowSelection($this->publicQueueOffices());
 
         session()->flash('success', "{$officeName} was deleted from the public queue.");
@@ -359,10 +352,6 @@ class Offices extends Component
         if ($this->officeName !== '' && ! $this->officeAdminEmailManuallyEdited) {
             $this->officeAdminEmail = $this->suggestOfficeAdminEmail($this->officeName);
         }
-
-        if ($this->officeAdminPassword === '') {
-            $this->regenerateOfficeAdminPassword();
-        }
     }
 
     private function suggestOfficeAdminEmail(string $officeName): string
@@ -402,10 +391,5 @@ class Offices extends Component
         } while (User::query()->whereRaw('LOWER(email) = ?', [$candidateEmail])->exists());
 
         return $candidateEmail;
-    }
-
-    private function generateTemporaryOfficeAdminPassword(): string
-    {
-        return Str::password(12, true, true, false, false);
     }
 }

@@ -51,6 +51,63 @@ class SuperAdminUserManagementTest extends TestCase
             ->assertDontSee('OBO Admin');
     }
 
+    public function test_user_management_shows_account_info_beside_status_for_public_office_users(): void
+    {
+        [$superAdminRole, $officeAdminRole] = $this->createRoles();
+
+        $superAdmin = User::factory()->create([
+            'role_id' => $superAdminRole->id,
+            'office_id' => null,
+        ]);
+
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+
+        User::factory()->create([
+            'name' => 'HRMO Admin',
+            'email' => 'hrmo@manolofortich.gov.ph',
+            'password' => 'password',
+            'role_id' => $officeAdminRole->id,
+            'office_id' => $hrmo->id,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('super-admin.user-management'))
+            ->assertOk()
+            ->assertSee('hrmo@manolofortich.gov.ph')
+            ->assertSee('Password')
+            ->assertSee('password')
+            ->assertSee('This account is still using the default password.');
+    }
+
+    public function test_user_management_shows_the_current_password_when_it_is_stored_for_super_admin_access(): void
+    {
+        [$superAdminRole, $officeAdminRole] = $this->createRoles();
+
+        $superAdmin = User::factory()->create([
+            'role_id' => $superAdminRole->id,
+            'office_id' => null,
+        ]);
+
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+
+        User::factory()->create([
+            'name' => 'HRMO Admin',
+            'email' => 'hrmo@manolofortich.gov.ph',
+            'password' => 'UpdatedPass123',
+            'recoverable_password' => 'UpdatedPass123',
+            'role_id' => $officeAdminRole->id,
+            'office_id' => $hrmo->id,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('super-admin.user-management'))
+            ->assertOk()
+            ->assertSee('hrmo@manolofortich.gov.ph')
+            ->assertSee('UpdatedPass123')
+            ->assertSee('This is the current password on file for this account.')
+            ->assertDontSee('Unavailable');
+    }
+
     private function createRoles(): array
     {
         return [
