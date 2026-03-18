@@ -48,13 +48,19 @@ class SuperAdminOfficesTest extends TestCase
         $this->actingAs($superAdmin);
 
         Livewire::test(SuperAdminOffices::class)
-            ->set('showCreateForm', true)
+            ->call('toggleCreateForm')
             ->set('officeName', 'Citizen Center')
             ->set('officePrefix', 'ccen')
+            ->set('officeDescription', 'Citizen Center services')
+            ->set('officeAdminEmail', 'citizen.center@manolofortich.gov.ph')
+            ->set('officeAdminPassword', 'Citizen123')
+            ->set('officeAdminPasswordConfirmation', 'Citizen123')
             ->call('createOffice')
             ->assertHasNoErrors()
             ->assertSee('Citizen Center')
-            ->assertSee('CCEN');
+            ->assertSee('CCEN')
+            ->assertSee('citizen.center@manolofortich.gov.ph')
+            ->assertSee('Temporary Password');
 
         $this->assertDatabaseHas('offices', [
             'name' => 'Citizen Center',
@@ -66,6 +72,13 @@ class SuperAdminOfficesTest extends TestCase
             'tickets_accommodated_total' => 0,
             'is_active' => true,
             'show_in_public_queue' => true,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Citizen Center Office Admin',
+            'email' => 'citizen.center@manolofortich.gov.ph',
+            'office_id' => Office::query()->where('slug', 'citizen-center')->value('id'),
+            'role_id' => Role::query()->where('slug', 'office_admin')->value('id'),
         ]);
     }
 
@@ -132,16 +145,24 @@ class SuperAdminOfficesTest extends TestCase
         $this->actingAs($superAdmin);
 
         Livewire::test(SuperAdminOffices::class)
-            ->set('showCreateForm', true)
+            ->call('toggleCreateForm')
             ->set('officeName', 'Citizen Center')
             ->set('officePrefix', 'NCTR')
+            ->set('officeDescription', 'Citizen Center services')
+            ->set('officeAdminEmail', 'citizen.center2@manolofortich.gov.ph')
+            ->set('officeAdminPassword', 'Citizen123')
+            ->set('officeAdminPasswordConfirmation', 'Citizen123')
             ->call('createOffice')
             ->assertHasErrors(['officeName']);
 
         Livewire::test(SuperAdminOffices::class)
-            ->set('showCreateForm', true)
+            ->call('toggleCreateForm')
             ->set('officeName', 'New Center')
             ->set('officePrefix', 'ccen')
+            ->set('officeDescription', 'New Center services')
+            ->set('officeAdminEmail', 'new.center@manolofortich.gov.ph')
+            ->set('officeAdminPassword', 'Citizen123')
+            ->set('officeAdminPasswordConfirmation', 'Citizen123')
             ->call('createOffice')
             ->assertHasErrors(['officePrefix']);
     }
@@ -202,15 +223,28 @@ class SuperAdminOfficesTest extends TestCase
 
     private function createSuperAdminUser(): User
     {
-        $role = Role::create([
-            'name' => 'Super Admin',
+        $role = Role::firstOrCreate([
             'slug' => 'super_admin',
+        ], [
+            'name' => 'Super Admin',
             'description' => 'System-wide administrator',
         ]);
+
+        $this->createOfficeAdminRole();
 
         return User::factory()->create([
             'role_id' => $role->id,
             'office_id' => null,
+        ]);
+    }
+
+    private function createOfficeAdminRole(): Role
+    {
+        return Role::firstOrCreate([
+            'slug' => 'office_admin',
+        ], [
+            'name' => 'Office Admin',
+            'description' => 'Office-specific administrator',
         ]);
     }
 

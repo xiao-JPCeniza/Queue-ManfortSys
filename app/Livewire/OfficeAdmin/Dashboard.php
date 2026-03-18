@@ -76,6 +76,8 @@ class Dashboard extends Component
 
     public string $hrmoTab = 'dashboard';
 
+    public bool $isSuperAdminRouteContext = false;
+
     public string $queueManagementSection = 'queued-today';
 
     public string $queueManagementOfficeFilter = 'all';
@@ -87,6 +89,7 @@ class Dashboard extends Component
     public function mount(Office $office): void
     {
         $this->office = $office;
+        $this->isSuperAdminRouteContext = request()->routeIs('super-admin.*');
 
         $superAdminTabByRoute = [
             'super-admin.reports' => 'reports',
@@ -1093,7 +1096,7 @@ class Dashboard extends Component
 
     private function shouldUseAllOfficesReportScope(): bool
     {
-        return $this->isSuperAdmin() && request()->routeIs('super-admin.*');
+        return $this->isSuperAdmin() && $this->isSuperAdminRouteContext;
     }
 
     private function currentUser(): ?User

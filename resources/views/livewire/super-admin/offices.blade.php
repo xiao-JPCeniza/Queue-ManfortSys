@@ -1,8 +1,58 @@
 <div class="space-y-6">
+    @php($generatedOfficeAccount = session('generatedOfficeAccount'))
+
     @if(session('success'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             {{ session('success') }}
         </div>
+    @endif
+
+    @if(is_array($generatedOfficeAccount))
+        <section class="rounded-2xl border border-blue-200 bg-blue-50/70 p-5 shadow-sm" aria-labelledby="generated-office-account-heading">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 id="generated-office-account-heading" class="text-base font-semibold text-blue-950">
+                        {{ $generatedOfficeAccount['office_name'] }} account is ready
+                    </h2>
+                    <p class="mt-1 text-sm text-blue-800">
+                        Use these credentials to sign in to the new office operation desk.
+                    </p>
+                </div>
+                <a
+                    href="{{ $generatedOfficeAccount['dashboard_url'] }}"
+                    class="inline-flex items-center rounded-lg bg-blue-800 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                    Open Office Desk
+                </a>
+            </div>
+
+            <div class="mt-4 grid gap-3 md:grid-cols-2">
+                <div class="rounded-xl border border-blue-100 bg-white px-4 py-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">Login Email</p>
+                    <p class="mt-1 break-all font-mono text-sm text-slate-800">{{ $generatedOfficeAccount['email'] }}</p>
+                </div>
+
+                <div class="rounded-xl border border-blue-100 bg-white px-4 py-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">Temporary Password</p>
+                    <p class="mt-1 break-all font-mono text-sm text-slate-800">{{ $generatedOfficeAccount['password'] }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap gap-3 text-sm">
+                <a
+                    href="{{ $generatedOfficeAccount['login_url'] }}"
+                    class="inline-flex items-center rounded-lg border border-blue-200 px-3 py-2 font-semibold text-blue-800 hover:bg-white"
+                >
+                    Go to Login
+                </a>
+                <a
+                    href="{{ route('super-admin.offices') }}"
+                    class="inline-flex items-center rounded-lg border border-transparent px-3 py-2 font-medium text-slate-600 hover:text-slate-800"
+                >
+                    Back to Offices
+                </a>
+            </div>
+        </section>
     @endif
 
     @if(session('error'))
@@ -109,7 +159,7 @@
                     <input
                         id="office-name"
                         type="text"
-                        wire:model="officeName"
+                        wire:model.live="officeName"
                         class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                         placeholder="e.g. Business Center"
                     >
@@ -142,6 +192,59 @@
                         placeholder="e.g. Business permits and licensing services"
                     ></textarea>
                     @error('officeDescription')
+                        <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="office-admin-email" class="mb-2 block text-sm font-medium text-slate-700">Office Login Email</label>
+                    <input
+                        id="office-admin-email"
+                        type="email"
+                        wire:model.live="officeAdminEmail"
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        placeholder="e.g. citizen.center@manolofortich.gov.ph"
+                    >
+                    <p class="mt-2 text-xs text-slate-500">Auto-suggested from the office name, but you can replace it.</p>
+                    @error('officeAdminEmail')
+                        <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="office-admin-password" class="mb-2 block text-sm font-medium text-slate-700">Temporary Password</label>
+                    <div class="flex gap-2">
+                        <input
+                            id="office-admin-password"
+                            type="text"
+                            wire:model="officeAdminPassword"
+                            class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="Create a temporary password"
+                        >
+                        <button
+                            type="button"
+                            wire:click="regenerateOfficeAdminPassword"
+                            class="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                            Generate
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">Use at least 8 characters. The office can change it later after logging in.</p>
+                    @error('officeAdminPassword')
+                        <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="md:col-span-2">
+                    <label for="office-admin-password-confirmation" class="mb-2 block text-sm font-medium text-slate-700">Confirm Temporary Password</label>
+                    <input
+                        id="office-admin-password-confirmation"
+                        type="text"
+                        wire:model="officeAdminPasswordConfirmation"
+                        class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        placeholder="Retype the temporary password"
+                    >
+                    @error('officeAdminPasswordConfirmation')
                         <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
                     @enderror
                 </div>
