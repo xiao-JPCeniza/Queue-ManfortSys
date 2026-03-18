@@ -7,7 +7,6 @@ use App\Http\Controllers\OfficeQueueReportsPdfController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
 use App\Livewire\QueueJoin;
-use App\Livewire\SuperAdmin\Dashboard as SuperAdminDashboard;
 use App\Models\Office;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -50,7 +49,7 @@ Route::post('/logout', function () {
             $user->load('role');
 
             if ($user->isSuperAdmin()) {
-                return redirect()->route('super-admin.index');
+                return redirect()->route('super-admin.reports');
             }
             if ($user->isOfficeAdmin() && $user->office_id) {
                 return redirect()->route('office.dashboard', $user->office->slug);
@@ -172,7 +171,9 @@ Route::post('/logout', function () {
     })->name('profile.photo.update');
 
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
-        Route::get('/', SuperAdminDashboard::class)->name('index');
+        Route::get('/', function () {
+            return redirect()->route('super-admin.reports');
+        })->name('index');
         Route::get('/reports', function () {
             $officeModel = Office::resolveSuperAdminContextOffice()
                 ?? abort(404, 'No office is available for the Super Admin dashboard.');
