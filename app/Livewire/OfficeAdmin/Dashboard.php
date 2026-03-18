@@ -294,9 +294,8 @@ class Dashboard extends Component
 
         $servingEntries = $this->todayOfficeQueueEntries()
             ->serving()
-            ->orderByRaw('COALESCE(service_window_number, 1)')
-            ->orderBy('called_at')
-            ->orderBy('id')
+            ->orderByRaw('COALESCE(called_at, created_at) DESC')
+            ->orderByDesc('id')
             ->get()
             ->map(function (QueueEntry $entry) {
                 if ($entry->service_window_number === null) {

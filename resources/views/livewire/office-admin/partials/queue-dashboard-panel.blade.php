@@ -22,20 +22,35 @@
         <section class="gov-card gov-serving-card xl:col-span-3" aria-labelledby="serving-heading">
             <div class="gov-card-head">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 id="serving-heading" class="gov-font-heading gov-card-title">
-                        {{ $usesMultipleServiceWindows ? 'Service Windows' : 'Currently Serving' }}
-                    </h2>
-                    <span class="gov-status-chip {{ $servingEntries->isNotEmpty() ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
-                        {{ $servingEntries->count() }} active
+                    <h2 id="serving-heading" class="gov-font-heading gov-card-title">Serving Now</h2>
+                    <span class="gov-status-chip {{ $serving ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
+                        {{ $serving ? '1 active' : 'Idle' }}
                     </span>
                 </div>
                 <p class="gov-card-subtitle">
-                    Call the next number per window to update the live monitor and announce exactly where the client should proceed.
+                    Only the latest called queue number is displayed here. Use the window controls below for the next call.
                 </p>
             </div>
 
             <div class="gov-card-body">
-                <div class="gov-window-grid">
+                @if($serving)
+                    <article class="gov-ticket-board gov-ticket-board-current">
+                        <p class="gov-window-kicker">{{ $serving->service_window_label ?? 'Window 1' }}</p>
+                        <p class="gov-ticket-number gov-ticket-number-current" aria-label="Currently serving {{ $serving->queue_number }}">
+                            {{ $serving->queue_number }}
+                        </p>
+                        <div class="gov-ticket-meta-panel">
+                            <p class="gov-ticket-meta-panel-label">Called at</p>
+                            <p class="gov-ticket-meta-panel-value">{{ $serving->displayCalledAt()?->format('h:i:s A') }}</p>
+                        </div>
+                    </article>
+                @else
+                    <div class="gov-ticket-empty gov-ticket-empty-window">
+                        <p>No active ticket right now.</p>
+                    </div>
+                @endif
+
+                <div class="gov-window-grid gov-window-grid-controls">
                     @foreach($serviceWindows as $window)
                         @php($windowEntry = $window['entry'])
 
@@ -44,7 +59,7 @@
                                 <div>
                                     <p class="gov-window-kicker">{{ $window['label'] }}</p>
                                     <h3 class="gov-window-title">
-                                        {{ $windowEntry?->queue_number ?? 'Available' }}
+                                        {{ $windowEntry ? 'Ticket in progress' : 'Ready for next call' }}
                                     </h3>
                                 </div>
 
@@ -53,22 +68,13 @@
                                 </span>
                             </div>
 
-                            @if($windowEntry)
-                                <div class="gov-ticket-board gov-ticket-board-window">
-                                    <p class="gov-ticket-label">Ticket Number</p>
-                                    <p class="gov-ticket-number" aria-label="{{ $window['label'] }} serving {{ $windowEntry->queue_number }}">
-                                        {{ $windowEntry->queue_number }}
-                                    </p>
-                                    <p class="gov-client-type-chip {{ $windowEntry->isPriorityClient() ? 'gov-client-type-chip-priority' : 'gov-client-type-chip-regular' }}">
-                                        {{ $windowEntry->client_type_label }}
-                                    </p>
-                                    <p class="gov-ticket-meta">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
-                                </div>
-                            @else
-                                <div class="gov-ticket-empty gov-ticket-empty-window">
+                            <div class="gov-window-note">
+                                @if($windowEntry)
+                                    <p>{{ $window['label'] }} has an active ticket.</p>
+                                @else
                                     <p>{{ $window['label'] }} is ready for the next client.</p>
-                                </div>
-                            @endif
+                                @endif
+                            </div>
 
                             <div class="gov-window-actions">
                                 <button
@@ -332,6 +338,10 @@
             gap: 1rem;
         }
 
+        .gov-window-grid-controls {
+            margin-top: 1rem;
+        }
+
         .gov-window-card {
             border: 1px solid #dce5ef;
             border-radius: 1rem;
@@ -377,6 +387,11 @@
             min-height: 13.5rem;
         }
 
+        .gov-ticket-board-current {
+            min-height: 0;
+            padding: 1.2rem;
+        }
+
         .gov-ticket-label {
             margin: 0;
             color: #0f7660;
@@ -395,10 +410,37 @@
             color: var(--gov-emerald-600);
         }
 
+        .gov-ticket-number-current {
+            font-size: clamp(3.4rem, 8vw, 5.4rem);
+            margin-top: 0.7rem;
+        }
+
         .gov-ticket-meta {
             margin: 0.45rem 0 0;
             color: #0f7660;
             font-size: 0.9rem;
+        }
+
+        .gov-ticket-meta-panel {
+            margin-top: 1rem;
+            border-radius: 0.95rem;
+            border: 1px solid #c8d8eb;
+            background: rgb(255 255 255 / 0.7);
+            padding: 0.95rem 1rem;
+        }
+
+        .gov-ticket-meta-panel-label {
+            margin: 0;
+            color: var(--gov-ink-700);
+            font-size: 0.88rem;
+        }
+
+        .gov-ticket-meta-panel-value {
+            margin: 0.28rem 0 0;
+            color: var(--gov-ink-900);
+            font-size: clamp(1.55rem, 3vw, 2.2rem);
+            font-weight: 800;
+            line-height: 1.1;
         }
 
         .gov-client-type-chip,
@@ -447,6 +489,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .gov-window-note {
+            border-radius: 0.95rem;
+            border: 1px dashed #cbd5e1;
+            background: #f8fafc;
+            padding: 0.9rem 1rem;
+            color: var(--gov-ink-700);
+            font-size: 0.9rem;
+        }
+
+        .gov-window-note p {
+            margin: 0;
         }
 
         .gov-window-actions {

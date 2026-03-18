@@ -36,6 +36,7 @@ class SuperAdminOfficesTest extends TestCase
             ->assertSee('Human Resource Management Office')
             ->assertSee('Municipal Accounting Office')
             ->assertSee('HRMO')
+            ->assertDontSee('Queue Link')
             ->assertDontSee('Manage')
             ->assertDontSee('OBO');
     }

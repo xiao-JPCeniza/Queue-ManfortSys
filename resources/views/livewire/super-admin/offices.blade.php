@@ -188,22 +188,14 @@
                             <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
                             <td class="px-6 py-4">
-                                <div class="flex flex-wrap gap-2">
-                                    <a
-                                        href="{{ route('queue.join', $office->slug) }}"
-                                        class="inline-flex items-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                                    >
-                                        Queue Link
-                                    </a>
-                                    <button
-                                        type="button"
-                                        wire:click="deleteOffice({{ $office->id }})"
-                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and unassign any linked users."
-                                        class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    wire:click="deleteOffice({{ $office->id }})"
+                                    wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and unassign any linked users."
+                                    class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                >
+                                    Delete
+                                </button>
                             </td>
                         </tr>
                     @empty
