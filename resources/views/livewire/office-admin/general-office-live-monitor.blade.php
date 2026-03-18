@@ -27,30 +27,21 @@
                 <section class="gov-monitor-panel gov-panel-serving" aria-labelledby="now-serving-heading">
                     <div class="gov-panel-head">
                         <h2 id="now-serving-heading" class="gov-font-heading gov-panel-title">Serving Now</h2>
-                        <span class="gov-status-badge {{ $servingEntries->isNotEmpty() ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
-                            {{ $servingEntries->isNotEmpty() ? $servingEntries->count().' Active' : 'Idle' }}
+                        <span class="gov-status-badge {{ $serving ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
+                            {{ $serving ? '1 Active' : 'Idle' }}
                         </span>
                     </div>
 
                     <div class="gov-panel-body">
-                        @if($servingEntries->isNotEmpty())
-                            <div class="gov-window-monitor-list">
-                                @foreach($serviceWindows as $window)
-                                    @continue(! $window['entry'])
-
-                                    <article class="gov-window-monitor-card">
-                                        <div>
-                                            <p class="gov-ticket-label">{{ $window['label'] }}</p>
-                                            <p class="gov-window-monitor-ticket" aria-live="polite">{{ $window['entry']->queue_number }}</p>
-                                        </div>
-
-                                        <div class="gov-ticket-meta-block">
-                                            <p class="gov-ticket-meta-label">Called at</p>
-                                            <p class="gov-ticket-meta-value">{{ $window['entry']->displayCalledAt()?->format('h:i:s A') }}</p>
-                                        </div>
-                                    </article>
-                                @endforeach
-                            </div>
+                        @if($serving)
+                            <article class="gov-ticket-card gov-ticket-card-serving">
+                                <p class="gov-ticket-label">{{ $serving->service_window_label ?? 'Now Serving' }}</p>
+                                <p class="gov-ticket-number gov-ticket-number-serving" aria-live="polite">{{ $serving->queue_number }}</p>
+                                <div class="gov-ticket-meta-block">
+                                    <p class="gov-ticket-meta-label">Called at</p>
+                                    <p class="gov-ticket-meta-value">{{ $serving->displayCalledAt()?->format('h:i:s A') }}</p>
+                                </div>
+                            </article>
                         @else
                             <div class="gov-ticket-empty">
                                 <p class="gov-ticket-empty-title">No active ticket right now</p>

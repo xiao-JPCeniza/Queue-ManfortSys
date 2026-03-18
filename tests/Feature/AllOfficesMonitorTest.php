@@ -213,6 +213,57 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertStringNotContainsString('Treasury', $html);
     }
 
+    public function test_it_displays_only_the_latest_called_ticket_in_serving_now_for_the_featured_office(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 18, 12, 52, 14, 'Asia/Manila'));
+
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO');
+
+        $olderServing = $this->createQueueEntry(
+            office: $hrmo,
+            queueNumber: 'HRMO-002',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 3, 18, 8, 43, 0, 'Asia/Manila')
+        );
+
+        QueueEntry::whereKey($olderServing)->update([
+            'service_window_number' => 1,
+        ]);
+        $this->setCalledAt($olderServing, Carbon::create(2026, 3, 18, 8, 44, 10, 'Asia/Manila'));
+
+        $latestServing = $this->createQueueEntry(
+            office: $hrmo,
+            queueNumber: 'HRMO-003',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 3, 18, 12, 49, 0, 'Asia/Manila')
+        );
+
+        QueueEntry::whereKey($latestServing)->update([
+            'service_window_number' => 4,
+        ]);
+        $this->setCalledAt($latestServing, Carbon::create(2026, 3, 18, 12, 50, 19, 'Asia/Manila'));
+
+        $middleServing = $this->createQueueEntry(
+            office: $hrmo,
+            queueNumber: 'HRMO-004',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 3, 18, 12, 44, 0, 'Asia/Manila')
+        );
+
+        QueueEntry::whereKey($middleServing)->update([
+            'service_window_number' => 2,
+        ]);
+        $this->setCalledAt($middleServing, Carbon::create(2026, 3, 18, 12, 45, 36, 'Asia/Manila'));
+
+        $html = Livewire::test(AllOfficesMonitor::class)->html();
+
+        $this->assertStringContainsString('1 Active', $html);
+        $this->assertStringContainsString($latestServing->queue_number, $html);
+        $this->assertStringContainsString('Window 4', $html);
+        $this->assertStringNotContainsString($olderServing->queue_number, $html);
+        $this->assertStringNotContainsString($middleServing->queue_number, $html);
+    }
+
     private function createOffice(string $name, string $slug, string $prefix): Office
     {
         return Office::create([

@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
 @section('title', request()->routeIs('super-admin.reports')
-    ? 'Reports'
+    ? 'Dashboard'
     : (request()->routeIs('super-admin.queue-management')
         ? 'Queue Management'
         : (request()->routeIs('super-admin.user-management')
             ? 'User Management'
             : (auth()->user()?->isSuperAdmin() && request()->routeIs('super-admin.*') ? 'Super Admin Queue' : $office->name . ' Queue'))))
+@section('full_width', '1')
 
 @section('content')
     @livewire('office-admin.dashboard', ['office' => $office])

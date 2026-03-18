@@ -7,13 +7,13 @@
     <meta name="session-pulse-url" content="{{ route('session.pulse') }}">
     <title>@yield('title', 'Queue System') - {{ config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|source-serif-4:500,700" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
         .gov-font-heading {
-            font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+            font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
             letter-spacing: -0.015em;
         }
         .lgu-topbar {
@@ -290,7 +290,7 @@
             $supportsAdvancedOfficeMenu = $isOfficeDashboard && in_array($activeOffice->slug, $specialOfficeSlugs, true);
             $sidebarOfficeSlug = $activeOffice?->slug ?? 'hrmo';
             $currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office');
-            $activeOfficeTab = (string) request()->query('tab', 'dashboard');
+            $activeOfficeTab = (string) request()->query('tab', 'reports');
             $isSuperAdminReports = request()->routeIs('super-admin.reports');
             $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
             $isSuperAdminOffices = request()->routeIs('super-admin.offices');
@@ -300,11 +300,6 @@
 
             if ($isSuperAdmin) {
                 $sidebarMenuItems = [
-                    [
-                        'label' => 'Reports',
-                        'href' => route('super-admin.reports'),
-                        'active' => $isSuperAdminReports,
-                    ],
                     [
                         'label' => 'Queue Management',
                         'href' => route('super-admin.queue-management'),
@@ -323,11 +318,6 @@
                 ];
             } elseif ($isOfficeDashboard) {
                 if ($supportsAdvancedOfficeMenu) {
-                    $sidebarMenuItems[] = [
-                        'label' => 'Reports',
-                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports',
-                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'reports',
-                    ];
                     $sidebarMenuItems[] = [
                         'label' => 'Queue Management',
                         'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management',
@@ -379,12 +369,18 @@
 
                     <div class="lgu-topbar-end">
                         @auth
+<<<<<<< HEAD
                             @if(auth()->user()->isSuperAdmin())
                                 <a href="{{ route('super-admin.index') }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
+=======
+                            @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
+                                @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
+                                <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('super-admin.reports') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
+>>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd
                             @endif
                             @if($showDashboardShortcut)
-                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}" wire:navigate
-                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug ? 'lgu-topbar-link-active' : '' }}">
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=reports" wire:navigate
+                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug && $activeOfficeTab === 'reports' ? 'lgu-topbar-link-active' : '' }}">
                                     Dashboard
                                 </a>
                             @endif

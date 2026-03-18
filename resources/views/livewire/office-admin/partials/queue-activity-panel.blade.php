@@ -18,14 +18,10 @@
         <div class="gov-activity-intro">
             <div class="gov-activity-chip-row">
                 <span class="gov-activity-chip gov-activity-chip-scope">{{ $kicker ?? 'Queue Activity Monitor' }}</span>
-                <span class="gov-activity-chip gov-activity-chip-live">Live Auto Refresh</span>
             </div>
             <h2 id="{{ $panelId }}" class="gov-activity-title">{{ $heading }}</h2>
             <p class="gov-activity-copy">
                 {{ $description ?? 'Issued, called, and completed timestamps for the current queue day.' }}
-                @if($latestIssuedAt)
-                    Latest issued ticket logged at {{ $latestIssuedAt->format('h:i:s A') }}.
-                @endif
             </p>
         </div>
     </div>
@@ -125,7 +121,7 @@
             padding: 1.15rem;
             background:
                 radial-gradient(circle at top right, rgb(255 255 255 / 0.16), transparent 34%),
-                linear-gradient(135deg, #15345f 0%, #8c631d 58%, #df8f05 100%);
+                linear-gradient(135deg, #395b8c 0%, #d89644 58%, #d5a756 100%);
             color: #fff;
         }
 

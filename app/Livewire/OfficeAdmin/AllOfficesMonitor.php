@@ -72,10 +72,9 @@ class AllOfficesMonitor extends Component
 
                 return $entry;
             })
-            ->sortBy(fn (QueueEntry $entry) => sprintf(
-                '%05d-%020d-%010d',
-                $entry->service_window_number ?? 1,
-                $entry->called_at?->getTimestamp() ?? 0,
+            ->sortByDesc(fn (QueueEntry $entry) => sprintf(
+                '%020d-%010d',
+                $entry->called_at?->getTimestamp() ?? $entry->created_at?->getTimestamp() ?? 0,
                 $entry->id
             ))
             ->values();

@@ -7,7 +7,6 @@
 <div class="gov-queue-shell">
     <section class="gov-queue-masthead" aria-label="Queue operations heading">
         <div>
-            <p class="gov-masthead-kicker">Republic of the Philippines</p>
             <h2 class="gov-font-heading gov-masthead-title">{{ $office->name }} Queue Operations Desk</h2>
             <p class="gov-masthead-meta">Official live transaction console for public service processing.</p>
         </div>

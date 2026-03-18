@@ -7,7 +7,7 @@
     <meta name="session-pulse-url" content="{{ route('session.pulse') }}">
     <title>@yield('title', 'Login') - {{ config('app.name') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700|source-serif-4:500,700" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     <style>
@@ -16,7 +16,7 @@
         }
 
         .gov-font-heading {
-            font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+            font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
             letter-spacing: -0.015em;
         }
     </style>

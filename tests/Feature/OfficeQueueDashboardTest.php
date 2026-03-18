@@ -207,7 +207,7 @@ class OfficeQueueDashboardTest extends TestCase
         Livewire::test(Dashboard::class, ['office' => $office])
             ->call('callNext')
             ->assertSee($priorityEntry->queue_number)
-            ->assertSee('Senior / Pregnant');
+            ->assertSee('Priority');
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $priorityEntry->id,

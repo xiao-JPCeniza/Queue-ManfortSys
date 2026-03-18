@@ -5,7 +5,6 @@ namespace App\Livewire\OfficeAdmin;
 use App\Livewire\OfficeAdmin\Concerns\HandlesOfficeQueueAnnouncements;
 use App\Models\Office;
 use App\Models\QueueEntry;
-use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class BploOfficeMonitor extends Component
@@ -87,9 +86,8 @@ class BploOfficeMonitor extends Component
     {
         $servingEntries = $this->todayOfficeQueueEntries()
             ->serving()
-            ->orderByRaw('COALESCE(service_window_number, 1)')
-            ->orderBy('called_at')
-            ->orderBy('id')
+            ->orderByRaw('COALESCE(called_at, created_at) DESC')
+            ->orderByDesc('id')
             ->get()
             ->map(function (QueueEntry $entry) {
                 if ($entry->service_window_number === null) {
@@ -120,27 +118,10 @@ class BploOfficeMonitor extends Component
         return view('livewire.office-admin.general-office-live-monitor', [
             'serving' => $servingEntries->first(),
             'servingEntries' => $servingEntries,
-            'serviceWindows' => $this->buildServiceWindows($servingEntries),
-            'usesMultipleServiceWindows' => $this->office->usesMultipleServiceWindows(),
             'nextInline' => $nextInline,
             'recentTransactions' => $recentTransactions,
             'manilaNow' => $manilaNow,
             'announcementPayload' => $this->getOfficeAnnouncement($this->office),
         ]);
-    }
-
-    private function buildServiceWindows(Collection $servingEntries): Collection
-    {
-        $servingByWindow = $servingEntries->keyBy(fn (QueueEntry $entry) => $entry->service_window_number ?? 1);
-
-        return $this->office->serviceWindowNumbers()
-            ->map(function (int $windowNumber) use ($servingByWindow) {
-                return [
-                    'number' => $windowNumber,
-                    'label' => $this->office->serviceWindowLabel($windowNumber),
-                    'entry' => $servingByWindow->get($windowNumber),
-                ];
-            })
-            ->values();
     }
 }

@@ -75,7 +75,7 @@ class Dashboard extends Component
 
     public Office $office;
 
-    public string $hrmoTab = 'dashboard';
+    public string $hrmoTab = 'reports';
 
     public bool $isSuperAdminRouteContext = false;
 
@@ -106,7 +106,7 @@ class Dashboard extends Component
             }
         }
 
-        $requestedTab = (string) request()->query('tab', 'dashboard');
+        $requestedTab = (string) request()->query('tab', 'reports');
         $allowedTabs = $this->allowedHrmoTabs();
 
         if ($this->supportsAdvancedQueueDashboard() && in_array($requestedTab, $allowedTabs, true)) {
@@ -322,7 +322,7 @@ class Dashboard extends Component
         if ($this->supportsAdvancedQueueDashboard()) {
             $viewData = array_merge($viewData, $this->buildAdvancedDashboardData());
         } else {
-            $this->hrmoTab = 'dashboard';
+            $this->hrmoTab = 'reports';
             $viewData = array_merge($viewData, $this->defaultAdvancedDashboardData());
         }
 
@@ -456,7 +456,7 @@ class Dashboard extends Component
 
     private function allowedHrmoTabs(): array
     {
-        $allowedTabs = ['dashboard', 'reports', 'queue-management'];
+        $allowedTabs = ['reports', 'queue-management'];
 
         if ($this->isSuperAdmin()) {
             $allowedTabs[] = 'user-management';
