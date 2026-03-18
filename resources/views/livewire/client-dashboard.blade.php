@@ -1,4 +1,4 @@
-<div class="queue-page min-h-screen flex flex-col">
+<div wire:poll.10s class="queue-page min-h-screen flex flex-col">
     <header class="queue-header text-white relative overflow-hidden">
         <div class="queue-header-ribbon" aria-hidden="true"></div>
         <div class="queue-shell-inner queue-header-inner relative z-10">

@@ -24,6 +24,26 @@ class ClientDashboardTest extends TestCase
             ->assertDontSee('OBO');
     }
 
+    public function test_public_queue_refresh_removes_deleted_offices_and_clears_an_invalid_filter(): void
+    {
+        $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+        $office = $this->createOffice('Citizen Center', 'citizen-center', 'CCEN', true);
+
+        Livewire::test(ClientDashboard::class)
+            ->set('selectedOfficeSlug', 'citizen-center')
+            ->assertSee('Citizen Center')
+            ->assertDontSee('HRMO');
+
+        $office->delete();
+
+        Livewire::test(ClientDashboard::class)
+            ->set('selectedOfficeSlug', 'citizen-center')
+            ->call('$refresh')
+            ->assertSet('selectedOfficeSlug', '')
+            ->assertSee('HRMO')
+            ->assertDontSee('Citizen Center');
+    }
+
     public function test_selecting_a_new_public_queue_office_generates_a_ticket_with_its_prefix(): void
     {
         $office = $this->createOffice('Citizen Center', 'citizen-center', 'CCEN', true);

@@ -53,14 +53,27 @@
 
                     <div>
                         <label for="password" class="gov-label">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            wire:model="password"
-                            class="gov-input @error('password') gov-input-error @enderror"
-                            placeholder="Enter password"
-                            autocomplete="current-password"
-                        >
+                        <div class="gov-password-field">
+                            <input
+                                type="password"
+                                id="password"
+                                wire:model="password"
+                                class="gov-input gov-password-input @error('password') gov-input-error @enderror"
+                                placeholder="Enter password"
+                                autocomplete="current-password"
+                            >
+                            <button
+                                type="button"
+                                class="gov-password-toggle"
+                                data-password-toggle
+                                data-password-target="password"
+                                aria-controls="password"
+                                aria-label="Show password"
+                                aria-pressed="false"
+                            >
+                                Show
+                            </button>
+                        </div>
                         @error('password')
                             <p class="gov-error-text" role="alert">{{ $message }}</p>
                         @enderror
@@ -351,6 +364,32 @@
             box-shadow: 0 0 0 3px rgb(190 18 60 / 0.16);
         }
 
+        .gov-password-field {
+            position: relative;
+        }
+
+        .gov-password-input {
+            padding-right: 5rem;
+        }
+
+        .gov-password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 0.9rem;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: var(--gov-blue-800);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .gov-password-toggle:focus {
+            outline: none;
+            text-decoration: underline;
+        }
+
         .gov-error-text {
             margin: 0.45rem 0 0;
             color: #be123c;
@@ -488,4 +527,26 @@
             }
         }
     </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-password-target');
+                    const input = targetId ? document.getElementById(targetId) : null;
+
+                    if (!input) {
+                        return;
+                    }
+
+                    const shouldShow = input.type === 'password';
+
+                    input.type = shouldShow ? 'text' : 'password';
+                    button.textContent = shouldShow ? 'Hide' : 'Show';
+                    button.setAttribute('aria-label', shouldShow ? 'Hide password' : 'Show password');
+                    button.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+                });
+            });
+        });
+    </script>
 @endonce
