@@ -172,11 +172,7 @@ Route::post('/logout', function () {
     })->name('profile.photo.update');
 
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
-<<<<<<< HEAD
         Route::get('/', SuperAdminDashboard::class)->name('index');
-=======
-        Route::redirect('/', '/super-admin/reports')->name('index');
->>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd
         Route::get('/reports', function () {
             $officeModel = Office::resolveSuperAdminContextOffice()
                 ?? abort(404, 'No office is available for the Super Admin dashboard.');
