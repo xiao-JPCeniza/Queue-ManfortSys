@@ -295,29 +295,15 @@
                             <td class="px-6 py-4 text-slate-700">{{ $office->display_name }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
-<<<<<<< HEAD
-                             <td class="px-6 py-4">
-                                 <div class="flex flex-wrap gap-2">
-                                     <button
-                                         type="button"
-                                         wire:click="deleteOffice({{ $office->id }})"
-                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
-                                        class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-=======
                             <td class="px-6 py-4">
                                 <button
                                     type="button"
                                     wire:click="deleteOffice({{ $office->id }})"
-                                    wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and unassign any linked users."
+                                    wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
                                     class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
                                 >
                                     Delete
                                 </button>
->>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd
                             </td>
                         </tr>
                     @empty

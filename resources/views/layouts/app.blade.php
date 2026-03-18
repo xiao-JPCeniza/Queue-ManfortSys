@@ -293,7 +293,7 @@
             $supportsAdvancedOfficeMenu = $isOfficeDashboard && in_array($activeOffice->slug, $specialOfficeSlugs, true);
             $sidebarOfficeSlug = $activeOffice?->slug ?? 'hrmo';
             $currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office');
-            $activeOfficeTab = (string) request()->query('tab', 'reports');
+            $activeOfficeTab = (string) request()->query('tab', $isOfficeDashboard ? 'queue-management' : 'reports');
             $isSuperAdminReports = request()->routeIs('super-admin.reports');
             $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
             $isSuperAdminOffices = request()->routeIs('super-admin.offices');
@@ -321,6 +321,11 @@
                 ];
             } elseif ($isOfficeDashboard) {
                 if ($supportsAdvancedOfficeMenu) {
+                    $sidebarMenuItems[] = [
+                        'label' => 'Reports',
+                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports',
+                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'reports',
+                    ];
                     $sidebarMenuItems[] = [
                         'label' => 'Queue Management',
                         'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management',
@@ -372,18 +377,13 @@
 
                     <div class="lgu-topbar-end">
                         @auth
-<<<<<<< HEAD
-                            @if(auth()->user()->isSuperAdmin())
-                                <a href="{{ route('super-admin.index') }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
-=======
                             @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
                                 @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
-                                <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('super-admin.reports') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
->>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd
+                                <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('super-admin.reports') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">{{ auth()->user()->isSuperAdmin() ? 'Reports' : 'Dashboard' }}</a>
                             @endif
                             @if($showDashboardShortcut)
-                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=reports" wire:navigate
-                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug && $activeOfficeTab === 'reports' ? 'lgu-topbar-link-active' : '' }}">
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=queue-management" wire:navigate
+                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug && $activeOfficeTab === 'queue-management' ? 'lgu-topbar-link-active' : '' }}">
                                     Dashboard
                                 </a>
                             @endif

@@ -70,6 +70,11 @@ class User extends Authenticatable
         return $this->role && $this->role->slug === 'super_admin';
     }
 
+    public function isQueueMaster(): bool
+    {
+        return $this->role && $this->role->slug === 'queue_master';
+    }
+
     public function isOfficeAdmin(): bool
     {
         return $this->role && $this->role->slug === 'office_admin';

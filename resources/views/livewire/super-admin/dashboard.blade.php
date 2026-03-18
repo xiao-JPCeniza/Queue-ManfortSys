@@ -32,15 +32,11 @@
                     </p>
 
                     <div class="gov-admin-chip-row" aria-label="Dashboard context">
-<<<<<<< HEAD:resources/views/livewire/super-admin/dashboard.blade.php
                         <span class="gov-admin-chip gov-admin-chip-strong">
                             System-wide oversight
                         </span>
                         <span class="gov-admin-chip">Live office monitoring</span>
                         <span class="gov-admin-chip">Internal government use</span>
-=======
-    
->>>>>>> fea74028e8d2e0547137d5aa634daa7a26e00abd:resources/views/livewire/queue-master/dashboard.blade.php
                     </div>
                 </div>
             </div>
