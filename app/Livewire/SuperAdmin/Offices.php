@@ -4,7 +4,10 @@ namespace App\Livewire\SuperAdmin;
 
 use App\Models\Office;
 use App\Models\QueueEntry;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -12,6 +15,7 @@ use Livewire\Component;
 class Offices extends Component
 {
     private const MAX_CONFIGURABLE_SERVICE_WINDOWS = 10;
+    private const GENERATED_ACCOUNT_DOMAIN = 'manolofortich.gov.ph';
 
     public bool $showCreateForm = false;
 
@@ -20,6 +24,14 @@ class Offices extends Component
     public string $officePrefix = '';
 
     public string $officeDescription = '';
+
+    public string $officeAdminEmail = '';
+
+    public string $officeAdminPassword = '';
+
+    public string $officeAdminPasswordConfirmation = '';
+
+    public bool $officeAdminEmailManuallyEdited = false;
 
     public string $serviceWindowOfficeSlug = '';
 
@@ -40,9 +52,37 @@ class Offices extends Component
     {
         $this->showCreateForm = ! $this->showCreateForm;
 
-        if (! $this->showCreateForm) {
+        if ($this->showCreateForm) {
+            $this->prepareSuggestedOfficeAdminCredentials();
+        } else {
             $this->resetForm();
         }
+    }
+
+    public function updatedOfficeName(string $officeName): void
+    {
+        $this->officeName = $officeName;
+
+        if (! $this->officeAdminEmailManuallyEdited) {
+            $this->officeAdminEmail = $this->suggestOfficeAdminEmail($officeName);
+        }
+    }
+
+    public function updatedOfficeAdminEmail(string $officeAdminEmail): void
+    {
+        $normalizedEmail = Str::lower(trim($officeAdminEmail));
+        $suggestedEmail = $this->suggestOfficeAdminEmail($this->officeName);
+
+        $this->officeAdminEmail = $normalizedEmail;
+        $this->officeAdminEmailManuallyEdited = $normalizedEmail !== '' && $normalizedEmail !== $suggestedEmail;
+    }
+
+    public function regenerateOfficeAdminPassword(): void
+    {
+        $generatedPassword = $this->generateTemporaryOfficeAdminPassword();
+
+        $this->officeAdminPassword = $generatedPassword;
+        $this->officeAdminPasswordConfirmation = $generatedPassword;
     }
 
     public function createOffice(): void
@@ -50,12 +90,18 @@ class Offices extends Component
         $name = trim($this->officeName);
         $prefix = Str::upper(trim($this->officePrefix));
         $description = trim($this->officeDescription);
+        $officeAdminEmail = Str::lower(trim($this->officeAdminEmail));
+        $officeAdminPassword = trim($this->officeAdminPassword);
+        $officeAdminPasswordConfirmation = trim($this->officeAdminPasswordConfirmation);
 
         Validator::make(
             [
                 'officeName' => $name,
                 'officePrefix' => $prefix,
                 'officeDescription' => $description,
+                'officeAdminEmail' => $officeAdminEmail,
+                'officeAdminPassword' => $officeAdminPassword,
+                'officeAdminPasswordConfirmation' => $officeAdminPasswordConfirmation,
             ],
             [
                 'officeName' => [
@@ -93,31 +139,85 @@ class Offices extends Component
                     'string',
                     'max:255',
                 ],
+                'officeAdminEmail' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    function (string $attribute, mixed $value, \Closure $fail): void {
+                        $normalizedEmail = Str::lower((string) $value);
+
+                        if (User::query()->whereRaw('LOWER(email) = ?', [$normalizedEmail])->exists()) {
+                            $fail('That office login email is already in use.');
+                        }
+                    },
+                ],
+                'officeAdminPassword' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'max:255',
+                ],
+                'officeAdminPasswordConfirmation' => [
+                    'required',
+                    'same:officeAdminPassword',
+                ],
             ],
             [
                 'officeName.required' => 'Office name is required.',
                 'officePrefix.required' => 'Prefix ticket is required.',
                 'officeDescription.required' => 'Meaning or description of the office is required.',
+                'officeAdminEmail.required' => 'Office login email is required.',
+                'officeAdminPassword.required' => 'Temporary password is required.',
+                'officeAdminPassword.min' => 'Temporary password must be at least 8 characters.',
+                'officeAdminPasswordConfirmation.required' => 'Please confirm the temporary password.',
+                'officeAdminPasswordConfirmation.same' => 'The password confirmation does not match.',
             ]
         )->validate();
 
-        $office = Office::create([
-            'name' => $name,
-            'slug' => Str::slug($name),
-            'prefix' => $prefix,
-            'description' => $description,
-            'next_number' => 1,
-            'service_window_count' => 1,
-            'tickets_accommodated_total' => 0,
-            'is_active' => true,
-            'show_in_public_queue' => true,
-        ]);
+        $officeAdminRole = Role::query()->where('slug', 'office_admin')->first();
+
+        if (! $officeAdminRole) {
+            session()->flash('error', 'Office Admin role is missing. Please seed roles first before creating a new office account.');
+
+            return;
+        }
+
+        [$office, $officeAdminUser, $generatedPassword] = DB::transaction(function () use ($description, $name, $officeAdminEmail, $officeAdminPassword, $officeAdminRole, $prefix): array {
+            $office = Office::create([
+                'name' => $name,
+                'slug' => Str::slug($name),
+                'prefix' => $prefix,
+                'description' => $description,
+                'next_number' => 1,
+                'service_window_count' => 1,
+                'tickets_accommodated_total' => 0,
+                'is_active' => true,
+                'show_in_public_queue' => true,
+            ]);
+
+            $officeAdminUser = User::create([
+                'name' => $office->name.' Office Admin',
+                'email' => $officeAdminEmail,
+                'password' => $officeAdminPassword,
+                'role_id' => $officeAdminRole->id,
+                'office_id' => $office->id,
+            ]);
+
+            return [$office, $officeAdminUser, $officeAdminPassword];
+        });
 
         $this->resetForm();
         $this->showCreateForm = false;
         $this->syncServiceWindowSelection($this->publicQueueOffices());
 
-        session()->flash('success', "{$office->name} was added and is now visible on the public queue page.");
+        session()->flash('success', "{$office->name} was added, is now visible on the public queue page, and already has its own office login.");
+        session()->flash('generatedOfficeAccount', [
+            'office_name' => $office->name,
+            'email' => $officeAdminUser->email,
+            'password' => $generatedPassword,
+            'dashboard_url' => route('office.dashboard', $office->slug),
+            'login_url' => route('login'),
+        ]);
     }
 
     public function deleteOffice(int $officeId): void
@@ -212,6 +312,10 @@ class Offices extends Component
         $this->officeName = '';
         $this->officePrefix = '';
         $this->officeDescription = '';
+        $this->officeAdminEmail = '';
+        $this->officeAdminPassword = '';
+        $this->officeAdminPasswordConfirmation = '';
+        $this->officeAdminEmailManuallyEdited = false;
     }
 
     private function publicQueueOffices(): Collection
@@ -248,5 +352,60 @@ class Offices extends Component
     private function serviceWindowCountOptions(): Collection
     {
         return collect(range(1, self::MAX_CONFIGURABLE_SERVICE_WINDOWS));
+    }
+
+    private function prepareSuggestedOfficeAdminCredentials(): void
+    {
+        if ($this->officeName !== '' && ! $this->officeAdminEmailManuallyEdited) {
+            $this->officeAdminEmail = $this->suggestOfficeAdminEmail($this->officeName);
+        }
+
+        if ($this->officeAdminPassword === '') {
+            $this->regenerateOfficeAdminPassword();
+        }
+    }
+
+    private function suggestOfficeAdminEmail(string $officeName): string
+    {
+        $officeSlug = Str::slug(trim($officeName));
+
+        if ($officeSlug === '') {
+            return '';
+        }
+
+        return $this->generateAvailableOfficeAdminEmail($officeSlug);
+    }
+
+    private function generateAvailableOfficeAdminEmail(string $officeSlug): string
+    {
+        $baseLocalPart = Str::of($officeSlug)
+            ->replaceMatches('/[^a-z0-9]+/i', '.')
+            ->trim('.')
+            ->lower()
+            ->value();
+
+        if ($baseLocalPart === '') {
+            $baseLocalPart = 'office.admin';
+        }
+
+        $candidateEmail = $baseLocalPart.'@'.self::GENERATED_ACCOUNT_DOMAIN;
+
+        if (! User::query()->whereRaw('LOWER(email) = ?', [$candidateEmail])->exists()) {
+            return $candidateEmail;
+        }
+
+        $suffix = 2;
+
+        do {
+            $candidateEmail = $baseLocalPart.$suffix.'@'.self::GENERATED_ACCOUNT_DOMAIN;
+            $suffix++;
+        } while (User::query()->whereRaw('LOWER(email) = ?', [$candidateEmail])->exists());
+
+        return $candidateEmail;
+    }
+
+    private function generateTemporaryOfficeAdminPassword(): string
+    {
+        return Str::password(12, true, true, false, false);
     }
 }
