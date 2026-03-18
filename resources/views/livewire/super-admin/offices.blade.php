@@ -1,4 +1,16 @@
 <div class="space-y-6">
+    @if(session('success'))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            {{ session('error') }}
+        </div>
+    @endif
+
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
             <h1 class="lgu-page-title mb-1">Offices</h1>
@@ -13,6 +25,67 @@
             + Add Office
         </button>
     </div>
+
+    <section class="lgu-card p-6" aria-labelledby="service-window-setup-heading">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div class="max-w-2xl">
+                <h2 id="service-window-setup-heading" class="lgu-section-title">Service Window Setup</h2>
+                <p class="mt-1 text-sm text-slate-500">Choose which public office to update and set how many service windows it should use.</p>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <span class="font-semibold text-slate-900">{{ $serviceWindowSelectedOfficeLabel }}</span>
+                currently uses
+                <span class="font-semibold text-blue-700">{{ $serviceWindowCurrentCount }}</span>
+                window{{ $serviceWindowCurrentCount === 1 ? '' : 's' }}.
+            </div>
+        </div>
+
+        <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(180px,220px)_auto] xl:items-end">
+            <div>
+                <label for="service-window-office" class="mb-2 block text-sm font-medium text-slate-700">Office</label>
+                <select
+                    id="service-window-office"
+                    wire:model.live="serviceWindowOfficeSlug"
+                    @disabled($offices->isEmpty())
+                    class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+                >
+                    @forelse($offices as $office)
+                        <option value="{{ $office->slug }}">{{ $office->name }}</option>
+                    @empty
+                        <option value="">No public offices available</option>
+                    @endforelse
+                </select>
+            </div>
+
+            <div>
+                <label for="service-window-count" class="mb-2 block text-sm font-medium text-slate-700">Service Windows</label>
+                <select
+                    id="service-window-count"
+                    wire:model.live="serviceWindowCountSelection"
+                    @disabled($offices->isEmpty())
+                    class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+                >
+                    @foreach($serviceWindowCountOptions as $windowCountOption)
+                        <option value="{{ $windowCountOption }}">
+                            {{ $windowCountOption }} window{{ $windowCountOption === 1 ? '' : 's' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <button
+                type="button"
+                wire:click="updateServiceWindowCount"
+                wire:loading.attr="disabled"
+                wire:target="updateServiceWindowCount"
+                @disabled($offices->isEmpty())
+                class="lgu-btn inline-flex items-center justify-center rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-blue-300"
+            >
+                Apply Window Count
+            </button>
+        </div>
+    </section>
 
     @if($showCreateForm)
         <section class="lgu-card p-6" aria-labelledby="add-office-heading">
@@ -103,6 +176,7 @@
                         <th class="px-6 py-3 font-semibold">Office Name</th>
                         <th class="px-6 py-3 font-semibold">Label</th>
                         <th class="px-6 py-3 font-semibold">Prefix Ticket</th>
+                        <th class="px-6 py-3 font-semibold">Service Windows</th>
                         <th class="px-6 py-3 font-semibold">Actions</th>
                     </tr>
                 </thead>
@@ -112,6 +186,7 @@
                             <td class="px-6 py-4 font-medium text-slate-800">{{ $office->name }}</td>
                             <td class="px-6 py-4 text-slate-700">{{ $office->display_name }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
+                            <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-wrap gap-2">
                                     <a
@@ -133,7 +208,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-slate-500">No public queue offices are configured yet.</td>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-500">No public queue offices are configured yet.</td>
                         </tr>
                     @endforelse
                 </tbody>

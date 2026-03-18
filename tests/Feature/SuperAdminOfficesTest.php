@@ -30,6 +30,8 @@ class SuperAdminOfficesTest extends TestCase
             ->assertSee('Office Name')
             ->assertSee('Label')
             ->assertSee('Prefix Ticket')
+            ->assertSee('Service Windows')
+            ->assertSee('Service Window Setup')
             ->assertSee('+ Add Office')
             ->assertSee('Human Resource Management Office')
             ->assertSee('Municipal Accounting Office')
@@ -59,9 +61,64 @@ class SuperAdminOfficesTest extends TestCase
             'prefix' => 'CCEN',
             'description' => 'Citizen Center services',
             'next_number' => 1,
+            'service_window_count' => 1,
             'tickets_accommodated_total' => 0,
             'is_active' => true,
             'show_in_public_queue' => true,
+        ]);
+    }
+
+    public function test_super_admin_can_update_service_windows_from_the_offices_page(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+        $this->createOffice('HRMO', 'hrmo', 'HRMO', true, 1);
+        $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY', true, 8);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->set('serviceWindowOfficeSlug', 'treasury')
+            ->assertSet('serviceWindowCountSelection', '8')
+            ->set('serviceWindowCountSelection', '5')
+            ->call('updateServiceWindowCount')
+            ->assertSee('Treasury service windows updated to 5.')
+            ->assertSet('serviceWindowCountSelection', '5');
+
+        $this->assertDatabaseHas('offices', [
+            'id' => $treasury->id,
+            'service_window_count' => 5,
+        ]);
+    }
+
+    public function test_super_admin_cannot_reduce_service_windows_below_an_active_window_from_the_offices_page(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+        $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY', true, 4);
+
+        $servingEntry = QueueEntry::create([
+            'office_id' => $treasury->id,
+            'queue_number' => 'TRSY-001',
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 4,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->set('serviceWindowOfficeSlug', 'treasury')
+            ->set('serviceWindowCountSelection', '2')
+            ->call('updateServiceWindowCount')
+            ->assertSee('Treasury still has an active ticket at Window 4.')
+            ->assertSet('serviceWindowCountSelection', '4');
+
+        $this->assertDatabaseHas('offices', [
+            'id' => $treasury->id,
+            'service_window_count' => 4,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $servingEntry->id,
+            'service_window_number' => 4,
         ]);
     }
 
@@ -156,7 +213,7 @@ class SuperAdminOfficesTest extends TestCase
         ]);
     }
 
-    private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue): Office
+    private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue, int $serviceWindowCount = 1): Office
     {
         return Office::create([
             'name' => $name,
@@ -164,6 +221,7 @@ class SuperAdminOfficesTest extends TestCase
             'prefix' => $prefix,
             'description' => $name.' services',
             'next_number' => 1,
+            'service_window_count' => $serviceWindowCount,
             'tickets_accommodated_total' => 0,
             'is_active' => true,
             'show_in_public_queue' => $showInPublicQueue,
