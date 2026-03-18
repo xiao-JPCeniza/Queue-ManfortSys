@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Office;
 use App\Models\QueueEntry;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -112,10 +113,33 @@ class ClientDashboard extends Component
 
     public function render()
     {
+        $officeOptions = $this->getOfficeOptions();
+        $this->normalizeSelectedOfficeSlug($officeOptions);
+
+        $offices = $this->selectedOfficeSlug === ''
+            ? $officeOptions
+            : $officeOptions
+                ->where('slug', $this->selectedOfficeSlug)
+                ->values();
+
         return view('livewire.client-dashboard', [
-            'offices' => $this->getOffices(),
-            'officeOptions' => $this->getOfficeOptions(),
+            'offices' => $offices,
+            'officeOptions' => $officeOptions,
             'clientTypeOptions' => QueueEntry::clientTypeOptions(),
         ]);
+    }
+
+    private function normalizeSelectedOfficeSlug(Collection $officeOptions): void
+    {
+        if ($this->selectedOfficeSlug === '') {
+            return;
+        }
+
+        $selectedOfficeStillExists = $officeOptions
+            ->contains(fn (Office $office) => $office->slug === $this->selectedOfficeSlug);
+
+        if (! $selectedOfficeStillExists) {
+            $this->selectedOfficeSlug = '';
+        }
     }
 }

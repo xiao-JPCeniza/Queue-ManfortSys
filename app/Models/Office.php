@@ -17,6 +17,7 @@ class Office extends Model
         'civil-registry',
         'business-permits',
         'assessors-office',
+        'menro',
         'mho',
         'mswdo',
     ];
@@ -27,6 +28,7 @@ class Office extends Model
         'business-permits' => 'Business Permits and Licensing Office',
         'civil-registry' => 'Local Civil Registry Office',
         'hrmo' => 'Human Resource Management Office',
+        'menro' => 'Municipal Environment and Natural Resources Office',
         'mho' => 'Municipal Health Office',
         'mswdo' => 'Municipal Social Welfare and Development Office',
         'obo' => 'Office of the Building Official',

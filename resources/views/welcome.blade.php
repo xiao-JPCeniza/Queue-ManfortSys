@@ -569,7 +569,7 @@
                     <div class="gov-hero-copy">
                         <h2 class="gov-hero-title">Welcome to the LGU Queue System</h2>
                         <p class="gov-hero-text">
-                            Get a queue number by selecting your office (MENRO, MHO, MSWDO, etc.). Your ticket will be generated and will be announced by voice.
+                            Get a queue number by selecting the office you need to visit. Your ticket will be generated and announced by voice.
                             Staff may log in to manage queues and serve clients.
                         </p>
 
