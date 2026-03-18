@@ -2,7 +2,7 @@
     <div class="mb-6">
         @php($mainDashboardRoute = auth()->user()?->isSuperAdmin() ? route('super-admin.index') : route('queue-master.index'))
         <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-btn inline-flex items-center gap-1 text-blue-800 font-medium text-sm hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1">
-            &larr; {{ auth()->user()?->isSuperAdmin() ? 'Reports' : 'Dashboard' }}
+            &larr; Dashboard
         </a>
         <h1 class="lgu-page-title mt-1">{{ $office->name }}</h1>
         <p class="text-slate-600 text-sm mt-0.5">{{ $office->description }}</p>

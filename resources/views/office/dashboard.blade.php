@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', request()->routeIs('super-admin.reports')
-    ? 'Reports'
+    ? 'Dashboard'
     : (request()->routeIs('super-admin.queue-management')
         ? 'Queue Management'
         : (request()->routeIs('super-admin.user-management')
