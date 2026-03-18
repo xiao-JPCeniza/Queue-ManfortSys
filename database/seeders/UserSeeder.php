@@ -6,37 +6,23 @@ use App\Models\Office;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
         $superAdminRole = Role::where('slug', 'super_admin')->first();
-        $queueMasterRole = Role::where('slug', 'queue_master')->first();
         $officeAdminRole = Role::where('slug', 'office_admin')->first();
 
         if ($superAdminRole) {
             User::updateOrCreate(
                 ['email' => 'admin@manolofortich.gov.ph'],
-                [
+                User::withRecoverablePassword([
                     'name' => 'Super Admin',
-                    'password' => Hash::make('password'),
+                    'password' => 'password',
                     'role_id' => $superAdminRole->id,
                     'office_id' => null,
-                ]
-            );
-        }
-
-        if ($queueMasterRole) {
-            User::updateOrCreate(
-                ['email' => 'queuemaster@manolofortich.gov.ph'],
-                [
-                    'name' => 'Queue Master',
-                    'password' => Hash::make('password'),
-                    'role_id' => $queueMasterRole->id,
-                    'office_id' => null,
-                ]
+                ], 'password')
             );
         }
 
@@ -101,12 +87,12 @@ class UserSeeder extends Seeder
 
             User::updateOrCreate(
                 ['email' => $account['email']],
-                [
+                User::withRecoverablePassword([
                     'name' => $account['name'],
-                    'password' => Hash::make('password'),
+                    'password' => 'password',
                     'role_id' => $officeAdminRole->id,
                     'office_id' => $office->id,
-                ]
+                ], 'password')
             );
         }
     }

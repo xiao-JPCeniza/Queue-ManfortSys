@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
+use App\Livewire\SuperAdmin\Dashboard as SuperAdminDashboard;
 use App\Models\Office;
 use App\Models\QueueEntry;
 use App\Models\Role;
@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
-class QueueMasterDashboardTest extends TestCase
+class SuperAdminDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -49,7 +49,7 @@ class QueueMasterDashboardTest extends TestCase
 
         $this->actingAs($superAdmin);
 
-        Livewire::test(QueueMasterDashboard::class)
+        Livewire::test(SuperAdminDashboard::class)
             ->assertSee('OBO')
             ->assertSee('OBO-007')
             ->assertSee('Completed');
@@ -73,7 +73,7 @@ class QueueMasterDashboardTest extends TestCase
 
         $this->actingAs($superAdmin);
 
-        Livewire::test(QueueMasterDashboard::class)
+        Livewire::test(SuperAdminDashboard::class)
             ->assertSee('HRMO-014')
             ->assertSee('Completed');
     }
@@ -88,7 +88,7 @@ class QueueMasterDashboardTest extends TestCase
 
         $this->actingAs($superAdmin);
 
-        Livewire::test(QueueMasterDashboard::class)
+        Livewire::test(SuperAdminDashboard::class)
             ->assertSee('HRMO')
             ->assertSee('Citizen Center')
             ->assertDontSee('OBO');

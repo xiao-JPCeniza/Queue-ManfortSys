@@ -2,7 +2,6 @@
 
 <div>
     @php
-        $isSuperAdmin = auth()->user()?->isSuperAdmin() ?? false;
         $superAdminOfficeNames = [
             'accounting' => 'Accounting Office',
             'hrmo' => 'Human Resource',
@@ -26,7 +25,7 @@
                 <div>
                     <p class="gov-admin-kicker">Municipal Queue Oversight</p>
                     <h1 id="dashboard-heading" class="gov-font-heading gov-admin-title">
-                        {{ $isSuperAdmin ? 'Admin Dashboard' : 'Dashboard' }}
+                        Admin Dashboard
                     </h1>
                     <p class="gov-admin-subtitle">
                         Monitor queue activity across all offices.
@@ -34,7 +33,7 @@
 
                     <div class="gov-admin-chip-row" aria-label="Dashboard context">
                         <span class="gov-admin-chip gov-admin-chip-strong">
-                            {{ $isSuperAdmin ? 'System-wide oversight' : 'Queue operations view' }}
+                            System-wide oversight
                         </span>
                         <span class="gov-admin-chip">Live office monitoring</span>
                         <span class="gov-admin-chip">Internal government use</span>
@@ -98,9 +97,8 @@
                                 </div>
                             </div>
 
-                            @php($manageRoute = $isSuperAdmin ? route('office.dashboard', $office->slug) : route('queue-master.office', $office->slug))
                             <div class="gov-office-actions">
-                                <a href="{{ $manageRoute }}" wire:navigate
+                                <a href="{{ route('office.dashboard', $office->slug) }}" wire:navigate
                                    class="lgu-btn gov-office-action gov-office-action-primary">
                                     Manage
                                 </a>
@@ -201,7 +199,7 @@
                             @empty
                                 <tr>
                                     <td colspan="4" class="gov-admin-table-empty">
-                                        {{ $isSuperAdmin ? 'No queue activity yet today.' : 'No active queue entries.' }}
+                                        No queue activity yet today.
                                     </td>
                                 </tr>
                             @endforelse

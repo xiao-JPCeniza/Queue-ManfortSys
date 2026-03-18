@@ -30,6 +30,7 @@ class ProfilePasswordTest extends TestCase
 
         $this->assertTrue(Hash::check('new-password-123', $user->password));
         $this->assertFalse(Hash::check('old-password', $user->password));
+        $this->assertSame('new-password-123', $user->recoverable_password);
     }
 
     public function test_password_update_requires_the_current_password_to_match(): void

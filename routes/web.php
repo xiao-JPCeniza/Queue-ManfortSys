@@ -6,10 +6,8 @@ use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\OfficeQueueReportsPdfController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
-use App\Livewire\OfficeAdmin\Dashboard as OfficeAdminDashboard;
 use App\Livewire\QueueJoin;
-use App\Livewire\QueueMaster\Dashboard as QueueMasterDashboard;
-use App\Livewire\QueueMaster\OfficeManage as QueueMasterOfficeManage;
+use App\Livewire\SuperAdmin\Dashboard as SuperAdminDashboard;
 use App\Models\Office;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -50,17 +48,15 @@ Route::post('/logout', function () {
         Route::get('/dashboard', function () {
             $user = Auth::user();
             $user->load('role');
+
             if ($user->isSuperAdmin()) {
                 return redirect()->route('super-admin.index');
-            }
-            if ($user->isQueueMaster()) {
-                return redirect()->route('queue-master.index');
             }
             if ($user->isOfficeAdmin() && $user->office_id) {
                 return redirect()->route('office.dashboard', $user->office->slug);
             }
 
-            return redirect()->route('queue-master.index');
+            abort(403, 'No dashboard is available for this account.');
         })->name('dashboard');
 
     Route::get('/profile', function () {
@@ -97,9 +93,9 @@ Route::post('/logout', function () {
             'password.different' => 'The new password must be different from the current password.',
         ]);
 
-        $request->user()->update([
+        $request->user()->update(User::withRecoverablePassword([
             'password' => $validated['password'],
-        ]);
+        ], $validated['password']));
 
         return back()->with('success', 'Password updated.');
     })->name('profile.password.update');
@@ -175,14 +171,8 @@ Route::post('/logout', function () {
         return back()->with('success', 'Profile photo updated.');
     })->name('profile.photo.update');
 
-    Route::middleware(['role:super_admin,queue_master'])->prefix('queue-master')->name('queue-master.')->group(function () {
-        Route::get('/', QueueMasterDashboard::class)->name('index');
-        Route::redirect('/live-monitor', '/live-monitor')->name('live-monitor');
-        Route::get('/office/{office}', QueueMasterOfficeManage::class)->name('office');
-    });
-
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
-        Route::get('/', QueueMasterDashboard::class)->name('index');
+        Route::get('/', SuperAdminDashboard::class)->name('index');
         Route::get('/reports', function () {
             $officeModel = Office::resolveSuperAdminContextOffice()
                 ?? abort(404, 'No office is available for the Super Admin dashboard.');

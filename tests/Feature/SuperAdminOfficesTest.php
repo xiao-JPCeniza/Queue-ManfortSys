@@ -59,7 +59,7 @@ class SuperAdminOfficesTest extends TestCase
             ->assertSee('Citizen Center')
             ->assertSee('CCEN')
             ->assertSee('citizen.center@manolofortich.gov.ph')
-            ->assertSee('Temporary Password');
+            ->assertSee('Password');
 
         $this->assertDatabaseHas('offices', [
             'name' => 'Citizen Center',
@@ -79,6 +79,12 @@ class SuperAdminOfficesTest extends TestCase
             'office_id' => Office::query()->where('slug', 'citizen-center')->value('id'),
             'role_id' => Role::query()->where('slug', 'office_admin')->value('id'),
         ]);
+
+        $officeAdminUser = User::query()
+            ->where('email', 'citizen.center@manolofortich.gov.ph')
+            ->firstOrFail();
+
+        $this->assertSame('Citizen123', $officeAdminUser->recoverable_password);
     }
 
     public function test_super_admin_can_update_service_windows_from_the_offices_page(): void
@@ -192,10 +198,47 @@ class SuperAdminOfficesTest extends TestCase
         $this->assertDatabaseMissing('queue_entries', [
             'id' => $entry->id,
         ]);
-        $this->assertDatabaseHas('users', [
+        $this->assertDatabaseMissing('users', [
             'id' => $user->id,
-            'office_id' => null,
         ]);
+    }
+
+    public function test_deleted_office_email_can_be_reused_without_incrementing_the_suggested_suffix(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+        $officeAdminRole = $this->createOfficeAdminRole();
+        $office = $this->createOffice('Ledipo', 'ledipo', 'LEDI', true);
+
+        User::factory()->create([
+            'name' => 'Ledipo Office Admin',
+            'email' => 'ledipo@manolofortich.gov.ph',
+            'role_id' => $officeAdminRole->id,
+            'office_id' => $office->id,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Ledipo Office Admin 2',
+            'email' => 'ledipo2@manolofortich.gov.ph',
+            'role_id' => $officeAdminRole->id,
+            'office_id' => $office->id,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Ledipo Office Admin 3',
+            'email' => 'ledipo3@manolofortich.gov.ph',
+            'role_id' => $officeAdminRole->id,
+            'office_id' => $office->id,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->call('deleteOffice', $office->id);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->call('toggleCreateForm')
+            ->set('officeName', 'Ledipo')
+            ->assertSet('officeAdminEmail', 'ledipo@manolofortich.gov.ph');
     }
 
     public function test_super_admin_can_delete_a_default_public_queue_office_without_breaking_admin_routes(): void
