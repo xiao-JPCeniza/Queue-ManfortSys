@@ -184,12 +184,14 @@ Route::post('/logout', function () {
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
         Route::get('/', QueueMasterDashboard::class)->name('index');
         Route::get('/reports', function () {
-            $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
+            $officeModel = Office::resolveSuperAdminContextOffice()
+                ?? abort(404, 'No office is available for the Super Admin dashboard.');
 
             return view('office.dashboard', ['office' => $officeModel]);
         })->name('reports');
         Route::get('/queue-management', function () {
-            $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
+            $officeModel = Office::resolveSuperAdminContextOffice()
+                ?? abort(404, 'No office is available for the Super Admin dashboard.');
 
             return view('office.dashboard', ['office' => $officeModel]);
         })->name('queue-management');
@@ -197,7 +199,8 @@ Route::post('/logout', function () {
             return view('super-admin.offices');
         })->name('offices');
         Route::get('/user-management', function () {
-            $officeModel = Office::where('slug', 'hrmo')->firstOrFail();
+            $officeModel = Office::resolveSuperAdminContextOffice()
+                ?? abort(404, 'No office is available for the Super Admin dashboard.');
 
             return view('office.dashboard', ['office' => $officeModel]);
         })->name('user-management');

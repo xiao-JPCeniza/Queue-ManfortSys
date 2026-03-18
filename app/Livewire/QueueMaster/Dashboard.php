@@ -80,14 +80,6 @@ class Dashboard extends Component
 
         $offices = $officeQuery
             ->addSelect([
-                'serving_ticket' => QueueEntry::query()
-                    ->select('queue_number')
-                    ->whereColumn('office_id', 'offices.id')
-                    ->where('status', QueueEntry::STATUS_SERVING)
-                    ->whereBetween('created_at', [$dayStart, $dayEnd])
-                    ->orderBy('called_at')
-                    ->orderBy('id')
-                    ->limit(1),
                 'next_waiting_ticket' => QueueEntry::query()
                     ->select('queue_number')
                     ->whereColumn('office_id', 'offices.id')
@@ -105,6 +97,42 @@ class Dashboard extends Component
         $offices = $isSuperAdmin
             ? Office::sortPublicQueueOffices($offices)
             : $offices->sortBy('name')->values();
+
+        $servingEntriesByOffice = QueueEntry::query()
+            ->whereIn('office_id', $offices->pluck('id'))
+            ->where('status', QueueEntry::STATUS_SERVING)
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->orderByRaw('COALESCE(service_window_number, 1)')
+            ->orderBy('called_at')
+            ->orderBy('id')
+            ->get()
+            ->map(function (QueueEntry $entry) {
+                if ($entry->service_window_number === null) {
+                    $entry->service_window_number = 1;
+                }
+
+                return $entry;
+            })
+            ->groupBy('office_id');
+
+        $offices->each(function (Office $office) use ($servingEntriesByOffice) {
+            $servingEntries = $servingEntriesByOffice->get($office->id, collect())->values();
+            $windowCount = $office->resolvedServiceWindowCount();
+
+            $office->serving_entries = $servingEntries;
+            $office->active_window_count = $servingEntries->count();
+            $office->available_window_count = max(0, $windowCount - $office->active_window_count);
+            $office->window_count = $windowCount;
+            $office->serving_ticket = $servingEntries
+                ->map(function (QueueEntry $entry) use ($office) {
+                    return sprintf(
+                        '%s: %s',
+                        $office->serviceWindowLabel($entry->service_window_number ?? 1),
+                        $entry->queue_number
+                    );
+                })
+                ->implode(' | ');
+        });
 
         $recentEntriesQuery = QueueEntry::with('office')->whereHas('office');
 

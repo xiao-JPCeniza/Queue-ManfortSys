@@ -22,58 +22,83 @@
         <section class="gov-card gov-serving-card xl:col-span-3" aria-labelledby="serving-heading">
             <div class="gov-card-head">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 id="serving-heading" class="gov-font-heading gov-card-title">Currently Serving</h2>
-                    <span class="gov-status-chip {{ $serving ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
-                        {{ $serving ? 'Active ticket' : 'No active ticket' }}
+                    <h2 id="serving-heading" class="gov-font-heading gov-card-title">
+                        {{ $usesMultipleServiceWindows ? 'Service Windows' : 'Currently Serving' }}
+                    </h2>
+                    <span class="gov-status-chip {{ $servingEntries->isNotEmpty() ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
+                        {{ $servingEntries->count() }} active
                     </span>
                 </div>
-                <p class="gov-card-subtitle">Call the next number to update the live monitor and announce the ticket automatically.</p>
+                <p class="gov-card-subtitle">
+                    Call the next number per window to update the live monitor and announce exactly where the client should proceed.
+                </p>
             </div>
 
             <div class="gov-card-body">
-                @if($serving)
-                    <div class="gov-ticket-board">
-                        <p class="gov-ticket-label">Ticket Number</p>
-                        <p class="gov-ticket-number" aria-label="Current queue number {{ $serving->queue_number }}">
-                            {{ $serving->queue_number }}
-                        </p>
-                        <p class="gov-client-type-chip {{ $serving->isPriorityClient() ? 'gov-client-type-chip-priority' : 'gov-client-type-chip-regular' }}">
-                            {{ $serving->client_type_label }}
-                        </p>
-                        <p class="gov-ticket-meta">Called at {{ $serving->called_at?->timezone('Asia/Manila')?->format('h:i A') }}</p>
-                    </div>
-                @else
-                    <div class="gov-ticket-empty">
-                        <p>No active ticket at the moment. Click <strong>Call Next</strong> to begin service.</p>
-                    </div>
-                @endif
+                <div class="gov-window-grid">
+                    @foreach($serviceWindows as $window)
+                        @php($windowEntry = $window['entry'])
 
-                <div class="mt-5">
-                    <button
-                        wire:click="callNext"
-                        wire:loading.attr="disabled"
-                        wire:target="callNext"
-                        type="button"
-                        class="gov-btn gov-btn-warning w-full"
-                    >
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 6a9 9 0 0 1 0 12" />
-                        </svg>
-                        Call Next
-                    </button>
+                        <article class="gov-window-card">
+                            <div class="gov-window-head">
+                                <div>
+                                    <p class="gov-window-kicker">{{ $window['label'] }}</p>
+                                    <h3 class="gov-window-title">
+                                        {{ $windowEntry?->queue_number ?? 'Available' }}
+                                    </h3>
+                                </div>
+
+                                <span class="gov-status-chip {{ $windowEntry ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
+                                    {{ $windowEntry ? 'Serving' : 'Idle' }}
+                                </span>
+                            </div>
+
+                            @if($windowEntry)
+                                <div class="gov-ticket-board gov-ticket-board-window">
+                                    <p class="gov-ticket-label">Ticket Number</p>
+                                    <p class="gov-ticket-number" aria-label="{{ $window['label'] }} serving {{ $windowEntry->queue_number }}">
+                                        {{ $windowEntry->queue_number }}
+                                    </p>
+                                    <p class="gov-client-type-chip {{ $windowEntry->isPriorityClient() ? 'gov-client-type-chip-priority' : 'gov-client-type-chip-regular' }}">
+                                        {{ $windowEntry->client_type_label }}
+                                    </p>
+                                    <p class="gov-ticket-meta">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
+                                </div>
+                            @else
+                                <div class="gov-ticket-empty gov-ticket-empty-window">
+                                    <p>{{ $window['label'] }} is ready for the next client.</p>
+                                </div>
+                            @endif
+
+                            <div class="gov-window-actions">
+                                <button
+                                    wire:click="callNext({{ $window['number'] }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="callNext"
+                                    type="button"
+                                    class="gov-btn gov-btn-warning"
+                                >
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5Z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 6a9 9 0 0 1 0 12" />
+                                    </svg>
+                                    Call Next
+                                </button>
+
+                                @if($windowEntry)
+                                    <button
+                                        wire:click="complete({{ $windowEntry->id }})"
+                                        type="button"
+                                        class="gov-btn gov-btn-complete"
+                                    >
+                                        Mark Completed
+                                    </button>
+                                @endif
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
-
-                @if($serving)
-                    <button
-                        wire:click="complete({{ $serving->id }})"
-                        type="button"
-                        class="gov-btn gov-btn-complete mt-3 w-full"
-                    >
-                        Mark Completed
-                    </button>
-                @endif
             </div>
         </section>
 
@@ -129,7 +154,7 @@
                                 <p class="gov-waiting-type {{ $entry->isPriorityClient() ? 'gov-waiting-type-priority' : 'gov-waiting-type-regular' }}">
                                     {{ $entry->client_type_label }}
                                 </p>
-                                <p class="gov-waiting-time">Joined {{ $entry->created_at->timezone('Asia/Manila')->format('h:i A') }}</p>
+                                <p class="gov-waiting-time">Joined {{ $entry->displayCreatedAt()?->format('h:i A') }}</p>
                             </div>
                             <span class="gov-waiting-order">#{{ $loop->iteration }}</span>
                         </div>
@@ -301,12 +326,55 @@
             color: #475569;
         }
 
+        .gov-window-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+            gap: 1rem;
+        }
+
+        .gov-window-card {
+            border: 1px solid #dce5ef;
+            border-radius: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 1rem;
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .gov-window-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .gov-window-kicker {
+            margin: 0;
+            color: var(--gov-ink-500);
+            text-transform: uppercase;
+            letter-spacing: 0.11em;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .gov-window-title {
+            margin: 0.3rem 0 0;
+            color: var(--gov-ink-900);
+            font-size: 1.15rem;
+            line-height: 1.1;
+            font-weight: 800;
+        }
+
         .gov-ticket-board {
             border-radius: 0.95rem;
             border: 1px solid #bfe7d9;
             background:
                 linear-gradient(180deg, #f4fdf9 0%, #e9f8f2 100%);
             padding: 1.05rem;
+        }
+
+        .gov-ticket-board-window {
+            min-height: 13.5rem;
         }
 
         .gov-ticket-label {
@@ -372,6 +440,18 @@
             color: #4b607f;
             text-align: center;
             font-size: 0.94rem;
+        }
+
+        .gov-ticket-empty-window {
+            min-height: 13.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gov-window-actions {
+            display: grid;
+            gap: 0.75rem;
         }
 
         .gov-btn {
@@ -520,6 +600,10 @@
 
             .gov-waiting-ticket {
                 font-size: 1.35rem;
+            }
+
+            .gov-window-grid {
+                grid-template-columns: 1fr;
             }
         }
 

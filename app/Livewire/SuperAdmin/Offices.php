@@ -107,12 +107,6 @@ class Offices extends Component
             return;
         }
 
-        if ($this->isProtectedOffice($office)) {
-            session()->flash('error', "{$office->name} is a protected municipality office and cannot be deleted.");
-
-            return;
-        }
-
         $officeName = $office->name;
         $office->delete();
 
@@ -138,10 +132,5 @@ class Offices extends Component
         $this->officeName = '';
         $this->officePrefix = '';
         $this->officeDescription = '';
-    }
-
-    private function isProtectedOffice(Office $office): bool
-    {
-        return in_array($office->slug, Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS, true);
     }
 }

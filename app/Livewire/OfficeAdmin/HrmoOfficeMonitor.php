@@ -5,6 +5,7 @@ namespace App\Livewire\OfficeAdmin;
 use App\Livewire\OfficeAdmin\Concerns\HandlesOfficeQueueAnnouncements;
 use App\Models\Office;
 use App\Models\QueueEntry;
+use Illuminate\Support\Collection;
 use Livewire\Component;
 
 class HrmoOfficeMonitor extends Component
@@ -80,10 +81,19 @@ class HrmoOfficeMonitor extends Component
 
     public function render()
     {
-        $serving = $this->todayOfficeQueueEntries()
+        $servingEntries = $this->todayOfficeQueueEntries()
             ->serving()
+            ->orderByRaw('COALESCE(service_window_number, 1)')
             ->orderBy('called_at')
-            ->first();
+            ->orderBy('id')
+            ->get()
+            ->map(function (QueueEntry $entry) {
+                if ($entry->service_window_number === null) {
+                    $entry->service_window_number = 1;
+                }
+
+                return $entry;
+            });
 
         $nextInline = $this->todayOfficeQueueEntries()
             ->waiting()
@@ -109,11 +119,29 @@ class HrmoOfficeMonitor extends Component
         };
 
         return view($view, [
-            'serving' => $serving,
+            'serving' => $servingEntries->first(),
+            'servingEntries' => $servingEntries,
+            'serviceWindows' => $this->buildServiceWindows($servingEntries),
+            'usesMultipleServiceWindows' => $this->office->usesMultipleServiceWindows(),
             'nextInline' => $nextInline,
             'recentTransactions' => $recentTransactions,
             'manilaNow' => $manilaNow,
             'announcementPayload' => $this->getOfficeAnnouncement($this->office),
         ]);
+    }
+
+    private function buildServiceWindows(Collection $servingEntries): Collection
+    {
+        $servingByWindow = $servingEntries->keyBy(fn (QueueEntry $entry) => $entry->service_window_number ?? 1);
+
+        return $this->office->serviceWindowNumbers()
+            ->map(function (int $windowNumber) use ($servingByWindow) {
+                return [
+                    'number' => $windowNumber,
+                    'label' => $this->office->serviceWindowLabel($windowNumber),
+                    'entry' => $servingByWindow->get($windowNumber),
+                ];
+            })
+            ->values();
     }
 }

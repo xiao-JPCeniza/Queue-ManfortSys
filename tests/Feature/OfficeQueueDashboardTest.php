@@ -89,7 +89,60 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
-    public function test_call_next_stores_a_serving_announcement_for_the_ticket_that_was_next_in_line(): void
+    public function test_call_next_can_assign_the_next_ticket_to_another_available_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(serviceWindowCount: 2);
+        $user = User::factory()->create(['office_id' => $office->id]);
+
+        $currentServing = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'ACCT-007',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 3, 9, 9, 45, 0, 'Asia/Manila')
+        );
+
+        QueueEntry::whereKey($currentServing)->update([
+            'service_window_number' => 1,
+            'called_at' => Carbon::create(2026, 3, 9, 9, 46, 0, 'Asia/Manila')->setTimezone((string) config('app.timezone', 'UTC')),
+        ]);
+
+        $nextInline = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'ACCT-008',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 9, 9, 50, 0, 'Asia/Manila')
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class, ['office' => $office])
+            ->call('callNext', 2)
+            ->assertSee('Window 2')
+            ->assertSee($nextInline->queue_number);
+
+        $announcement = Cache::get('office-queue-announcement:'.$office->id);
+
+        $this->assertIsArray($announcement);
+        $this->assertSame('serving', $announcement['type'] ?? null);
+        $this->assertSame($nextInline->queue_number, $announcement['queue_number'] ?? null);
+        $this->assertSame(2, $announcement['service_window_number'] ?? null);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $currentServing->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 1,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $nextInline->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 2,
+        ]);
+    }
+
+    public function test_call_next_does_not_replace_an_active_ticket_on_the_same_window(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
@@ -113,22 +166,17 @@ class OfficeQueueDashboardTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(Dashboard::class, ['office' => $office])
-            ->call('callNext');
-
-        $announcement = Cache::get('office-queue-announcement:'.$office->id);
-
-        $this->assertIsArray($announcement);
-        $this->assertSame('serving', $announcement['type'] ?? null);
-        $this->assertSame($nextInline->queue_number, $announcement['queue_number'] ?? null);
+            ->call('callNext', 1)
+            ->assertSee('Window 1 is still handling an active ticket.');
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $currentServing->id,
-            'status' => QueueEntry::STATUS_WAITING,
+            'status' => QueueEntry::STATUS_SERVING,
         ]);
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $nextInline->id,
-            'status' => QueueEntry::STATUS_SERVING,
+            'status' => QueueEntry::STATUS_WAITING,
         ]);
     }
 
@@ -257,7 +305,7 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
-    private function createOffice(): Office
+    private function createOffice(int $serviceWindowCount = 1): Office
     {
         return Office::create([
             'name' => 'Accounting Office',
@@ -265,6 +313,7 @@ class OfficeQueueDashboardTest extends TestCase
             'prefix' => 'ACCT',
             'description' => 'Accounting services',
             'next_number' => 1,
+            'service_window_count' => $serviceWindowCount,
             'tickets_accommodated_total' => 0,
             'is_active' => true,
         ]);

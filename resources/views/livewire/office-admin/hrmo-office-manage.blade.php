@@ -27,20 +27,29 @@
                 <section class="gov-monitor-panel gov-panel-serving" aria-labelledby="now-serving-heading">
                     <div class="gov-panel-head">
                         <h2 id="now-serving-heading" class="gov-font-heading gov-panel-title">Serving Now</h2>
-                        <span class="gov-status-badge {{ $serving ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
-                            {{ $serving ? 'Active' : 'Idle' }}
+                        <span class="gov-status-badge {{ $servingEntries->isNotEmpty() ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
+                            {{ $servingEntries->isNotEmpty() ? $servingEntries->count().' Active' : 'Idle' }}
                         </span>
                     </div>
 
                     <div class="gov-panel-body">
-                        @if($serving)
-                            <div class="gov-ticket-card gov-ticket-card-serving">
-                                <p class="gov-ticket-label">Queue Number</p>
-                                <p class="gov-ticket-number gov-ticket-number-serving" aria-live="polite">{{ $serving->queue_number }}</p>
-                                <div class="gov-ticket-meta-block">
-                                    <p class="gov-ticket-meta-label">Called at</p>
-                                    <p class="gov-ticket-meta-value">{{ $serving->called_at?->timezone('Asia/Manila')?->format('h:i:s A') }}</p>
-                                </div>
+                        @if($servingEntries->isNotEmpty())
+                            <div class="gov-window-monitor-list">
+                                @foreach($serviceWindows as $window)
+                                    @continue(! $window['entry'])
+
+                                    <article class="gov-window-monitor-card">
+                                        <div>
+                                            <p class="gov-ticket-label">{{ $window['label'] }}</p>
+                                            <p class="gov-window-monitor-ticket" aria-live="polite">{{ $window['entry']->queue_number }}</p>
+                                        </div>
+
+                                        <div class="gov-ticket-meta-block">
+                                            <p class="gov-ticket-meta-label">Called at</p>
+                                            <p class="gov-ticket-meta-value">{{ $window['entry']->displayCalledAt()?->format('h:i:s A') }}</p>
+                                        </div>
+                                    </article>
+                                @endforeach
                             </div>
                         @else
                             <div class="gov-ticket-empty">
@@ -66,7 +75,7 @@
                                 <p class="gov-ticket-number gov-ticket-number-next" aria-live="polite">{{ $nextInline->queue_number }}</p>
                                 <div class="gov-ticket-meta-block">
                                     <p class="gov-ticket-meta-label">Queued at</p>
-                                    <p class="gov-ticket-meta-value">{{ $nextInline->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</p>
+                                    <p class="gov-ticket-meta-value">{{ $nextInline->displayCreatedAt()?->format('h:i:s A') }}</p>
                                 </div>
                             </div>
                         @else
@@ -358,6 +367,29 @@
         .gov-ticket-card-next {
             border-color: #b6dcf9;
             background: linear-gradient(180deg, #f3f9ff 0%, #e8f3ff 100%);
+        }
+
+        .gov-window-monitor-list {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .gov-window-monitor-card {
+            border-radius: 0.92rem;
+            border: 1px solid #a7e6cb;
+            background: linear-gradient(180deg, #f2fdf8 0%, #e5f8ef 100%);
+            padding: 0.95rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .gov-window-monitor-ticket {
+            margin: 0.35rem 0 0;
+            color: #067a55;
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 0.95;
+            font-weight: 800;
+            letter-spacing: -0.03em;
         }
 
         .gov-ticket-label {

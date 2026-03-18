@@ -26,7 +26,7 @@
                         </div>
 
                         <span class="gov-office-monitor-chip">
-                            {{ $featuredOfficeRow['waiting_count'] }} waiting
+                            {{ $featuredOfficeRow['waiting_count'] }} waiting | {{ $featuredOfficeRow['active_window_count'] }} active
                         </span>
                     </div>
 
@@ -34,20 +34,26 @@
                         <section class="gov-monitor-panel gov-panel-serving" aria-labelledby="serving-{{ $featuredOfficeRow['office']->slug }}">
                             <div class="gov-panel-head">
                                 <h3 id="serving-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Serving Now</h3>
-                                <span class="gov-status-badge {{ $featuredOfficeRow['serving'] ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
-                                    {{ $featuredOfficeRow['serving'] ? 'Active' : 'Idle' }}
+                                <span class="gov-status-badge {{ $featuredOfficeRow['servingEntries']->isNotEmpty() ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
+                                    {{ $featuredOfficeRow['servingEntries']->isNotEmpty() ? $featuredOfficeRow['servingEntries']->count().' Active' : 'Idle' }}
                                 </span>
                             </div>
 
                             <div class="gov-panel-body">
-                                @if($featuredOfficeRow['serving'])
-                                    <div class="gov-ticket-card gov-ticket-card-serving">
-                                        <p class="gov-ticket-label">Queue Number</p>
-                                        <p class="gov-ticket-number gov-ticket-number-serving" aria-live="polite">{{ $featuredOfficeRow['serving']->queue_number }}</p>
-                                        <div class="gov-ticket-meta-block">
-                                            <p class="gov-ticket-meta-label">Called at</p>
-                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['serving']->called_at?->timezone('Asia/Manila')?->format('h:i:s A') ?? 'Just now' }}</p>
-                                        </div>
+                                @if($featuredOfficeRow['servingEntries']->isNotEmpty())
+                                    <div class="gov-window-monitor-list">
+                                        @foreach($featuredOfficeRow['servingEntries'] as $entry)
+                                            <article class="gov-window-monitor-card">
+                                                <div>
+                                                    <p class="gov-ticket-label">{{ $entry->service_window_label ?? 'Window 1' }}</p>
+                                                    <p class="gov-window-monitor-ticket" aria-live="polite">{{ $entry->queue_number }}</p>
+                                                </div>
+                                                <div class="gov-ticket-meta-block">
+                                                    <p class="gov-ticket-meta-label">Called at</p>
+                                                    <p class="gov-ticket-meta-value">{{ $entry->displayCalledAt()?->format('h:i:s A') ?? 'Just now' }}</p>
+                                                </div>
+                                            </article>
+                                        @endforeach
                                     </div>
                                 @else
                                     <div class="gov-ticket-empty">
@@ -73,7 +79,7 @@
                                         <p class="gov-ticket-number gov-ticket-number-next" aria-live="polite">{{ $featuredOfficeRow['nextInline']->queue_number }}</p>
                                         <div class="gov-ticket-meta-block">
                                             <p class="gov-ticket-meta-label">Queued at</p>
-                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['nextInline']->created_at->timezone('Asia/Manila')->format('h:i:s A') }}</p>
+                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['nextInline']->displayCreatedAt()?->format('h:i:s A') }}</p>
                                         </div>
                                     </div>
                                 @else
@@ -129,7 +135,7 @@
         </main>
     </section>
 
-    @foreach($announcementOfficeRows as $officeRow)
+    @foreach(collect([$featuredOfficeRow])->filter() as $officeRow)
         @include('livewire.office-admin.partials.live-monitor-announcer', [
             'office' => $officeRow['office'],
             'announcementPayload' => $officeRow['announcementPayload'],
@@ -433,6 +439,29 @@
         .gov-ticket-card-next {
             border-color: #b6dcf9;
             background: linear-gradient(180deg, #f3f9ff 0%, #e8f3ff 100%);
+        }
+
+        .gov-window-monitor-list {
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .gov-window-monitor-card {
+            border-radius: 0.92rem;
+            border: 1px solid #a7e6cb;
+            background: linear-gradient(180deg, #f2fdf8 0%, #e5f8ef 100%);
+            padding: 0.95rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .gov-window-monitor-ticket {
+            margin: 0.35rem 0 0;
+            color: #067a55;
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 0.95;
+            font-weight: 800;
+            letter-spacing: -0.03em;
         }
 
         .gov-ticket-label {

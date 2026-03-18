@@ -88,7 +88,7 @@ class SuperAdminOfficesTest extends TestCase
             ->assertHasErrors(['officePrefix']);
     }
 
-    public function test_super_admin_can_delete_a_non_protected_office(): void
+    public function test_super_admin_can_delete_an_office_and_clean_up_related_records(): void
     {
         $superAdmin = $this->createSuperAdminUser();
         $office = $this->createOffice('Citizen Center', 'citizen-center', 'CCEN', true);
@@ -120,21 +120,26 @@ class SuperAdminOfficesTest extends TestCase
         ]);
     }
 
-    public function test_super_admin_cannot_delete_a_protected_municipality_office(): void
+    public function test_super_admin_can_delete_a_default_public_queue_office_without_breaking_admin_routes(): void
     {
         $superAdmin = $this->createSuperAdminUser();
         $office = $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+        $this->createOffice('Accounting', 'accounting', 'ACCT', true);
 
         $this->actingAs($superAdmin);
 
         Livewire::test(SuperAdminOffices::class)
             ->call('deleteOffice', $office->id)
-            ->assertSee('HRMO');
+            ->assertDontSee('HRMO');
 
-        $this->assertDatabaseHas('offices', [
+        $this->assertDatabaseMissing('offices', [
             'id' => $office->id,
             'slug' => 'hrmo',
         ]);
+
+        $this->get(route('super-admin.reports'))
+            ->assertOk()
+            ->assertSee('Accommodated Tickets by Office');
     }
 
     private function createSuperAdminUser(): User

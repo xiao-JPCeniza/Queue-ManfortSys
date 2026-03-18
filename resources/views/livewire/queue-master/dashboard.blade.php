@@ -10,9 +10,9 @@
             'treasury' => 'Treasury Office',
         ];
         $officeCount = $offices->count();
-        $servingCount = $offices->filter(fn ($office) => filled($office->serving_ticket))->count();
+        $servingCount = (int) $offices->sum(fn ($office) => (int) ($office->active_window_count ?? 0));
         $waitingTotal = (int) $offices->sum('waiting_count');
-        $idleCount = $officeCount - $servingCount;
+        $idleCount = (int) $offices->sum(fn ($office) => (int) ($office->available_window_count ?? max(0, ($office->window_count ?? 1) - ($office->active_window_count ?? 0))));
         $activityStatusCounts = $recentEntries->countBy('status');
     @endphp
 
@@ -50,9 +50,9 @@
                 </article>
 
                 <article class="gov-admin-stat-card gov-admin-stat-card-strong">
-                    <p class="gov-admin-stat-label">Serving Now</p>
+                    <p class="gov-admin-stat-label">Active Windows</p>
                     <p class="gov-font-heading gov-admin-stat-value">{{ number_format($servingCount) }}</p>
-                    <p class="gov-admin-stat-note">Counters with an active queue transaction in progress.</p>
+                    <p class="gov-admin-stat-note">Service windows with an active queue transaction in progress.</p>
                 </article>
 
                 <article class="gov-admin-stat-card gov-admin-stat-card-accent">
@@ -62,7 +62,7 @@
                 </article>
 
                 <article class="gov-admin-stat-card">
-                    <p class="gov-admin-stat-label">Idle Offices</p>
+                    <p class="gov-admin-stat-label">Available Windows</p>
                     <p class="gov-font-heading gov-admin-stat-value">{{ number_format($idleCount) }}</p>
                     <p class="gov-admin-stat-note">Service windows without an active ticket at the moment.</p>
                 </article>
@@ -94,6 +94,7 @@
                                 <div class="gov-office-meta" aria-label="Office queue numbering">
                                     <span class="gov-office-meta-chip">{{ $office->prefix }}</span>
                                     <span class="gov-office-meta-text">Next ticket release: #{{ $office->next_number }}</span>
+                                    <span class="gov-office-meta-text">{{ number_format($office->window_count ?? 1) }} window{{ ($office->window_count ?? 1) === 1 ? '' : 's' }}</span>
                                 </div>
                             </div>
 
@@ -117,7 +118,9 @@
                                 <p class="gov-queue-panel-value">
                                     {{ $office->serving_ticket ?: 'No active ticket' }}
                                 </p>
-                                <p class="gov-queue-panel-note">Current transaction being handled at the office counter.</p>
+                                <p class="gov-queue-panel-note">
+                                    {{ number_format($office->active_window_count ?? 0) }} of {{ number_format($office->window_count ?? 1) }} window{{ ($office->window_count ?? 1) === 1 ? '' : 's' }} currently active.
+                                </p>
                             </section>
 
                             <section class="gov-queue-panel gov-queue-panel-waiting" aria-label="Next in line">
@@ -175,6 +178,9 @@
                                     <td>
                                         <div class="gov-admin-table-ticket-stack">
                                             <span class="gov-admin-table-ticket">{{ $entry->queue_number }}</span>
+                                            @if($entry->service_window_label)
+                                                <span class="gov-admin-table-office-code">{{ $entry->service_window_label }}</span>
+                                            @endif
                                             <span class="gov-admin-client-type-chip {{ $entry->isPriorityClient() ? 'gov-admin-client-type-chip-priority' : 'gov-admin-client-type-chip-regular' }}">
                                                 {{ $entry->client_type_label }}
                                             </span>

@@ -39,12 +39,14 @@ class Office extends Model
         'prefix',
         'description',
         'next_number',
+        'service_window_count',
         'tickets_accommodated_total',
         'is_active',
         'show_in_public_queue',
     ];
 
     protected $casts = [
+        'service_window_count' => 'integer',
         'tickets_accommodated_total' => 'integer',
         'is_active' => 'boolean',
         'show_in_public_queue' => 'boolean',
@@ -79,6 +81,31 @@ class Office extends Model
             ->values();
     }
 
+    public static function resolveSuperAdminContextOffice(): ?self
+    {
+        $hrmoOffice = self::query()
+            ->where('slug', 'hrmo')
+            ->first();
+
+        if ($hrmoOffice) {
+            return $hrmoOffice;
+        }
+
+        $publicQueueOffice = self::sortPublicQueueOffices(
+            self::query()
+                ->activePublicQueue()
+                ->get()
+        )->first();
+
+        if ($publicQueueOffice) {
+            return $publicQueueOffice;
+        }
+
+        return self::query()
+            ->orderBy('name')
+            ->first();
+    }
+
     public function getDisplayNameAttribute(): string
     {
         return self::DISPLAY_NAME_MAP[$this->slug]
@@ -99,6 +126,28 @@ class Office extends Model
     public function waitingCount(): int
     {
         return $this->queueEntries()->where('status', 'waiting')->count();
+    }
+
+    public function resolvedServiceWindowCount(): int
+    {
+        return max(1, (int) ($this->service_window_count ?? 1));
+    }
+
+    public function usesMultipleServiceWindows(): bool
+    {
+        return $this->resolvedServiceWindowCount() > 1;
+    }
+
+    public function serviceWindowNumbers(): Collection
+    {
+        return collect(range(1, $this->resolvedServiceWindowCount()));
+    }
+
+    public function serviceWindowLabel(int $windowNumber): string
+    {
+        $windowNumber = max(1, $windowNumber);
+
+        return 'Window '.$windowNumber;
     }
 
     public function getQueueJoinUrl(): string

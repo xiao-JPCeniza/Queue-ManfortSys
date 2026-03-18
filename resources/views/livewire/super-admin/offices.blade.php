@@ -108,7 +108,6 @@
                 </thead>
                 <tbody>
                     @forelse($offices as $office)
-                        @php($isProtectedOffice = in_array($office->slug, \App\Models\Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS, true))
                         <tr class="border-t border-slate-100">
                             <td class="px-6 py-4 font-medium text-slate-800">{{ $office->name }}</td>
                             <td class="px-6 py-4 text-slate-700">{{ $office->display_name }}</td>
@@ -121,23 +120,14 @@
                                     >
                                         Queue Link
                                     </a>
-                                    @if($isProtectedOffice)
-                                        <span
-                                            class="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700"
-                                            title="Built-in municipality offices cannot be deleted here."
-                                        >
-                                            Protected
-                                        </span>
-                                    @else
-                                        <button
-                                            type="button"
-                                            wire:click="deleteOffice({{ $office->id }})"
-                                            wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and unassign any linked users."
-                                            class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                                        >
-                                            Delete
-                                        </button>
-                                    @endif
+                                    <button
+                                        type="button"
+                                        wire:click="deleteOffice({{ $office->id }})"
+                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and unassign any linked users."
+                                        class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                    >
+                                        Delete
+                                    </button>
                                 </div>
                             </td>
                         </tr>

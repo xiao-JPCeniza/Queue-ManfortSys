@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class QueueEntry extends Model
 {
@@ -21,6 +22,7 @@ class QueueEntry extends Model
         'queue_number',
         'client_type',
         'status',
+        'service_window_number',
         'served_by',
         'served_at',
         'called_at',
@@ -28,6 +30,7 @@ class QueueEntry extends Model
     ];
 
     protected $casts = [
+        'service_window_number' => 'integer',
         'served_at' => 'datetime',
         'called_at' => 'datetime',
         'recent_transaction_cleared_at' => 'datetime',
@@ -117,5 +120,46 @@ class QueueEntry extends Model
             $this->created_at?->getTimestamp() ?? 0,
             $this->id
         );
+    }
+
+    public function resolvedServiceWindowNumber(): ?int
+    {
+        return $this->service_window_number === null
+            ? null
+            : max(1, (int) $this->service_window_number);
+    }
+
+    public function getServiceWindowLabelAttribute(): ?string
+    {
+        $windowNumber = $this->resolvedServiceWindowNumber();
+
+        return $windowNumber === null ? null : 'Window '.$windowNumber;
+    }
+
+    public function displayCreatedAt(string $timezone = 'Asia/Manila'): ?Carbon
+    {
+        return $this->displayTimestamp('created_at', $timezone);
+    }
+
+    public function displayCalledAt(string $timezone = 'Asia/Manila'): ?Carbon
+    {
+        return $this->displayTimestamp('called_at', $timezone);
+    }
+
+    public function displayServedAt(string $timezone = 'Asia/Manila'): ?Carbon
+    {
+        return $this->displayTimestamp('served_at', $timezone);
+    }
+
+    private function displayTimestamp(string $column, string $timezone): ?Carbon
+    {
+        $rawValue = $this->getRawOriginal($column);
+
+        if (! is_string($rawValue) || $rawValue === '') {
+            return null;
+        }
+
+        return Carbon::parse($rawValue, (string) config('app.timezone', 'UTC'))
+            ->setTimezone($timezone);
     }
 }

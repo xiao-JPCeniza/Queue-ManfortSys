@@ -63,14 +63,22 @@ class AllOfficesMonitor extends Component
             return null;
         }
 
-        $serving = $officeEntries
+        $servingEntries = $officeEntries
             ->where('status', QueueEntry::STATUS_SERVING)
+            ->map(function (QueueEntry $entry) {
+                if ($entry->service_window_number === null) {
+                    $entry->service_window_number = 1;
+                }
+
+                return $entry;
+            })
             ->sortBy(fn (QueueEntry $entry) => sprintf(
-                '%020d-%010d',
+                '%05d-%020d-%010d',
+                $entry->service_window_number ?? 1,
                 $entry->called_at?->getTimestamp() ?? 0,
                 $entry->id
             ))
-            ->first();
+            ->values();
 
         $waitingEntries = $officeEntries
             ->where('status', QueueEntry::STATUS_WAITING)
@@ -79,21 +87,26 @@ class AllOfficesMonitor extends Component
 
         $nextInline = $waitingEntries->first();
 
-        if ($serving === null && $nextInline === null) {
+        if ($servingEntries->isEmpty() && $nextInline === null) {
             return null;
         }
 
         $announcementPayload = $this->getOfficeAnnouncement($office);
+        $activeWindowCount = $servingEntries->count();
+        $windowCount = $office->resolvedServiceWindowCount();
 
         return [
             'office' => $office,
-            'serving' => $serving,
+            'serving' => $servingEntries->first(),
+            'servingEntries' => $servingEntries,
             'nextInline' => $nextInline,
             'waiting_count' => $waitingEntries->count(),
+            'active_window_count' => $activeWindowCount,
+            'window_count' => $windowCount,
             'announcementPayload' => $announcementPayload,
             'priority_timestamp' => max(
                 $this->announcementTimestamp($announcementPayload),
-                $serving?->called_at?->getTimestamp() ?? 0
+                $servingEntries->max(fn (QueueEntry $entry) => $entry->called_at?->getTimestamp() ?? 0) ?? 0
             ),
         ];
     }

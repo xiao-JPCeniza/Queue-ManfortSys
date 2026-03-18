@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 trait HandlesOfficeQueueAnnouncements
 {
-    protected function storeOfficeAnnouncement(Office $office, string $type, string $queueNumber): void
+    protected function storeOfficeAnnouncement(Office $office, string $type, string $queueNumber, ?int $serviceWindowNumber = null): void
     {
         Cache::put(
             $this->officeAnnouncementCacheKey($office),
@@ -16,6 +16,7 @@ trait HandlesOfficeQueueAnnouncements
                 'id' => (string) Str::uuid(),
                 'type' => $type,
                 'queue_number' => $queueNumber,
+                'service_window_number' => $serviceWindowNumber,
                 'triggered_at' => now()->toIso8601String(),
             ],
             now()->addMinutes(30)

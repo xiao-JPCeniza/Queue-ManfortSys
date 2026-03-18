@@ -169,8 +169,29 @@ class Dashboard extends Component
         $this->overallDataPage++;
     }
 
-    public function callNext()
+    public function callNext(?int $windowNumber = null)
     {
+        $requestedWindowNumber = $windowNumber;
+        $windowNumber = $this->normalizeWindowNumber($windowNumber);
+
+        $currentServing = $this->servingEntryForWindow($windowNumber);
+
+        if ($currentServing !== null) {
+            if ($requestedWindowNumber === null && ! $this->office->usesMultipleServiceWindows()) {
+                $currentServing->update([
+                    'status' => QueueEntry::STATUS_WAITING,
+                    'service_window_number' => null,
+                ]);
+            } else {
+                session()->flash(
+                    'office_message',
+                    $this->office->serviceWindowLabel($windowNumber).' is still handling an active ticket.'
+                );
+
+                return;
+            }
+        }
+
         $next = $this->todayOfficeQueueEntries()
             ->waiting()
             ->orderedForService()
@@ -182,18 +203,18 @@ class Dashboard extends Component
             return;
         }
 
-        $this->todayOfficeQueueEntries()
-            ->serving()
-            ->update(['status' => QueueEntry::STATUS_WAITING]);
-
         $next->update([
             'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => $windowNumber,
             'called_at' => now(),
             'served_by' => $this->authenticatedUserId(),
         ]);
 
-        $this->storeOfficeAnnouncement($this->office, 'serving', $next->queue_number);
-        session()->flash('office_message', "Now serving {$next->queue_number}");
+        $this->storeOfficeAnnouncement($this->office, 'serving', $next->queue_number, $windowNumber);
+        session()->flash(
+            'office_message',
+            sprintf('Now serving %s at %s.', $next->queue_number, $this->office->serviceWindowLabel($windowNumber))
+        );
     }
 
     public function complete(int $entryId)
@@ -266,14 +287,32 @@ class Dashboard extends Component
 
     public function render()
     {
+        $waiting = $this->todayOfficeQueueEntries()
+            ->waiting()
+            ->orderedForService()
+            ->get();
+
+        $servingEntries = $this->todayOfficeQueueEntries()
+            ->serving()
+            ->orderByRaw('COALESCE(service_window_number, 1)')
+            ->orderBy('called_at')
+            ->orderBy('id')
+            ->get()
+            ->map(function (QueueEntry $entry) {
+                if ($entry->service_window_number === null) {
+                    $entry->service_window_number = 1;
+                }
+
+                return $entry;
+            });
+
         $viewData = [
-            'waiting' => $this->todayOfficeQueueEntries()
-                ->waiting()
-                ->orderedForService()
-                ->get(),
-            'serving' => $this->todayOfficeQueueEntries()
-                ->serving()
-                ->first(),
+            'waiting' => $waiting,
+            'serving' => $servingEntries->first(),
+            'servingEntries' => $servingEntries,
+            'serviceWindows' => $this->buildServiceWindows($servingEntries),
+            'serviceWindowCount' => $this->office->resolvedServiceWindowCount(),
+            'usesMultipleServiceWindows' => $this->office->usesMultipleServiceWindows(),
         ];
 
         if ($this->supportsAdvancedQueueDashboard()) {
@@ -284,6 +323,47 @@ class Dashboard extends Component
         }
 
         return view('livewire.office-admin.dashboard', $viewData);
+    }
+
+    private function buildServiceWindows(Collection $servingEntries): Collection
+    {
+        $servingByWindow = $servingEntries->keyBy(fn (QueueEntry $entry) => $entry->service_window_number ?? 1);
+
+        return $this->office->serviceWindowNumbers()
+            ->map(function (int $windowNumber) use ($servingByWindow) {
+                return [
+                    'number' => $windowNumber,
+                    'label' => $this->office->serviceWindowLabel($windowNumber),
+                    'entry' => $servingByWindow->get($windowNumber),
+                ];
+            })
+            ->values();
+    }
+
+    private function normalizeWindowNumber(?int $windowNumber): int
+    {
+        $windowNumber = $windowNumber ?? 1;
+
+        return min(
+            max(1, $windowNumber),
+            $this->office->resolvedServiceWindowCount()
+        );
+    }
+
+    private function servingEntryForWindow(int $windowNumber): ?QueueEntry
+    {
+        return $this->todayOfficeQueueEntries()
+            ->serving()
+            ->where(function ($query) use ($windowNumber) {
+                $query->where('service_window_number', $windowNumber);
+
+                if ($windowNumber === 1) {
+                    $query->orWhereNull('service_window_number');
+                }
+            })
+            ->orderBy('called_at')
+            ->orderBy('id')
+            ->first();
     }
 
     private function defaultAdvancedDashboardData(): array
@@ -1014,7 +1094,7 @@ class Dashboard extends Component
 
     private function shouldUseAllOfficesReportScope(): bool
     {
-        return $this->isSuperAdmin() && $this->office->slug === 'hrmo';
+        return $this->isSuperAdmin() && request()->routeIs('super-admin.*');
     }
 
     private function currentUser(): ?User

@@ -16,7 +16,7 @@
         'mswdo' => 'MSWDO',
     ])
     @php($reportOfficeLabel = $reportOfficeLabels[$office->slug] ?? $office->name)
-    @php($isAllOfficesReportScope = auth()->user()?->isSuperAdmin() && $office->slug === 'hrmo')
+    @php($isAllOfficesReportScope = auth()->user()?->isSuperAdmin() && request()->routeIs('super-admin.*'))
     @php($liveMonitorRoute = $office->slug === 'hrmo' ? 'office.hrmo.monitor' : ($isBploOffice ? 'office.bplo.monitor' : 'office.hrmo.monitor'))
     @php($liveMonitorLabel = $office->slug === 'hrmo' ? 'Open HRMO Live Monitor' : ($isBploOffice ? 'Open BPLO Live Monitor' : ($isMhoOffice ? 'Open MHO Live Queue Monitor' : ($isMswdoOffice ? 'Open MSWDO Live Queue Monitor' : ($isAccountingOffice ? 'Open Accounting Live Queue Monitor' : ($office->slug === 'treasury' ? 'Open Treasury Live Queue Monitor' : ($office->slug === 'civil-registry' ? 'Open Civil Registry Live Queue Monitor' : ($office->slug === 'assessors-office' ? 'Open Assessor\'s Live Queue Monitor' : 'Open Live Monitor'))))))))
 
