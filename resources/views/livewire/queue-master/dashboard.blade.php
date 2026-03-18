@@ -33,11 +33,7 @@
                     </p>
 
                     <div class="gov-admin-chip-row" aria-label="Dashboard context">
-                        <span class="gov-admin-chip gov-admin-chip-strong">
-                            {{ $isSuperAdmin ? 'System-wide oversight' : 'Queue operations view' }}
-                        </span>
-                        <span class="gov-admin-chip">Live office monitoring</span>
-                        <span class="gov-admin-chip">Internal government use</span>
+    
                     </div>
                 </div>
             </div>

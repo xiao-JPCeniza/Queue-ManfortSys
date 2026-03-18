@@ -34,27 +34,21 @@
                         <section class="gov-monitor-panel gov-panel-serving" aria-labelledby="serving-{{ $featuredOfficeRow['office']->slug }}">
                             <div class="gov-panel-head">
                                 <h3 id="serving-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Serving Now</h3>
-                                <span class="gov-status-badge {{ $featuredOfficeRow['servingEntries']->isNotEmpty() ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
-                                    {{ $featuredOfficeRow['servingEntries']->isNotEmpty() ? $featuredOfficeRow['servingEntries']->count().' Active' : 'Idle' }}
+                                <span class="gov-status-badge {{ $featuredOfficeRow['serving'] ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
+                                    {{ $featuredOfficeRow['serving'] ? '1 Active' : 'Idle' }}
                                 </span>
                             </div>
 
                             <div class="gov-panel-body">
-                                @if($featuredOfficeRow['servingEntries']->isNotEmpty())
-                                    <div class="gov-window-monitor-list">
-                                        @foreach($featuredOfficeRow['servingEntries'] as $entry)
-                                            <article class="gov-window-monitor-card">
-                                                <div>
-                                                    <p class="gov-ticket-label">{{ $entry->service_window_label ?? 'Window 1' }}</p>
-                                                    <p class="gov-window-monitor-ticket" aria-live="polite">{{ $entry->queue_number }}</p>
-                                                </div>
-                                                <div class="gov-ticket-meta-block">
-                                                    <p class="gov-ticket-meta-label">Called at</p>
-                                                    <p class="gov-ticket-meta-value">{{ $entry->displayCalledAt()?->format('h:i:s A') ?? 'Just now' }}</p>
-                                                </div>
-                                            </article>
-                                        @endforeach
-                                    </div>
+                                @if($featuredOfficeRow['serving'])
+                                    <article class="gov-ticket-card gov-ticket-card-serving">
+                                        <p class="gov-ticket-label">{{ $featuredOfficeRow['serving']->service_window_label ?? 'Window 1' }}</p>
+                                        <p class="gov-ticket-number gov-ticket-number-serving" aria-live="polite">{{ $featuredOfficeRow['serving']->queue_number }}</p>
+                                        <div class="gov-ticket-meta-block">
+                                            <p class="gov-ticket-meta-label">Called at</p>
+                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['serving']->displayCalledAt()?->format('h:i:s A') ?? 'Just now' }}</p>
+                                        </div>
+                                    </article>
                                 @else
                                     <div class="gov-ticket-empty">
                                         <p class="gov-ticket-empty-title">No active ticket right now</p>

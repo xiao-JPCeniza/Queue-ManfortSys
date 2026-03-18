@@ -67,11 +67,11 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Ticket Option')
-            ->assertSee('Senior / Pregnant')
+            ->assertSee('Priority')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_SENIOR_PREGNANT)
             ->assertSee('Citizen Center')
             ->assertSee('CCEN-001')
-            ->assertSee('Senior / Pregnant');
+            ->assertSee('Priority');
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,

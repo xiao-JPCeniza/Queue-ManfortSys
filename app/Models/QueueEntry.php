@@ -82,7 +82,7 @@ class QueueEntry extends Model
                 'description' => 'Standard queue ticket for the selected office.',
             ],
             self::TYPE_SENIOR_PREGNANT => [
-                'label' => 'Senior / Pregnant',
+                'label' => 'Priority',
                 'description' => 'Priority assistance ticket for senior citizens and pregnant clients.',
             ],
         ];

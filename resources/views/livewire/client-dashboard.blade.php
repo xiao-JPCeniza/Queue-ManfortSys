@@ -49,7 +49,7 @@
         @if(!$ticket)
             <section class="queue-intro-card">
                 <h2 class="queue-intro-title">Select an Office to Get Your Queue Number</h2>
-                <p class="queue-intro-copy">Please choose the office you need to visit. You will be asked to choose either a regular ticket or a senior/pregnant ticket before the queue number is generated.</p>
+                <p class="queue-intro-copy">Please choose the office you need to visit. You will be asked to choose either a regular ticket or a priority ticket before the queue number is generated.</p>
             </section>
 
             <div class="gov-office-grid mt-5" role="list">
@@ -369,7 +369,7 @@
         inset: 0 auto 0 0;
         width: 7px;
         border-radius: 1.1rem 0 0 1.1rem;
-        background: linear-gradient(180deg, #14539e 0%, #2b7ac7 45%, #f2b635 100%);
+        background: linear-gradient(180deg, #c09f5c 0%, #2b7ac7 45%, #f2b635 100%);
     }
 
     .gov-office-grid > button:nth-child(4n + 2)::before {
@@ -673,9 +673,9 @@
     }
 
     .queue-modal-option-regular {
-        border-color: #c8d8ef;
+        border-color: #003c90;
         background:
-            linear-gradient(135deg, rgba(20, 83, 158, 0.08), rgba(255, 255, 255, 0) 56%),
+            linear-gradient(135deg, rgb(196, 221, 252), rgb(129, 160, 226) 56%),
             linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
     }
 
@@ -685,9 +685,9 @@
     }
 
     .queue-modal-option-priority {
-        border-color: #efcf90;
+        border-color: #868d06;
         background:
-            linear-gradient(135deg, rgba(241, 187, 107, 0.34), rgba(255, 255, 255, 0) 58%),
+            linear-gradient(135deg, rgb(219, 215, 122), rgb(216, 216, 28) 58%),
             linear-gradient(180deg, #fffdf7 0%, #fff6df 100%);
     }
 
@@ -733,7 +733,7 @@
         margin-top: 0.95rem;
         width: 100%;
         border-radius: 0.9rem;
-        border: 1px solid #cbd5e1;
+        border: 1px solid #f30808;
         background: #ffffff;
         color: #475569;
         font-size: 0.92rem;

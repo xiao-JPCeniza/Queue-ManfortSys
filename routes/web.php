@@ -182,7 +182,7 @@ Route::post('/logout', function () {
     });
 
     Route::middleware(['role:super_admin'])->prefix('super-admin')->name('super-admin.')->group(function () {
-        Route::get('/', QueueMasterDashboard::class)->name('index');
+        Route::redirect('/', '/super-admin/reports')->name('index');
         Route::get('/reports', function () {
             $officeModel = Office::resolveSuperAdminContextOffice()
                 ?? abort(404, 'No office is available for the Super Admin dashboard.');

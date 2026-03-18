@@ -16,11 +16,11 @@
                         Regular
                     </button>
                     <button
-                        wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_SENIOR_PREGNANT }}')"
+                        wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_PRIORITY
                         type="button"
                         class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-4 rounded-xl text-lg transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
                     >
-                        Senior / Pregnant
+                        Priority
                     </button>
                 </div>
             </div>

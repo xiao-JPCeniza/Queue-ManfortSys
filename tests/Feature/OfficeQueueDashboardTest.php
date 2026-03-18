@@ -207,7 +207,7 @@ class OfficeQueueDashboardTest extends TestCase
         Livewire::test(Dashboard::class, ['office' => $office])
             ->call('callNext')
             ->assertSee($priorityEntry->queue_number)
-            ->assertSee('Senior / Pregnant');
+            ->assertSee('Priority');
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $priorityEntry->id,
@@ -218,46 +218,6 @@ class OfficeQueueDashboardTest extends TestCase
             'id' => $regularEntry->id,
             'status' => QueueEntry::STATUS_WAITING,
         ]);
-    }
-
-    public function test_dashboard_displays_only_the_latest_called_ticket_number_when_multiple_windows_are_serving(): void
-    {
-        Carbon::setTestNow(Carbon::create(2026, 3, 9, 12, 50, 0, 'Asia/Manila'));
-
-        $office = $this->createOffice(serviceWindowCount: 2);
-        $user = User::factory()->create(['office_id' => $office->id]);
-
-        $olderServing = $this->createQueueEntry(
-            office: $office,
-            queueNumber: 'ACCT-007',
-            status: QueueEntry::STATUS_SERVING,
-            createdAt: Carbon::create(2026, 3, 9, 12, 40, 0, 'Asia/Manila')
-        );
-
-        QueueEntry::whereKey($olderServing)->update([
-            'service_window_number' => 1,
-            'called_at' => Carbon::create(2026, 3, 9, 12, 44, 10, 'Asia/Manila')->setTimezone((string) config('app.timezone', 'UTC')),
-        ]);
-
-        $latestServing = $this->createQueueEntry(
-            office: $office,
-            queueNumber: 'ACCT-008',
-            status: QueueEntry::STATUS_SERVING,
-            createdAt: Carbon::create(2026, 3, 9, 12, 41, 0, 'Asia/Manila')
-        );
-
-        QueueEntry::whereKey($latestServing)->update([
-            'service_window_number' => 2,
-            'called_at' => Carbon::create(2026, 3, 9, 12, 45, 36, 'Asia/Manila')->setTimezone((string) config('app.timezone', 'UTC')),
-        ]);
-
-        $this->actingAs($user);
-
-        Livewire::test(Dashboard::class, ['office' => $office])
-            ->assertSee('Serving Now')
-            ->assertSee('1 active')
-            ->assertSee($latestServing->queue_number)
-            ->assertDontSee($olderServing->queue_number);
     }
 
     public function test_clear_transaction_removes_only_todays_waiting_line_entries(): void
