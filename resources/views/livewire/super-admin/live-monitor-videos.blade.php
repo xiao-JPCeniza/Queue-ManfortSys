@@ -75,14 +75,13 @@
         </div>
 
         <div class="overflow-x-auto border-t border-slate-200 bg-white">
-            <table class="min-w-[980px] w-full text-left">
+            <table class="min-w-full w-full table-fixed text-left">
                 <thead class="bg-gradient-to-b from-emerald-50 to-slate-50">
                     <tr class="text-xs uppercase tracking-[0.14em] text-slate-500">
-                        <th class="px-6 py-4 font-extrabold">Slot</th>
-                        <th class="px-6 py-4 font-extrabold">Video</th>
-                        <th class="px-6 py-4 font-extrabold">Details</th>
-                        <th class="px-6 py-4 font-extrabold">Status</th>
-                        <th class="px-6 py-4 font-extrabold">Actions</th>
+                        <th class="w-[32%] px-6 py-4 font-extrabold">Video</th>
+                        <th class="w-[34%] px-6 py-4 font-extrabold">Details</th>
+                        <th class="w-[16%] px-6 py-4 font-extrabold">Status</th>
+                        <th class="w-[18%] px-6 py-4 font-extrabold">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
@@ -98,13 +97,7 @@
                         @endphp
                         <tr x-show="matchesSearch(@js($searchTokens))" x-transition.opacity.duration.150ms class="hover:bg-slate-50/70">
                             <td class="px-6 py-5 align-middle">
-                                <div class="space-y-1">
-                                    <p class="text-lg font-bold text-slate-700">Idle Monitor</p>
-                                    <p class="text-base text-slate-400">idle_monitor_video</p>
-                                </div>
-                            </td>
-                            <td class="px-6 py-5 align-middle">
-                                <div class="relative w-[24rem] shrink-0 overflow-hidden rounded-[1.5rem] bg-slate-900 shadow-inner">
+                                <div class="relative w-full max-w-[18rem] overflow-hidden rounded-[1.35rem] bg-slate-900 shadow-inner">
                                     <video muted playsinline preload="metadata" class="aspect-video w-full object-cover opacity-90">
                                         <source src="{{ route('super-admin.live-monitor-videos.preview', $video['id']) }}" type="video/mp4">
                                     </video>
@@ -112,9 +105,9 @@
                                 </div>
                             </td>
                             <td class="px-6 py-5 align-middle">
-                                <div class="max-w-xl space-y-2">
-                                    <p class="text-[1.35rem] font-bold leading-tight text-slate-700">{{ $video['original_name'] }}</p>
-                                    <p class="text-sm font-medium text-slate-400">
+                                <div class="max-w-[22rem] space-y-2">
+                                    <p class="break-all text-[1.2rem] font-bold leading-tight text-slate-700">{{ $video['original_name'] }}</p>
+                                    <p class="text-sm leading-6 font-medium text-slate-400">
                                         Updated {{ $uploadedAt->diffForHumans() }} | {{ $uploadedAt->format('M d, Y h:i A') }} Manila time | {{ $sizeInMb }} MB
                                     </p>
                                 </div>
@@ -173,7 +166,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="4" class="px-6 py-12 text-center">
                                 <p class="text-lg font-bold text-slate-700">No uploaded idle videos yet.</p>
                                 <p class="mt-2 text-sm text-slate-500">The live monitor is currently using the default tourism video.</p>
                             </td>
@@ -182,7 +175,7 @@
 
                     @if($videos->isNotEmpty())
                         <tr x-show="hasSearch && !hasVisibleRows()" x-transition.opacity.duration.150ms>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="4" class="px-6 py-12 text-center">
                                 <p class="text-lg font-bold text-slate-700">No videos match your search.</p>
                                 <p class="mt-2 text-sm text-slate-500">Try a different filename or clear the search field.</p>
                             </td>

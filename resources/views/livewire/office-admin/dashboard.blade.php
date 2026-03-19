@@ -224,82 +224,110 @@
 
                         @if($hrmoTab === 'user-management' && auth()->user()?->isSuperAdmin())
                             <div class="space-y-6">
-                                <section class="lgu-card p-6" aria-labelledby="user-management-heading">
-                                    <div class="flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <h2 id="user-management-heading" class="lgu-section-title">User Management</h2>
-                                            <p class="mt-1 text-sm text-slate-500">Super Admin view of office-assigned users and queue activity status by office.</p>
+                                <section aria-labelledby="user-management-heading">
+                                    <div class="gov-shell-inner p-5 sm:p-8">
+                                        <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                                            <div class="max-w-3xl">
+                                                <p class="gov-kicker">Municipal Queue Administration</p>
+                                                <h2 id="user-management-heading" class="gov-heading mt-3">User Management</h2>
+                                                <p class="gov-copy mt-3">
+                                                    Super Admin review of office-assigned user accounts and current queue activity status across municipal offices.
+                                                </p>
+                                            </div>
+
+                                            <div class="grid gap-3 sm:grid-cols-2 xl:min-w-[330px]">
+                                                <div class="gov-summary-chip gov-summary-chip-active">
+                                                    <span class="block text-[11px] uppercase tracking-[0.16em]">Active Offices</span>
+                                                    <span class="mt-1 block"><strong>{{ $userManagementStatusSummary['active'] }}</strong> account records</span>
+                                                </div>
+                                                <div class="gov-summary-chip gov-summary-chip-inactive">
+                                                    <span class="block text-[11px] uppercase tracking-[0.16em]">Not Active</span>
+                                                    <span class="mt-1 block"><strong>{{ $userManagementStatusSummary['inactive'] }}</strong> account records</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="flex flex-wrap gap-2 text-xs font-medium">
-                                            <span class="rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-700">
-                                                Active: {{ $userManagementStatusSummary['active'] }}
-                                            </span>
-                                            <span class="rounded-full bg-slate-200 px-3 py-1.5 text-slate-700">
-                                                Not Active: {{ $userManagementStatusSummary['inactive'] }}
-                                            </span>
-                                        </div>
-                                    </div>
 
-                                    <div class="mt-5 overflow-x-auto">
-                                        <table class="w-full text-sm">
-                                            <thead>
-                                                <tr class="border-b border-slate-200 text-left text-slate-500">
-                                                    <th class="px-3 py-2.5 font-semibold">Name</th>
-                                                    <th class="px-3 py-2.5 font-semibold">Role</th>
-                                                    <th class="px-3 py-2.5 font-semibold">Office</th>
-                                                    <th class="px-3 py-2.5 font-semibold">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @forelse($userManagementRows as $userRow)
-                                                    <tr class="border-b border-slate-100 last:border-b-0">
-                                                        <td class="px-3 py-3 font-medium text-slate-800">{{ $userRow['name'] }}</td>
-                                                        <td class="px-3 py-3 text-slate-600">{{ $userRow['role'] }}</td>
-                                                        <td class="px-3 py-3 text-slate-600">{{ $userRow['office'] }}</td>
-                                                        <td class="px-3 py-3">
-                                                            <div class="flex flex-wrap items-center gap-2">
-                                                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $userRow['status_badge_class'] }}">
-                                                                    {{ $userRow['status_label'] }}
-                                                                </span>
+                                        <div class="gov-table-shell mt-7">
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full min-w-[820px] text-sm">
+                                                    <thead class="gov-table-head">
+                                                        <tr class="text-left">
+                                                            <th class="px-5 py-4">Name</th>
+                                                            <th class="px-5 py-4">Role</th>
+                                                            <th class="px-5 py-4">Office</th>
+                                                            <th class="px-5 py-4">Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @forelse($userManagementRows as $userRow)
+                                                            @php($isActive = $userRow['status_label'] === 'Active')
+                                                            @php($nameSegments = preg_split('/\s+/', trim($userRow['name'])) ?: [])
+                                                            @php($initials = collect($nameSegments)->filter()->map(fn ($segment) => strtoupper(substr($segment, 0, 1)))->take(2)->implode(''))
 
-                                                                <details class="group relative">
-                                                                    <summary
-                                                                        class="list-none cursor-pointer rounded-full border border-slate-300 bg-white p-2 text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                                                                        aria-label="View account info"
-                                                                        title="View account info"
-                                                                    >
-                                                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                                            <circle cx="5" cy="12" r="1.75" />
-                                                                            <circle cx="12" cy="12" r="1.75" />
-                                                                            <circle cx="19" cy="12" r="1.75" />
-                                                                        </svg>
-                                                                    </summary>
-
-                                                                    <div class="mt-2 w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
-                                                                        <div>
-                                                                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Login Email</p>
-                                                                            <p class="mt-1 break-all font-mono text-sm text-slate-800">{{ $userRow['email'] }}</p>
-                                                                        </div>
-
-                                                                        <div class="mt-3">
-                                                                            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Password</p>
-                                                                            <p class="mt-1 font-mono text-sm {{ $userRow['password_is_recoverable'] ? 'text-slate-800' : 'text-slate-500' }}">
-                                                                                {{ $userRow['password_value'] }}
-                                                                            </p>
-                                                                            <p class="mt-1 text-xs text-slate-500">{{ $userRow['password_help'] }}</p>
+                                                            <tr class="gov-table-row align-top">
+                                                                <td class="px-5 py-4">
+                                                                    <div class="flex items-start gap-3">
+                                                                        <span class="gov-user-seal">{{ $initials !== '' ? $initials : 'NA' }}</span>
+                                                                        <div class="min-w-0">
+                                                                            <p class="font-semibold text-slate-900">{{ $userRow['name'] }}</p>
+                                                                            <p class="mt-1 break-all text-xs text-slate-500">{{ $userRow['email'] }}</p>
                                                                         </div>
                                                                     </div>
-                                                                </details>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                @empty
-                                                    <tr>
-                                                        <td colspan="4" class="px-3 py-6 text-center text-slate-500">No office-assigned users found.</td>
-                                                    </tr>
-                                                @endforelse
-                                            </tbody>
-                                        </table>
+                                                                </td>
+                                                                <td class="px-5 py-4">
+                                                                    <p class="font-semibold text-slate-800">{{ $userRow['role'] }}</p>
+                                                                    <p class="mt-1 text-xs text-slate-500">Assigned system access</p>
+                                                                </td>
+                                                                <td class="px-5 py-4">
+                                                                    <p class="font-semibold text-slate-800">{{ $userRow['office'] }}</p>
+                                                                    <p class="mt-1 text-xs text-slate-500">Office assignment</p>
+                                                                </td>
+                                                                <td class="px-5 py-4">
+                                                                    <div class="flex items-center justify-between gap-3">
+                                                                        <span class="gov-status-badge {{ $isActive ? 'gov-status-badge-active' : 'gov-status-badge-inactive' }}">
+                                                                            {{ $userRow['status_label'] }}
+                                                                        </span>
+
+                                                                        <details class="group relative shrink-0">
+                                                                            <summary
+                                                                                class="gov-action-trigger list-none cursor-pointer [&::-webkit-details-marker]:hidden"
+                                                                                aria-label="View account record"
+                                                                                title="View account record"
+                                                                            >
+                                                                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                                                                    <circle cx="5" cy="12" r="1.75" />
+                                                                                    <circle cx="12" cy="12" r="1.75" />
+                                                                                    <circle cx="19" cy="12" r="1.75" />
+                                                                                </svg>
+                                                                            </summary>
+
+                                                                            <div class="gov-info-card absolute right-0 top-full z-10 mt-2 w-80 p-4">
+                                                                                <div>
+                                                                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Login Email</p>
+                                                                                    <p class="mt-1 break-all font-mono text-sm text-slate-800">{{ $userRow['email'] }}</p>
+                                                                                </div>
+
+                                                                                <div class="mt-4">
+                                                                                    <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Password</p>
+                                                                                    <p class="mt-1 font-mono text-sm {{ $userRow['password_is_recoverable'] ? 'text-slate-800' : 'text-slate-500' }}">
+                                                                                        {{ $userRow['password_value'] }}
+                                                                                    </p>
+                                                                                    <p class="mt-1 text-xs leading-5 text-slate-500">{{ $userRow['password_help'] }}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </details>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @empty
+                                                            <tr>
+                                                                <td colspan="4" class="px-5 py-10 text-center text-sm text-slate-500">No office-assigned users found.</td>
+                                                            </tr>
+                                                        @endforelse
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                 </section>
                             </div>
