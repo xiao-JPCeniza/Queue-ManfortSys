@@ -93,7 +93,7 @@ class UserSeeder extends Seeder
                     'role_id' => $officeAdminRole->id,
                     'office_id' => $office->id,
                 ], 'password')
-            );
+             );
         }
     }
 }
