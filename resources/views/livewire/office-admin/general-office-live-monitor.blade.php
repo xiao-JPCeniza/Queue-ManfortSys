@@ -1,4 +1,11 @@
-<div wire:poll.keep-alive.2s="tick" data-session-keepalive="always" class="gov-monitor-root">
+<div
+    wire:poll.keep-alive.2s="tick"
+    data-session-keepalive="always"
+    data-live-monitor-root
+    data-has-current-transaction="{{ $serving ? 'true' : 'false' }}"
+    data-idle-video-delay-ms="60000"
+    class="gov-monitor-root"
+>
     <section class="gov-monitor-shell" aria-label="{{ $office->name }} live queue monitor">
         <header class="gov-monitor-header">
             <div class="gov-monitor-brand">
@@ -104,6 +111,7 @@
             </section>
         </main>
     </section>
+    @include('livewire.office-admin.partials.live-monitor-idle-video')
     @include('livewire.office-admin.partials.live-monitor-announcer', [
         'announcementPayload' => $announcementPayload ?? null,
     ])

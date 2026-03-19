@@ -47,6 +47,12 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString('1 Active', $html);
         $this->assertStringContainsString($latestServing->queue_number, $html);
         $this->assertStringContainsString('Window 3', $html);
+        $this->assertStringContainsString('data-has-current-transaction="true"', $html);
+        $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
+        $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
+        $this->assertStringContainsString('data-idle-video-revision=', $html);
+        $this->assertStringContainsString('wire:ignore', $html);
+        $this->assertStringContainsString(route('media.tourism-video'), $html);
         $this->assertStringNotContainsString($olderServing->queue_number, $html);
         $this->assertStringNotContainsString('Window 4', $html);
     }
@@ -76,6 +82,12 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString('1 Active', $html);
         $this->assertStringContainsString($latestServing->queue_number, $html);
         $this->assertStringContainsString('Window 2', $html);
+        $this->assertStringContainsString('data-has-current-transaction="true"', $html);
+        $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
+        $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
+        $this->assertStringContainsString('data-idle-video-revision=', $html);
+        $this->assertStringContainsString('wire:ignore', $html);
+        $this->assertStringContainsString(route('media.tourism-video'), $html);
         $this->assertStringNotContainsString($olderServing->queue_number, $html);
         $this->assertStringNotContainsString('Window 1', $html);
     }

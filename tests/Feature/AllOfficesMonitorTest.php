@@ -64,10 +64,35 @@ class AllOfficesMonitorTest extends TestCase
             ->assertSee('HRMO')
             ->assertSee('HRMO-001')
             ->assertSee('HRMO-002')
+            ->assertSeeHtml('data-has-current-transaction="true"')
+            ->assertSeeHtml('data-idle-video-delay-ms="60000"')
             ->assertDontSee('Treasury')
             ->assertDontSee('TRSY-001')
             ->assertDontSee('MSWDO')
             ->assertDontSee('MSWDO-001');
+    }
+
+    public function test_it_marks_the_monitor_as_idle_when_no_office_has_a_current_transaction(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
+
+        $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY');
+
+        $this->createQueueEntry(
+            office: $treasury,
+            queueNumber: 'TRSY-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 9, 9, 20, 0, 'Asia/Manila')
+        );
+
+        $html = Livewire::test(AllOfficesMonitor::class)->html();
+
+        $this->assertStringContainsString('data-has-current-transaction="false"', $html);
+        $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
+        $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
+        $this->assertStringContainsString('data-idle-video-revision=', $html);
+        $this->assertStringContainsString('wire:ignore', $html);
+        $this->assertStringContainsString(route('media.tourism-video'), $html);
     }
 
     public function test_it_shows_recent_transactions_for_the_featured_office_only(): void

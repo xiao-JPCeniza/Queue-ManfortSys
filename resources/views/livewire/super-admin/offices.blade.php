@@ -55,7 +55,24 @@
         </button>
     </div>
 
-    <section class="lgu-card p-6" aria-labelledby="service-window-setup-heading">
+    <section
+        class="lgu-card p-6"
+        aria-labelledby="service-window-setup-heading"
+        x-data="serviceWindowSetup({
+            initialOfficeSlug: @js($serviceWindowOfficeSlug),
+            initialWindowCount: @js($serviceWindowCountSelection),
+            offices: @js(
+                $offices
+                    ->map(fn ($office) => [
+                        'slug' => $office->slug,
+                        'name' => $office->name,
+                        'windowCount' => $office->resolvedServiceWindowCount(),
+                    ])
+                    ->values()
+                    ->all()
+            ),
+        })"
+    >
         <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div class="max-w-2xl">
                 <h2 id="service-window-setup-heading" class="lgu-section-title">Service Window Setup</h2>
@@ -63,19 +80,23 @@
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                <span class="font-semibold text-slate-900">{{ $serviceWindowSelectedOfficeLabel }}</span>
+                <span class="font-semibold text-slate-900" x-text="selectedOfficeLabel">{{ $serviceWindowSelectedOfficeLabel }}</span>
                 currently uses
-                <span class="font-semibold text-blue-700">{{ $serviceWindowCurrentCount }}</span>
-                window{{ $serviceWindowCurrentCount === 1 ? '' : 's' }}.
+                <span class="font-semibold text-blue-700" x-text="selectedOfficeCurrentCount">{{ $serviceWindowCurrentCount }}</span>
+                window<span x-text="selectedOfficeCurrentCount === 1 ? '' : 's'">{{ $serviceWindowCurrentCount === 1 ? '' : 's' }}</span>.
             </div>
         </div>
 
-        <form wire:submit="updateServiceWindowCount" class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(180px,220px)_auto] xl:items-end">
+        <form
+            x-on:submit.prevent="$wire.updateServiceWindowCount(selectedOfficeSlug, selectedWindowCount)"
+            class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(180px,220px)_auto] xl:items-end"
+        >
             <div>
                 <label for="service-window-office" class="mb-2 block text-sm font-medium text-slate-700">Office</label>
                 <select
                     id="service-window-office"
-                    wire:model.change="serviceWindowOfficeSlug"
+                    x-model="selectedOfficeSlug"
+                    x-on:change="syncWindowCount()"
                     @disabled($offices->isEmpty())
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                 >
@@ -91,7 +112,7 @@
                 <label for="service-window-count" class="mb-2 block text-sm font-medium text-slate-700">Service Windows</label>
                 <select
                     id="service-window-count"
-                    wire:model="serviceWindowCountSelection"
+                    x-model="selectedWindowCount"
                     @disabled($offices->isEmpty())
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                 >
@@ -106,7 +127,7 @@
             <button
                 type="submit"
                 wire:loading.attr="disabled"
-                wire:target="serviceWindowOfficeSlug,updateServiceWindowCount"
+                wire:target="updateServiceWindowCount"
                 @disabled($offices->isEmpty())
                 class="lgu-btn inline-flex items-center justify-center rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
@@ -318,6 +339,36 @@
 
 @once
     <script>
+        function serviceWindowSetup({ initialOfficeSlug, initialWindowCount, offices }) {
+            return {
+                offices,
+                selectedOfficeSlug: initialOfficeSlug || (offices[0]?.slug ?? ''),
+                selectedWindowCount: initialWindowCount || '1',
+                init() {
+                    if (! this.selectedOffice && this.offices.length > 0) {
+                        this.selectedOfficeSlug = this.offices[0].slug;
+                        this.syncWindowCount();
+                    }
+
+                    if (! this.selectedWindowCount) {
+                        this.syncWindowCount();
+                    }
+                },
+                get selectedOffice() {
+                    return this.offices.find((office) => office.slug === this.selectedOfficeSlug) ?? this.offices[0] ?? null;
+                },
+                get selectedOfficeLabel() {
+                    return this.selectedOffice?.name ?? 'No office selected';
+                },
+                get selectedOfficeCurrentCount() {
+                    return Number(this.selectedOffice?.windowCount ?? 1);
+                },
+                syncWindowCount() {
+                    this.selectedWindowCount = String(this.selectedOffice?.windowCount ?? 1);
+                },
+            };
+        }
+
         document.addEventListener('click', (event) => {
             const toggle = event.target.closest('[data-password-toggle]');
 

@@ -228,8 +228,16 @@ class Offices extends Component
         session()->flash('success', "{$officeName} was deleted from the public queue.");
     }
 
-    public function updateServiceWindowCount(): void
+    public function updateServiceWindowCount(?string $officeSlug = null, int|string|null $windowCountSelection = null): void
     {
+        if ($officeSlug !== null) {
+            $this->serviceWindowOfficeSlug = trim($officeSlug);
+        }
+
+        if ($windowCountSelection !== null) {
+            $this->serviceWindowCountSelection = (string) $windowCountSelection;
+        }
+
         $officeOptions = $this->publicQueueOffices();
         $selectedOffice = $officeOptions->firstWhere('slug', $this->serviceWindowOfficeSlug);
 

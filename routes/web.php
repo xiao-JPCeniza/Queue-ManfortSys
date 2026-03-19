@@ -9,7 +9,9 @@ use App\Livewire\ClientDashboard;
 use App\Livewire\QueueJoin;
 use App\Models\Office;
 use App\Models\User;
+use App\Support\LiveMonitorVideoLibrary;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
@@ -25,6 +27,26 @@ Route::get('/', function () {
 
 Route::view('/welcome', 'welcome')->name('welcome');
 Route::view('/live-monitor', 'office.all-offices-monitor')->name('live-monitor.public');
+Route::get('/media/mf-tourism-video', function (LiveMonitorVideoLibrary $videoLibrary) {
+    $customVideoPath = $videoLibrary->activeVideoPath();
+
+    if ($customVideoPath !== null && Storage::disk(LiveMonitorVideoLibrary::DISK)->exists($customVideoPath)) {
+        return response()->file(Storage::disk('public')->path($customVideoPath), [
+            'Content-Type' => 'video/mp4',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
+    }
+
+    $videoPath = public_path('images/MF TOURISM VIDEO.mp4');
+
+    abort_unless(is_file($videoPath), 404);
+
+    return response()->file($videoPath, [
+        'Content-Type' => 'video/mp4',
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+})->name('media.tourism-video');
+
 Route::get('/session/pulse', function (Request $request) {
     $request->session()->put('_session_pulse_at', now()->timestamp);
 
@@ -189,6 +211,19 @@ Route::post('/logout', function () {
         Route::get('/offices', function () {
             return view('super-admin.offices');
         })->name('offices');
+        Route::get('/live-monitor-videos', function () {
+            return view('super-admin.live-monitor-videos');
+        })->name('live-monitor-videos');
+        Route::get('/live-monitor-videos/{videoId}/preview', function (string $videoId, LiveMonitorVideoLibrary $videoLibrary) {
+            $video = $videoLibrary->find($videoId);
+
+            abort_unless(is_array($video) && Storage::disk(LiveMonitorVideoLibrary::DISK)->exists($video['stored_path']), 404);
+
+            return response()->file(Storage::disk(LiveMonitorVideoLibrary::DISK)->path($video['stored_path']), [
+                'Content-Type' => 'video/mp4',
+                'Cache-Control' => 'private, max-age=0, must-revalidate',
+            ]);
+        })->name('live-monitor-videos.preview');
         Route::get('/user-management', function () {
             $officeModel = Office::resolveSuperAdminContextOffice()
                 ?? abort(404, 'No office is available for the Super Admin dashboard.');

@@ -297,6 +297,7 @@
             $isSuperAdminReports = request()->routeIs('super-admin.reports');
             $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
             $isSuperAdminOffices = request()->routeIs('super-admin.offices');
+            $isSuperAdminLiveMonitorVideos = request()->routeIs('super-admin.live-monitor-videos*');
             $isSuperAdminUserManagement = request()->routeIs('super-admin.user-management');
             $sidebarMenuLabel = $isSuperAdmin ? 'Super Admin Panel' : 'Office Menu';
             $sidebarMenuItems = [];
@@ -312,6 +313,11 @@
                         'label' => 'Offices',
                         'href' => route('super-admin.offices'),
                         'active' => $isSuperAdminOffices,
+                    ],
+                    [
+                        'label' => 'Live Monitor Videos',
+                        'href' => route('super-admin.live-monitor-videos'),
+                        'active' => $isSuperAdminLiveMonitorVideos,
                     ],
                     [
                         'label' => 'User Management',

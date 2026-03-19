@@ -156,6 +156,7 @@
                                                    aria-label="Current password">
                                             <button type="button"
                                                     class="gov-profile-password-toggle"
+                                                    data-password-toggle
                                                     data-password-target="current_password"
                                                     aria-label="Show current password"
                                                     aria-pressed="false">
@@ -178,6 +179,7 @@
                                                    aria-label="New password">
                                             <button type="button"
                                                     class="gov-profile-password-toggle"
+                                                    data-password-toggle
                                                     data-password-target="password"
                                                     aria-label="Show new password"
                                                     aria-pressed="false">
@@ -200,6 +202,7 @@
                                                    aria-label="Confirm new password">
                                             <button type="button"
                                                     class="gov-profile-password-toggle"
+                                                    data-password-toggle
                                                     data-password-target="password_confirmation"
                                                     aria-label="Show password confirmation"
                                                     aria-pressed="false">
@@ -914,26 +917,28 @@
 
 @once
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.gov-profile-password-toggle').forEach((toggle) => {
-                toggle.addEventListener('click', () => {
-                    const target = document.getElementById(toggle.dataset.passwordTarget);
+        document.addEventListener('click', (event) => {
+            const toggle = event.target.closest('[data-password-toggle].gov-profile-password-toggle');
 
-                    if (! target) {
-                        return;
-                    }
+            if (! toggle) {
+                return;
+            }
 
-                    const isVisible = target.type === 'text';
+            const target = document.getElementById(toggle.dataset.passwordTarget);
 
-                    target.type = isVisible ? 'password' : 'text';
-                    toggle.textContent = isVisible ? 'Show' : 'Hide';
-                    toggle.setAttribute('aria-pressed', isVisible ? 'false' : 'true');
-                    toggle.setAttribute(
-                        'aria-label',
-                        `${isVisible ? 'Show' : 'Hide'} ${target.getAttribute('aria-label')?.toLowerCase() ?? 'password'}`
-                    );
-                });
-            });
+            if (! target) {
+                return;
+            }
+
+            const isVisible = target.type === 'text';
+
+            target.type = isVisible ? 'password' : 'text';
+            toggle.textContent = isVisible ? 'Show' : 'Hide';
+            toggle.setAttribute('aria-pressed', isVisible ? 'false' : 'true');
+            toggle.setAttribute(
+                'aria-label',
+                `${isVisible ? 'Show' : 'Hide'} ${target.getAttribute('aria-label')?.toLowerCase() ?? 'password'}`
+            );
         });
     </script>
 @endonce

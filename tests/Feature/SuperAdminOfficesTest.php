@@ -34,12 +34,13 @@ class SuperAdminOfficesTest extends TestCase
             ->assertSee('Service Windows')
             ->assertSee('Service Window Setup')
             ->assertSee('+ Add Office')
+            ->assertSee('Live Monitor Videos')
             ->assertSee('Human Resource Management Office')
             ->assertSee('Municipal Accounting Office')
+            ->assertSee('2 offices')
             ->assertSee('HRMO')
-            ->assertDontSee('Queue Link')
-            ->assertDontSee('Manage')
-            ->assertDontSee('OBO');
+            ->assertDontSee('Live Monitor Idle Video')
+            ->assertDontSee('Queue Link');
     }
 
     public function test_super_admin_can_add_a_public_queue_office_with_default_queue_settings(): void
@@ -205,7 +206,8 @@ class SuperAdminOfficesTest extends TestCase
 
         Livewire::test(SuperAdminOffices::class)
             ->call('deleteOffice', $office->id)
-            ->assertDontSee('Citizen Center');
+            ->assertSee('was deleted from the public queue.')
+            ->assertSee('No public queue offices are configured yet.');
 
         $this->assertDatabaseMissing('offices', [
             'id' => $office->id,
@@ -266,7 +268,8 @@ class SuperAdminOfficesTest extends TestCase
 
         Livewire::test(SuperAdminOffices::class)
             ->call('deleteOffice', $office->id)
-            ->assertDontSee('HRMO');
+            ->assertSee('Accounting')
+            ->assertSee('1 office');
 
         $this->assertDatabaseMissing('offices', [
             'id' => $office->id,
