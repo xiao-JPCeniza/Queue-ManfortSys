@@ -70,12 +70,12 @@
             </div>
         </div>
 
-        <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(180px,220px)_auto] xl:items-end">
+        <form wire:submit="updateServiceWindowCount" class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(180px,220px)_auto] xl:items-end">
             <div>
                 <label for="service-window-office" class="mb-2 block text-sm font-medium text-slate-700">Office</label>
                 <select
                     id="service-window-office"
-                    wire:model.live="serviceWindowOfficeSlug"
+                    wire:model.change="serviceWindowOfficeSlug"
                     @disabled($offices->isEmpty())
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                 >
@@ -91,7 +91,7 @@
                 <label for="service-window-count" class="mb-2 block text-sm font-medium text-slate-700">Service Windows</label>
                 <select
                     id="service-window-count"
-                    wire:model.live="serviceWindowCountSelection"
+                    wire:model="serviceWindowCountSelection"
                     @disabled($offices->isEmpty())
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
                 >
@@ -104,16 +104,15 @@
             </div>
 
             <button
-                type="button"
-                wire:click="updateServiceWindowCount"
+                type="submit"
                 wire:loading.attr="disabled"
-                wire:target="updateServiceWindowCount"
+                wire:target="serviceWindowOfficeSlug,updateServiceWindowCount"
                 @disabled($offices->isEmpty())
                 class="lgu-btn inline-flex items-center justify-center rounded-lg bg-blue-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
                 Apply Window Count
             </button>
-        </div>
+        </form>
     </section>
 
     @if($showCreateForm)

@@ -7,6 +7,7 @@ use App\Models\Office;
 use App\Models\QueueEntry;
 use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\OfficeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -139,6 +140,19 @@ class SuperAdminOfficesTest extends TestCase
         $this->assertDatabaseHas('queue_entries', [
             'id' => $servingEntry->id,
             'service_window_number' => 4,
+        ]);
+    }
+
+    public function test_reseeding_offices_preserves_saved_service_window_counts(): void
+    {
+        $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY', true, 5);
+
+        $this->seed(OfficeSeeder::class);
+
+        $this->assertDatabaseHas('offices', [
+            'id' => $treasury->id,
+            'slug' => 'treasury',
+            'service_window_count' => 5,
         ]);
     }
 

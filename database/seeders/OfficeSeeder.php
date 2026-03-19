@@ -31,7 +31,10 @@ class OfficeSeeder extends Seeder
                 'name' => $office['name'],
                 'prefix' => $office['prefix'],
                 'description' => $office['description'],
-                'service_window_count' => $office['service_window_count'] ?? 1,
+                // Preserve admin-configured window counts when seeders are re-run locally.
+                'service_window_count' => $officeModel->exists
+                    ? $officeModel->resolvedServiceWindowCount()
+                    : ($office['service_window_count'] ?? 1),
                 'is_active' => true,
                 'show_in_public_queue' => in_array($office['slug'], Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS, true),
             ]);
