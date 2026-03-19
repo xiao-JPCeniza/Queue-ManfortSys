@@ -75,7 +75,7 @@ class Dashboard extends Component
 
     public Office $office;
 
-    public string $hrmoTab = 'reports';
+    public string $hrmoTab = 'queue-management';
 
     public bool $isSuperAdminRouteContext = false;
 
@@ -106,7 +106,8 @@ class Dashboard extends Component
             }
         }
 
-        $requestedTab = (string) request()->query('tab', 'reports');
+        $defaultTab = $this->isSuperAdminRouteContext ? 'reports' : 'queue-management';
+        $requestedTab = (string) request()->query('tab', $defaultTab);
         $allowedTabs = $this->allowedHrmoTabs();
 
         if ($this->supportsAdvancedQueueDashboard() && in_array($requestedTab, $allowedTabs, true)) {
@@ -322,7 +323,7 @@ class Dashboard extends Component
         if ($this->supportsAdvancedQueueDashboard()) {
             $viewData = array_merge($viewData, $this->buildAdvancedDashboardData());
         } else {
-            $this->hrmoTab = 'reports';
+            $this->hrmoTab = 'queue-management';
             $viewData = array_merge($viewData, $this->defaultAdvancedDashboardData());
         }
 

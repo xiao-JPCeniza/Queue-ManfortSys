@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="session-pulse-url" content="{{ route('session.pulse') }}">
     <title>@yield('title', 'Login') - {{ config('app.name') }}</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo1.jpg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo1.jpg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo1.jpg') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])

@@ -214,13 +214,10 @@
                                     @endif
                                 </div>
                             @else
-                                @include('livewire.office-admin.partials.queue-activity-panel', [
-                                    'panelId' => 'overall-activity-heading',
-                                    'heading' => 'Overall Ticket Activity (Today)',
-                                    'kicker' => $office->name,
-                                    'description' => 'Live record of issued tickets, call times, and completed service milestones for today.',
-                                    'entries' => $overallTickets,
-                                    'emptyMessage' => 'No tickets yet for ' . $office->name . ' today.',
+                                @include('livewire.office-admin.partials.queue-dashboard-panel', [
+                                    'showLiveMonitor' => true,
+                                    'liveMonitorRoute' => $liveMonitorRoute,
+                                    'liveMonitorLabel' => $liveMonitorLabel,
                                 ])
                             @endif
                         @endif

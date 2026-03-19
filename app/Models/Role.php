@@ -19,6 +19,11 @@ class Role extends Model
         return $this->slug === 'super_admin';
     }
 
+    public function isQueueMaster(): bool
+    {
+        return $this->slug === 'queue_master';
+    }
+
     public function isOfficeAdmin(): bool
     {
         return $this->slug === 'office_admin';

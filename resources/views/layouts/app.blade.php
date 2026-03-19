@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="session-pulse-url" content="{{ route('session.pulse') }}">
     <title>@yield('title', 'Queue System') - {{ config('app.name') }}</title>
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo1.jpg') }}">
+    <link rel="shortcut icon" href="{{ asset('images/logo1.jpg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo1.jpg') }}">
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -290,7 +293,7 @@
             $supportsAdvancedOfficeMenu = $isOfficeDashboard && in_array($activeOffice->slug, $specialOfficeSlugs, true);
             $sidebarOfficeSlug = $activeOffice?->slug ?? 'hrmo';
             $currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office');
-            $activeOfficeTab = (string) request()->query('tab', 'reports');
+            $activeOfficeTab = (string) request()->query('tab', $isOfficeDashboard ? 'queue-management' : 'reports');
             $isSuperAdminReports = request()->routeIs('super-admin.reports');
             $isSuperAdminQueueManagement = request()->routeIs('super-admin.queue-management');
             $isSuperAdminOffices = request()->routeIs('super-admin.offices');
@@ -318,6 +321,11 @@
                 ];
             } elseif ($isOfficeDashboard) {
                 if ($supportsAdvancedOfficeMenu) {
+                    $sidebarMenuItems[] = [
+                        'label' => 'Reports',
+                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports',
+                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'reports',
+                    ];
                     $sidebarMenuItems[] = [
                         'label' => 'Queue Management',
                         'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management',
@@ -369,12 +377,18 @@
 
                     <div class="lgu-topbar-end">
                         @auth
+<<<<<<< HEAD
                             @if(auth()->user()->isSuperAdmin())
                                 <a href="{{ route('super-admin.index') }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
+=======
+                            @if(auth()->user()->isQueueMaster() || auth()->user()->isSuperAdmin())
+                                @php($mainDashboardRoute = auth()->user()->isSuperAdmin() ? route('super-admin.reports') : route('queue-master.index'))
+                                <a href="{{ $mainDashboardRoute }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('super-admin.reports') || request()->routeIs('queue-master.index') ? 'lgu-topbar-link-active' : '' }}">{{ auth()->user()->isSuperAdmin() ? 'Reports' : 'Dashboard' }}</a>
+>>>>>>> d2d22f072b387b5c3abd461b4dc8b8380306223d
                             @endif
                             @if($showDashboardShortcut)
-                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=reports" wire:navigate
-                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug && $activeOfficeTab === 'reports' ? 'lgu-topbar-link-active' : '' }}">
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=queue-management" wire:navigate
+                                   class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug && $activeOfficeTab === 'queue-management' ? 'lgu-topbar-link-active' : '' }}">
                                     Dashboard
                                 </a>
                             @endif
