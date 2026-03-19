@@ -295,6 +295,18 @@
                             <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
                             <td class="px-6 py-4">
+<<<<<<< HEAD
+                                <div class="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        wire:click="deleteOffice({{ $office->id }})"
+                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
+                                        class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+=======
                                 <button
                                     type="button"
                                     wire:click="deleteOffice({{ $office->id }})"
@@ -303,6 +315,7 @@
                                 >
                                     Delete
                                 </button>
+>>>>>>> d2d22f072b387b5c3abd461b4dc8b8380306223d
                             </td>
                         </tr>
                     @empty
