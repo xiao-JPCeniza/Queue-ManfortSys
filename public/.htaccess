@@ -1,4 +1,20 @@
 <IfModule mod_rewrite.c>
+    <IfModule mod_php.c>
+        php_value upload_max_filesize 3072M
+        php_value post_max_size 3200M
+        php_value max_execution_time 1200
+        php_value max_input_time 1200
+        php_value memory_limit 1024M
+    </IfModule>
+
+    <IfModule mod_php8.c>
+        php_value upload_max_filesize 3072M
+        php_value post_max_size 3200M
+        php_value max_execution_time 1200
+        php_value max_input_time 1200
+        php_value memory_limit 1024M
+    </IfModule>
+
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>

@@ -1,10 +1,10 @@
 @php
     $idleMonitorVideoUrl = $idleMonitorVideoUrl ?? route('media.tourism-video');
-    $customIdleMonitorVideoPath = 'live-monitor/idle-monitor-video.mp4';
     $defaultIdleMonitorVideoPath = public_path('images/MF TOURISM VIDEO.mp4');
-    $publicDisk = \Illuminate\Support\Facades\Storage::disk('public');
-    $idleMonitorVideoRevision = $publicDisk->exists($customIdleMonitorVideoPath)
-        ? (string) $publicDisk->lastModified($customIdleMonitorVideoPath)
+    $videoLibrary = app(\App\Support\LiveMonitorVideoLibrary::class);
+    $customIdleMonitorVideoPath = $videoLibrary->activeVideoPath();
+    $idleMonitorVideoRevision = ($customIdleMonitorVideoPath !== null && $videoLibrary->exists($customIdleMonitorVideoPath))
+        ? (string) filemtime($videoLibrary->absolutePath($customIdleMonitorVideoPath))
         : (is_file($defaultIdleMonitorVideoPath) ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
     $idleMonitorVideoSource = $idleMonitorVideoUrl.(str_contains($idleMonitorVideoUrl, '?') ? '&' : '?').'v='.rawurlencode($idleMonitorVideoRevision);
 @endphp
@@ -21,7 +21,6 @@
     <video
         data-live-monitor-idle-video-player
         muted
-        loop
         playsinline
         preload="metadata"
     >
@@ -54,6 +53,26 @@
                 }
             };
 
+            const applyVideoSource = (controller, nextUrl, nextRevision) => {
+                if (! controller.video || ! controller.source || nextUrl === '') {
+                    return;
+                }
+
+                const separator = nextUrl.includes('?') ? '&' : '?';
+                controller.source.src = `${nextUrl}${separator}v=${encodeURIComponent(nextRevision)}`;
+                controller.video.load();
+                controller.video.loop = false;
+
+                if (controller.overlay && ! controller.overlay.hidden) {
+                    playVideo(controller.video);
+                }
+
+                controller.appliedVideoUrl = nextUrl;
+                controller.appliedVideoRevision = nextRevision;
+                controller.pendingVideoUrl = null;
+                controller.pendingVideoRevision = null;
+            };
+
             const syncVideoSource = (controller) => {
                 const nextUrl = controller.config?.dataset.idleVideoUrl ?? '';
                 const nextRevision = controller.config?.dataset.idleVideoRevision ?? 'default';
@@ -62,23 +81,59 @@
                     return;
                 }
 
-                if (
-                    controller.appliedVideoUrl === nextUrl
-                    && controller.appliedVideoRevision === nextRevision
-                ) {
+                const hasAppliedVideo = controller.appliedVideoUrl !== null;
+                const sourceChanged = (
+                    controller.appliedVideoUrl !== nextUrl
+                    || controller.appliedVideoRevision !== nextRevision
+                );
+
+                if (! sourceChanged) {
                     return;
                 }
 
-                const separator = nextUrl.includes('?') ? '&' : '?';
-                controller.source.src = `${nextUrl}${separator}v=${encodeURIComponent(nextRevision)}`;
-                controller.video.load();
+                const shouldWaitForCurrentPlaybackToEnd = hasAppliedVideo
+                    && controller.overlay
+                    && ! controller.overlay.hidden;
 
-                if (controller.overlay && ! controller.overlay.hidden) {
-                    playVideo(controller.video);
+                if (shouldWaitForCurrentPlaybackToEnd) {
+                    controller.pendingVideoUrl = nextUrl;
+                    controller.pendingVideoRevision = nextRevision;
+
+                    return;
                 }
 
-                controller.appliedVideoUrl = nextUrl;
-                controller.appliedVideoRevision = nextRevision;
+                applyVideoSource(controller, nextUrl, nextRevision);
+            };
+
+            const bindVideoEvents = (controller) => {
+                if (! controller.video || controller.boundVideo === controller.video) {
+                    return;
+                }
+
+                controller.video.loop = false;
+                controller.video.addEventListener('ended', () => {
+                    if (! controller.overlay || controller.overlay.hidden) {
+                        return;
+                    }
+
+                    if (
+                        controller.pendingVideoUrl !== null
+                        && controller.pendingVideoRevision !== null
+                    ) {
+                        applyVideoSource(
+                            controller,
+                            controller.pendingVideoUrl,
+                            controller.pendingVideoRevision
+                        );
+
+                        return;
+                    }
+
+                    controller.video.currentTime = 0;
+                    playVideo(controller.video);
+                });
+
+                controller.boundVideo = controller.video;
             };
 
             const hideOverlay = (controller, shouldResetIdleSince = false) => {
@@ -128,6 +183,9 @@
                         idleSince: null,
                         appliedVideoUrl: null,
                         appliedVideoRevision: null,
+                        pendingVideoUrl: null,
+                        pendingVideoRevision: null,
+                        boundVideo: null,
                     };
 
                     controllers.set(root, controller);
@@ -137,15 +195,17 @@
                 controller.overlay = root.querySelector('[data-live-monitor-idle-video]');
                 controller.video = root.querySelector('[data-live-monitor-idle-video-player]');
                 controller.source = root.querySelector('[data-live-monitor-idle-video-source]');
+                bindVideoEvents(controller);
                 syncVideoSource(controller);
 
                 const hasCurrentTransaction = root.dataset.hasCurrentTransaction === 'true';
+                const hasQueuedNextInline = root.dataset.hasQueuedNextInline === 'true';
                 const parsedDelayMs = Number.parseInt(root.dataset.idleVideoDelayMs ?? '', 10);
                 const delayMs = Number.isFinite(parsedDelayMs) && parsedDelayMs > 0
                     ? parsedDelayMs
                     : defaultDelayMs;
 
-                if (hasCurrentTransaction) {
+                if (hasCurrentTransaction || hasQueuedNextInline) {
                     hideOverlay(controller, true);
 
                     return;

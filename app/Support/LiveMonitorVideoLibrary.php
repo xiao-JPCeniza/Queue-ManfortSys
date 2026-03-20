@@ -4,8 +4,8 @@ namespace App\Support;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class LiveMonitorVideoLibrary
 {
@@ -33,22 +33,35 @@ class LiveMonitorVideoLibrary
 
     public function upload(UploadedFile $uploadedFile): array
     {
-        $disk = Storage::disk(self::DISK);
         $manifest = $this->loadManifest();
         $videoId = (string) Str::uuid();
         $stagedPath = self::LIBRARY_DIRECTORY.'/'.$videoId.'.uploading.mp4';
         $storedPath = self::LIBRARY_DIRECTORY.'/'.$videoId.'.mp4';
+        $stagedAbsolutePath = $this->absolutePath($stagedPath);
+        $storedAbsolutePath = $this->absolutePath($storedPath);
+        $originalName = $uploadedFile->getClientOriginalName();
 
-        $disk->delete($stagedPath);
-        $disk->putFileAs(dirname($stagedPath), $uploadedFile, basename($stagedPath));
-        $disk->move($stagedPath, $storedPath);
+        $this->deleteFile($stagedPath);
+        $this->ensureDirectoryExists(dirname($storedAbsolutePath));
+
+        try {
+            $uploadedFile->move(dirname($stagedAbsolutePath), basename($stagedAbsolutePath));
+        } catch (\Throwable $exception) {
+            throw new RuntimeException('Unable to save the uploaded live monitor video.', 0, $exception);
+        }
+
+        if (! @rename($stagedAbsolutePath, $storedAbsolutePath)) {
+            @unlink($stagedAbsolutePath);
+
+            throw new RuntimeException('Unable to finalize the uploaded live monitor video.');
+        }
 
         $entry = [
             'id' => $videoId,
-            'original_name' => $uploadedFile->getClientOriginalName(),
+            'original_name' => $originalName,
             'stored_path' => $storedPath,
             'uploaded_at' => now('Asia/Manila')->toIso8601String(),
-            'size_bytes' => $disk->size($storedPath),
+            'size_bytes' => @filesize($storedAbsolutePath) ?: 0,
         ];
 
         $videos = collect($manifest['videos'] ?? [])
@@ -95,7 +108,6 @@ class LiveMonitorVideoLibrary
 
     public function delete(string $videoId): bool
     {
-        $disk = Storage::disk(self::DISK);
         $manifest = $this->loadManifest();
         $videos = collect($manifest['videos'] ?? []);
         $videoToDelete = $videos->firstWhere('id', $videoId);
@@ -110,8 +122,8 @@ class LiveMonitorVideoLibrary
 
         $storedPath = (string) ($videoToDelete['stored_path'] ?? '');
 
-        if ($storedPath !== '' && $disk->exists($storedPath)) {
-            $disk->delete($storedPath);
+        if ($storedPath !== '' && $this->exists($storedPath)) {
+            $this->deleteFile($storedPath);
         }
 
         $manifest['videos'] = $remainingVideos->all();
@@ -125,7 +137,7 @@ class LiveMonitorVideoLibrary
                 $manifest['active_id'] = $replacementVideo['id'] ?? null;
             } else {
                 $manifest['active_id'] = null;
-                $disk->delete(self::ACTIVE_VIDEO_PATH);
+                $this->deleteFile(self::ACTIVE_VIDEO_PATH);
             }
         }
 
@@ -154,25 +166,35 @@ class LiveMonitorVideoLibrary
             return (string) $activeVideo['stored_path'];
         }
 
-        return Storage::disk(self::DISK)->exists(self::ACTIVE_VIDEO_PATH)
+        return $this->exists(self::ACTIVE_VIDEO_PATH)
             ? self::ACTIVE_VIDEO_PATH
             : null;
+    }
+
+    public function exists(string $relativePath): bool
+    {
+        return is_file($this->absolutePath($relativePath));
+    }
+
+    public function absolutePath(string $relativePath): string
+    {
+        $relativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($relativePath, '/\\'));
+
+        return $this->rootPath().DIRECTORY_SEPARATOR.$relativePath;
     }
 
     private function loadManifest(): array
     {
         $this->syncLegacyActiveVideo();
 
-        $disk = Storage::disk(self::DISK);
-
-        if (! $disk->exists(self::MANIFEST_PATH)) {
+        if (! $this->exists(self::MANIFEST_PATH)) {
             return [
                 'active_id' => null,
                 'videos' => [],
             ];
         }
 
-        $manifest = json_decode((string) $disk->get(self::MANIFEST_PATH), true);
+        $manifest = json_decode((string) @file_get_contents($this->absolutePath(self::MANIFEST_PATH)), true);
 
         if (! is_array($manifest)) {
             return [
@@ -182,10 +204,10 @@ class LiveMonitorVideoLibrary
         }
 
         $videos = collect($manifest['videos'] ?? [])
-            ->filter(function (mixed $video) use ($disk): bool {
+            ->filter(function (mixed $video): bool {
                 return is_array($video)
                     && isset($video['id'], $video['stored_path'])
-                    && $disk->exists((string) $video['stored_path']);
+                    && $this->exists((string) $video['stored_path']);
             })
             ->values();
 
@@ -209,25 +231,31 @@ class LiveMonitorVideoLibrary
 
     private function writeManifest(array $manifest): void
     {
-        Storage::disk(self::DISK)->put(
-            self::MANIFEST_PATH,
+        $manifestAbsolutePath = $this->absolutePath(self::MANIFEST_PATH);
+        $this->ensureDirectoryExists(dirname($manifestAbsolutePath));
+
+        file_put_contents(
+            $manifestAbsolutePath,
             json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)
         );
     }
 
     private function syncLegacyActiveVideo(): void
     {
-        $disk = Storage::disk(self::DISK);
-
-        if ($disk->exists(self::MANIFEST_PATH) || ! $disk->exists(self::ACTIVE_VIDEO_PATH)) {
+        if ($this->exists(self::MANIFEST_PATH) || ! $this->exists(self::ACTIVE_VIDEO_PATH)) {
             return;
         }
 
         $videoId = 'legacy-'.Str::lower(Str::random(10));
         $storedPath = self::LIBRARY_DIRECTORY.'/'.$videoId.'.mp4';
 
-        if (! $disk->exists($storedPath)) {
-            $disk->copy(self::ACTIVE_VIDEO_PATH, $storedPath);
+        if (! $this->exists($storedPath)) {
+            $storedAbsolutePath = $this->absolutePath($storedPath);
+            $this->ensureDirectoryExists(dirname($storedAbsolutePath));
+
+            if (! @copy($this->absolutePath(self::ACTIVE_VIDEO_PATH), $storedAbsolutePath)) {
+                throw new RuntimeException('Unable to migrate the legacy live monitor video.');
+            }
         }
 
         $this->writeManifest([
@@ -237,8 +265,36 @@ class LiveMonitorVideoLibrary
                 'original_name' => basename(self::ACTIVE_VIDEO_PATH),
                 'stored_path' => $storedPath,
                 'uploaded_at' => now('Asia/Manila')->toIso8601String(),
-                'size_bytes' => $disk->size($storedPath),
+                'size_bytes' => @filesize($this->absolutePath($storedPath)) ?: 0,
             ]],
         ]);
+    }
+
+    private function rootPath(): string
+    {
+        return rtrim(
+            (string) config('filesystems.disks.'.self::DISK.'.root', storage_path('app/public')),
+            '/\\'
+        );
+    }
+
+    private function ensureDirectoryExists(string $absoluteDirectory): void
+    {
+        if (is_dir($absoluteDirectory)) {
+            return;
+        }
+
+        if (! mkdir($absoluteDirectory, 0755, true) && ! is_dir($absoluteDirectory)) {
+            throw new RuntimeException('Unable to prepare live monitor video storage.');
+        }
+    }
+
+    private function deleteFile(string $relativePath): void
+    {
+        $absolutePath = $this->absolutePath($relativePath);
+
+        if (is_file($absolutePath)) {
+            @unlink($absolutePath);
+        }
     }
 }

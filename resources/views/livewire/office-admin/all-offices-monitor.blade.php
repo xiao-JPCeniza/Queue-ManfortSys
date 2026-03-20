@@ -3,6 +3,7 @@
     data-session-keepalive="always"
     data-live-monitor-root
     data-has-current-transaction="{{ $hasCurrentTransaction ? 'true' : 'false' }}"
+    data-has-queued-next-inline="{{ $hasQueuedNextInline ? 'true' : 'false' }}"
     data-idle-video-delay-ms="60000"
     class="gov-monitor-root"
 >
@@ -96,18 +97,17 @@
                     <section class="gov-monitor-panel gov-panel-recent" aria-labelledby="recent-{{ $featuredOfficeRow['office']->slug }}">
                         <div class="gov-panel-head">
                             <h3 id="recent-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Recent Transactions Today</h3>
-                            @if($featuredOfficeRow['recentTransactions']->isNotEmpty())
-                                <span class="gov-recent-count">{{ $featuredOfficeRow['recentTransactions']->count() }} records</span>
-                            @endif
                         </div>
 
                         <div class="gov-panel-body">
                             @if($featuredOfficeRow['recentTransactions']->isNotEmpty())
-                                <marquee behavior="scroll" direction="left" scrollamount="7" class="gov-ticker gov-marquee" aria-label="Recent transaction queue numbers for {{ $featuredOfficeRow['office']->name }}">
-                                    @foreach($featuredOfficeRow['recentTransactions'] as $entry)
-                                        <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
-                                    @endforeach
-                                </marquee>
+                                <div class="gov-ticker gov-marquee" aria-label="Recent transaction queue numbers for {{ $featuredOfficeRow['office']->name }}">
+                                    <div class="gov-ticker-track">
+                                        @foreach($featuredOfficeRow['recentTransactions'] as $entry)
+                                            <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
                             @else
                                 <div class="gov-ticket-empty gov-ticket-empty-soft">
                                     <p class="gov-ticket-empty-title">No recent transaction yet</p>
@@ -610,11 +610,19 @@
         .gov-marquee {
             padding: 1rem 0.95rem;
             line-height: 1;
+            display: flex;
+            overflow: hidden;
         }
 
-        .gov-marquee .gov-ticker-pill {
-            margin-right: 0.7rem;
-            vertical-align: middle;
+        .gov-ticker-track {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            white-space: nowrap;
+            width: max-content;
+            padding: 0 0.95rem;
+            will-change: transform;
+            animation: gov-ticker-scroll 16s linear infinite;
         }
 
         .gov-ticker-pill {
@@ -686,6 +694,11 @@
                 height: 2.8rem;
                 font-size: 1.1rem;
             }
+
+            .gov-ticker-track {
+                gap: 0.55rem;
+                animation-duration: 13s;
+            }
         }
 
         @keyframes gov-monitor-rise {
@@ -696,6 +709,15 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes gov-ticker-scroll {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(-100%);
             }
         }
 

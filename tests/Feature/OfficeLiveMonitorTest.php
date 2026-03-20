@@ -53,6 +53,7 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString('data-idle-video-revision=', $html);
         $this->assertStringContainsString('wire:ignore', $html);
         $this->assertStringContainsString(route('media.tourism-video'), $html);
+        $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringNotContainsString($olderServing->queue_number, $html);
         $this->assertStringNotContainsString('Window 4', $html);
     }
@@ -88,8 +89,59 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString('data-idle-video-revision=', $html);
         $this->assertStringContainsString('wire:ignore', $html);
         $this->assertStringContainsString(route('media.tourism-video'), $html);
+        $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringNotContainsString($olderServing->queue_number, $html);
         $this->assertStringNotContainsString('Window 1', $html);
+    }
+
+    public function test_bplo_monitor_marks_a_waiting_next_ticket_as_non_idle(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 20, 11, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice('Business Permits', 'bplo', 'BPLO', 4);
+
+        $nextInline = QueueEntry::create([
+            'office_id' => $office->id,
+            'queue_number' => 'BPLO-001',
+            'status' => QueueEntry::STATUS_WAITING,
+        ]);
+
+        QueueEntry::whereKey($nextInline)->update([
+            'created_at' => Carbon::create(2026, 3, 20, 10, 58, 0, 'Asia/Manila')
+                ->setTimezone((string) config('app.timezone', 'UTC')),
+        ]);
+
+        $html = Livewire::test(BploOfficeMonitor::class, ['office' => $office])->html();
+
+        $this->assertStringContainsString('data-has-current-transaction="false"', $html);
+        $this->assertStringContainsString('data-has-queued-next-inline="true"', $html);
+        $this->assertStringContainsString($nextInline->queue_number, $html);
+        $this->assertStringContainsString('Queued', $html);
+    }
+
+    public function test_hrmo_monitor_marks_a_waiting_next_ticket_as_non_idle(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 20, 11, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice('HRMO', 'hrmo', 'HRMO', 2);
+
+        $nextInline = QueueEntry::create([
+            'office_id' => $office->id,
+            'queue_number' => 'HRMO-001',
+            'status' => QueueEntry::STATUS_WAITING,
+        ]);
+
+        QueueEntry::whereKey($nextInline)->update([
+            'created_at' => Carbon::create(2026, 3, 20, 10, 57, 0, 'Asia/Manila')
+                ->setTimezone((string) config('app.timezone', 'UTC')),
+        ]);
+
+        $html = Livewire::test(HrmoOfficeMonitor::class, ['office' => $office])->html();
+
+        $this->assertStringContainsString('data-has-current-transaction="false"', $html);
+        $this->assertStringContainsString('data-has-queued-next-inline="true"', $html);
+        $this->assertStringContainsString($nextInline->queue_number, $html);
+        $this->assertStringContainsString('Queued', $html);
     }
 
     private function createOffice(string $name, string $slug, string $prefix, int $serviceWindowCount): Office

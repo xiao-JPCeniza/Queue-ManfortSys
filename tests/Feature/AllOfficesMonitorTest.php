@@ -72,7 +72,7 @@ class AllOfficesMonitorTest extends TestCase
             ->assertDontSee('MSWDO-001');
     }
 
-    public function test_it_marks_the_monitor_as_idle_when_no_office_has_a_current_transaction(): void
+    public function test_it_keeps_the_monitor_out_of_idle_when_an_office_has_a_waiting_next_ticket(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
@@ -88,6 +88,23 @@ class AllOfficesMonitorTest extends TestCase
         $html = Livewire::test(AllOfficesMonitor::class)->html();
 
         $this->assertStringContainsString('data-has-current-transaction="false"', $html);
+        $this->assertStringContainsString('data-has-queued-next-inline="true"', $html);
+        $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
+        $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
+        $this->assertStringContainsString('data-idle-video-revision=', $html);
+        $this->assertStringContainsString('wire:ignore', $html);
+        $this->assertStringContainsString(route('media.tourism-video'), $html);
+        $this->assertStringContainsString('TRSY-001', $html);
+    }
+
+    public function test_it_marks_the_monitor_as_idle_when_there_are_no_current_or_waiting_transactions(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
+
+        $html = Livewire::test(AllOfficesMonitor::class)->html();
+
+        $this->assertStringContainsString('data-has-current-transaction="false"', $html);
+        $this->assertStringContainsString('data-has-queued-next-inline="false"', $html);
         $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
         $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
         $this->assertStringContainsString('data-idle-video-revision=', $html);
@@ -140,6 +157,8 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertSame(1, substr_count($html, 'Recent Transactions Today'));
         $this->assertStringContainsString('HRMO', $html);
         $this->assertStringContainsString('HRMO-009', $html);
+        $this->assertStringContainsString('gov-ticker-track', $html);
+        $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringNotContainsString('TRSY-004', $html);
     }
 
@@ -232,8 +251,10 @@ class AllOfficesMonitorTest extends TestCase
         $html = Livewire::test(AllOfficesMonitor::class)->html();
 
         $this->assertSame(1, substr_count($html, 'Recent Transactions Today'));
-        $this->assertSame(1, substr_count($html, 'ACCT-009'));
+        $this->assertStringContainsString('ACCT-009', $html);
         $this->assertSame(0, substr_count($html, 'TRSY-004'));
+        $this->assertStringContainsString('gov-ticker-track', $html);
+        $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringContainsString('Accounting', $html);
         $this->assertStringNotContainsString('Treasury', $html);
     }

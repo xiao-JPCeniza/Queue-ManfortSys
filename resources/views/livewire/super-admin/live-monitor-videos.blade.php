@@ -6,7 +6,6 @@
 
 <div
     x-data="liveMonitorVideoManager({ openOnLoad: @js($hasUploadError) })"
-    x-on:live-monitor-video-saved.window="showUploadModal = false; isUploading = false; uploadProgress = 0"
     class="space-y-6"
 >
     @if(session('success'))
@@ -220,13 +219,13 @@
                 </div>
 
                 <form
-                    wire:submit="uploadIdleMonitorVideo"
+                    action="{{ route('super-admin.live-monitor-videos.upload') }}"
+                    method="POST"
+                    enctype="multipart/form-data"
                     class="space-y-6 px-6 py-6 sm:px-9 sm:py-8"
-                    x-on:livewire-upload-start="isUploading = true; uploadProgress = 0"
-                    x-on:livewire-upload-progress="uploadProgress = $event.detail.progress"
-                    x-on:livewire-upload-error="isUploading = false"
-                    x-on:livewire-upload-finish="isUploading = false; uploadProgress = 100"
+                    x-on:submit.prevent="submitUpload($event)"
                 >
+                    @csrf
                     <div class="grid gap-5 md:grid-cols-2">
                         <div>
                             <label class="mb-2 block text-sm font-semibold text-slate-500">Section</label>
@@ -254,34 +253,43 @@
                         <input
                             id="idle-monitor-video-upload"
                             type="file"
-                            wire:model="idleMonitorVideoUpload"
+                            name="idleMonitorVideoUpload"
                             accept="video/mp4"
+                            x-ref="uploadInput"
+                            x-on:change="clearUploadFeedback()"
                             class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700 shadow-sm file:mr-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-4 file:py-2.5 file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                         >
                         <p class="mt-3 text-sm text-slate-500">Accepted format: MP4. Max 3 GB. Upload speed still depends on your PHP, server, and network limits.</p>
                         <p class="mt-1 text-sm text-slate-500">The current active video keeps playing on live monitors until this upload finishes and becomes active.</p>
-                        @php($idleMonitorVideoUploadError = $errors->first('idleMonitorVideoUpload'))
-                        @if($idleMonitorVideoUploadError !== '')
-                            <p class="mt-3 text-sm font-semibold text-rose-600">
-                                {{
-                                    str_contains($idleMonitorVideoUploadError, '3145728 kilobytes')
-                                        ? 'The idle monitor video must not be larger than 3 GB.'
-                                        : (str_contains($idleMonitorVideoUploadError, 'file of type')
-                                            ? 'The idle monitor video must be an MP4 file.'
-                                            : $idleMonitorVideoUploadError)
-                                }}
+                        @if($hasServerUploadLimitMismatch)
+                            <p class="mt-1 text-sm font-semibold text-amber-600">
+                                Current PHP upload limit on this server: {{ $serverUploadLimitLabel }}. Increase `upload_max_filesize` and `post_max_size` to use the full 3 GB allowance.
                             </p>
                         @endif
+                        @php($idleMonitorVideoUploadError = $errors->first('idleMonitorVideoUpload'))
+                        @if($idleMonitorVideoUploadError !== '')
+                            <p class="mt-3 text-sm font-semibold text-rose-600">{{ $idleMonitorVideoUploadError }}</p>
+                        @endif
+                        <p
+                            x-cloak
+                            x-show="uploadError !== ''"
+                            x-text="uploadError"
+                            class="mt-3 text-sm font-semibold text-rose-600"
+                        ></p>
                     </div>
 
                     <div x-show="isUploading" x-transition.opacity.duration.150ms class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                         <div class="mb-3 flex items-center justify-between gap-3 text-sm font-semibold text-slate-600">
-                            <span>Uploading video...</span>
-                            <span x-text="`${uploadProgress}%`"></span>
+                            <span x-text="uploadStatusLabel"></span>
+                            <span x-text="progressLabel"></span>
                         </div>
                         <div class="h-3 overflow-hidden rounded-full bg-slate-200">
-                            <div class="h-full rounded-full bg-gradient-to-r from-pink-600 to-fuchsia-500 transition-all duration-200" :style="`width: ${uploadProgress}%`"></div>
+                            <div
+                                class="h-full rounded-full bg-gradient-to-r from-pink-600 to-fuchsia-500 transition-all duration-200"
+                                x-bind:style="`width: ${uploadProgress}%`"
+                            ></div>
                         </div>
+                        <p class="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500" x-text="transferLabel"></p>
                     </div>
 
                     <div class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-end">
@@ -294,8 +302,7 @@
                         </button>
                         <button
                             type="submit"
-                            wire:loading.attr="disabled"
-                            wire:target="idleMonitorVideoUpload,uploadIdleMonitorVideo"
+                            x-bind:disabled="isUploading"
                             class="inline-flex min-h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70"
                             style="background: linear-gradient(135deg, #db2777, #ec4899); box-shadow: 0 12px 24px rgba(219, 39, 119, 0.25);"
                         >
@@ -316,7 +323,12 @@
                 search: '',
                 isUploading: false,
                 uploadProgress: 0,
+                uploadError: '',
+                uploadStatusLabel: 'Uploading video...',
+                uploadedBytes: 0,
+                totalBytes: 0,
                 openUploadModal() {
+                    this.resetUploadState();
                     this.showUploadModal = true;
                 },
                 closeUploadModal() {
@@ -324,7 +336,137 @@
                         return;
                     }
 
+                    this.resetUploadState();
                     this.showUploadModal = false;
+                },
+                clearUploadFeedback() {
+                    this.uploadError = '';
+                },
+                resetUploadState() {
+                    this.isUploading = false;
+                    this.uploadProgress = 0;
+                    this.uploadError = '';
+                    this.uploadStatusLabel = 'Uploading video...';
+                    this.uploadedBytes = 0;
+                    this.totalBytes = 0;
+                },
+                submitUpload(event) {
+                    if (this.isUploading) {
+                        return;
+                    }
+
+                    const form = event.target;
+                    const file = this.$refs.uploadInput?.files?.[0] ?? null;
+
+                    this.uploadError = '';
+
+                    if (! file) {
+                        this.uploadError = 'Please choose an MP4 video to upload.';
+
+                        return;
+                    }
+
+                    this.isUploading = true;
+                    this.uploadProgress = 0;
+                    this.uploadStatusLabel = 'Uploading video...';
+                    this.uploadedBytes = 0;
+                    this.totalBytes = file.size || 0;
+
+                    const request = new XMLHttpRequest();
+
+                    request.open(form.method || 'POST', form.action, true);
+                    request.responseType = 'json';
+                    request.setRequestHeader('Accept', 'application/json');
+                    request.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+                    request.upload.addEventListener('progress', (uploadEvent) => {
+                        if (! uploadEvent.lengthComputable || uploadEvent.total === 0) {
+                            return;
+                        }
+
+                        this.totalBytes = uploadEvent.total;
+                        this.uploadedBytes = uploadEvent.loaded;
+                        this.uploadProgress = Math.min(100, Math.round((uploadEvent.loaded / uploadEvent.total) * 100));
+                        this.uploadStatusLabel = this.uploadProgress >= 100 ? 'Finalizing upload...' : 'Uploading video...';
+                    });
+
+                    request.addEventListener('load', () => {
+                        const payload = this.parseUploadResponse(request);
+
+                        if (request.status >= 200 && request.status < 300) {
+                            this.uploadProgress = 100;
+                            this.uploadedBytes = this.totalBytes || this.uploadedBytes;
+                            this.uploadStatusLabel = 'Upload complete';
+
+                            window.location.assign(payload.redirect_url || window.location.href);
+
+                            return;
+                        }
+
+                        this.isUploading = false;
+                        this.uploadProgress = 0;
+                        this.uploadedBytes = 0;
+                        this.totalBytes = 0;
+                        this.uploadStatusLabel = 'Uploading video...';
+                        this.uploadError = this.resolveUploadError(request, payload);
+                    });
+
+                    request.addEventListener('error', () => {
+                        this.isUploading = false;
+                        this.uploadProgress = 0;
+                        this.uploadedBytes = 0;
+                        this.totalBytes = 0;
+                        this.uploadStatusLabel = 'Uploading video...';
+                        this.uploadError = 'Unable to upload the video right now. Please check your network and try again.';
+                    });
+
+                    request.send(new FormData(form));
+                },
+                parseUploadResponse(request) {
+                    if (request.response && typeof request.response === 'object') {
+                        return request.response;
+                    }
+
+                    try {
+                        return JSON.parse(request.responseText || '{}');
+                    } catch (error) {
+                        return {};
+                    }
+                },
+                resolveUploadError(request, payload) {
+                    const fieldErrors = payload?.errors?.idleMonitorVideoUpload;
+
+                    if (Array.isArray(fieldErrors) && fieldErrors.length > 0) {
+                        return fieldErrors[0];
+                    }
+
+                    if (request.status === 413) {
+                        return 'The uploaded video is larger than the server allows.';
+                    }
+
+                    if (typeof payload?.message === 'string' && payload.message.trim() !== '') {
+                        return payload.message;
+                    }
+
+                    return 'Unable to upload the video right now. Please try again.';
+                },
+                formatBytes(bytes) {
+                    if (! Number.isFinite(bytes) || bytes <= 0) {
+                        return '0 B';
+                    }
+
+                    const units = ['B', 'KB', 'MB', 'GB'];
+                    let value = bytes;
+                    let unitIndex = 0;
+
+                    while (value >= 1024 && unitIndex < units.length - 1) {
+                        value /= 1024;
+                        unitIndex += 1;
+                    }
+
+                    const precision = value >= 100 || unitIndex === 0 ? 0 : 1;
+
+                    return `${value.toFixed(precision)} ${units[unitIndex]}`;
                 },
                 matchesSearch(text) {
                     const query = this.search.trim().toLowerCase();
@@ -338,6 +480,16 @@
                 },
                 get hasSearch() {
                     return this.search.trim() !== '';
+                },
+                get progressLabel() {
+                    return `${this.uploadProgress}%`;
+                },
+                get transferLabel() {
+                    if (this.totalBytes > 0) {
+                        return `${this.formatBytes(this.uploadedBytes)} of ${this.formatBytes(this.totalBytes)} uploaded`;
+                    }
+
+                    return 'Please keep this window open until the upload finishes.';
                 },
             };
         }

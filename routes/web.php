@@ -7,11 +7,11 @@ use App\Http\Controllers\OfficeQueueReportsPdfController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
 use App\Livewire\QueueJoin;
+use App\Livewire\SuperAdmin\LiveMonitorVideos as SuperAdminLiveMonitorVideos;
 use App\Models\Office;
 use App\Models\User;
 use App\Support\LiveMonitorVideoLibrary;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
@@ -30,8 +30,8 @@ Route::view('/live-monitor', 'office.all-offices-monitor')->name('live-monitor.p
 Route::get('/media/mf-tourism-video', function (LiveMonitorVideoLibrary $videoLibrary) {
     $customVideoPath = $videoLibrary->activeVideoPath();
 
-    if ($customVideoPath !== null && Storage::disk(LiveMonitorVideoLibrary::DISK)->exists($customVideoPath)) {
-        return response()->file(Storage::disk('public')->path($customVideoPath), [
+    if ($customVideoPath !== null && $videoLibrary->exists($customVideoPath)) {
+        return response()->file($videoLibrary->absolutePath($customVideoPath), [
             'Content-Type' => 'video/mp4',
             'Cache-Control' => 'public, max-age=3600',
         ]);
@@ -214,12 +214,47 @@ Route::post('/logout', function () {
         Route::get('/live-monitor-videos', function () {
             return view('super-admin.live-monitor-videos');
         })->name('live-monitor-videos');
+        Route::post('/live-monitor-videos/upload', function (Request $request, LiveMonitorVideoLibrary $videoLibrary) {
+            $validated = $request->validate(
+                SuperAdminLiveMonitorVideos::idleMonitorVideoUploadRules(),
+                SuperAdminLiveMonitorVideos::idleMonitorVideoUploadMessages()
+            );
+
+            $uploadedFile = $validated['idleMonitorVideoUpload'];
+
+            if ($videoLibrary->findDuplicateUpload($uploadedFile)) {
+                throw ValidationException::withMessages([
+                    'idleMonitorVideoUpload' => 'File already exists in the live monitor library.',
+                ]);
+            }
+
+            try {
+                $video = $videoLibrary->upload($uploadedFile);
+            } catch (\Throwable) {
+                throw ValidationException::withMessages([
+                    'idleMonitorVideoUpload' => 'Unable to save the uploaded video.',
+                ]);
+            }
+
+            $successMessage = ($video['original_name'] ?? 'The uploaded video').' is now the active live monitor video.';
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $successMessage,
+                    'redirect_url' => route('super-admin.live-monitor-videos'),
+                ]);
+            }
+
+            return redirect()
+                ->route('super-admin.live-monitor-videos')
+                ->with('success', $successMessage);
+        })->name('live-monitor-videos.upload');
         Route::get('/live-monitor-videos/{videoId}/preview', function (string $videoId, LiveMonitorVideoLibrary $videoLibrary) {
             $video = $videoLibrary->find($videoId);
 
-            abort_unless(is_array($video) && Storage::disk(LiveMonitorVideoLibrary::DISK)->exists($video['stored_path']), 404);
+            abort_unless(is_array($video) && $videoLibrary->exists($video['stored_path']), 404);
 
-            return response()->file(Storage::disk(LiveMonitorVideoLibrary::DISK)->path($video['stored_path']), [
+            return response()->file($videoLibrary->absolutePath($video['stored_path']), [
                 'Content-Type' => 'video/mp4',
                 'Cache-Control' => 'private, max-age=0, must-revalidate',
             ]);

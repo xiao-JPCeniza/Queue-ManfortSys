@@ -48,11 +48,13 @@ class AllOfficesMonitor extends Component
 
         $featuredOfficeRow = $officeRows->first();
         $hasCurrentTransaction = $officeRows->contains(fn (array $row) => $row['serving'] !== null);
+        $hasQueuedNextInline = $officeRows->contains(fn (array $row) => $row['nextInline'] !== null);
 
         return view('livewire.office-admin.all-offices-monitor', [
             'featuredOfficeRow' => $featuredOfficeRow,
             'announcementOfficeRows' => $officeRows,
             'hasCurrentTransaction' => $hasCurrentTransaction,
+            'hasQueuedNextInline' => $hasQueuedNextInline,
             'manilaNow' => now('Asia/Manila'),
         ]);
     }
