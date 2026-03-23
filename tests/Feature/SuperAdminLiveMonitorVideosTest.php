@@ -27,6 +27,7 @@ class SuperAdminLiveMonitorVideosTest extends TestCase
             ->get(route('super-admin.live-monitor-videos'))
             ->assertOk()
             ->assertSee('Live Monitor Videos')
+            ->assertSee('Preview Playlist')
             ->assertSee('+ Add Video')
             ->assertSee('No uploaded idle videos yet.')
             ->assertSee('Offices')
@@ -73,6 +74,10 @@ class SuperAdminLiveMonitorVideosTest extends TestCase
             ->get(route('super-admin.live-monitor-videos.preview', $firstVideoId))
             ->assertOk()
             ->assertHeader('content-type', 'video/mp4');
+
+        $this->get(route('media.live-monitor-video', $firstVideoId))
+            ->assertOk()
+            ->assertHeader('content-type', 'video/mp4');
     }
 
     public function test_super_admin_can_upload_an_idle_monitor_video_through_the_browser_form(): void
@@ -88,7 +93,7 @@ class SuperAdminLiveMonitorVideosTest extends TestCase
         $response->assertRedirect(route('super-admin.live-monitor-videos'));
 
         $this->followRedirects($response)
-            ->assertSee('browser-upload.mp4 is now the active live monitor video.');
+            ->assertSee('browser-upload.mp4 was added to the live monitor playlist and will play first.');
 
         $manifest = $this->readManifest($storageRoot);
 
@@ -116,7 +121,7 @@ class SuperAdminLiveMonitorVideosTest extends TestCase
         $response
             ->assertOk()
             ->assertJson([
-                'message' => 'xhr-upload.mp4 is now the active live monitor video.',
+                'message' => 'xhr-upload.mp4 was added to the live monitor playlist and will play first.',
                 'redirect_url' => route('super-admin.live-monitor-videos'),
             ]);
 
@@ -191,7 +196,7 @@ class SuperAdminLiveMonitorVideosTest extends TestCase
 
         Livewire::test(LiveMonitorVideos::class)
             ->call('setActiveVideo', $firstVideo['id'])
-            ->assertSee('first-video.mp4');
+            ->assertSee('first-video.mp4 will now play first on live monitors after idle time.');
 
         $manifestAfterActivation = $this->readManifest($storageRoot);
         $this->assertSame($firstVideo['id'], $manifestAfterActivation['active_id']);
@@ -209,6 +214,28 @@ class SuperAdminLiveMonitorVideosTest extends TestCase
 
         $this->assertCount(1, $manifestAfterDelete['videos']);
         $this->assertSame($secondVideo['id'], $manifestAfterDelete['active_id']);
+    }
+
+    public function test_super_admin_can_preview_the_live_monitor_playlist(): void
+    {
+        $this->fakeLiveMonitorStorage();
+
+        $superAdmin = $this->createSuperAdminUser();
+
+        $this->actingAs($superAdmin)->post(route('super-admin.live-monitor-videos.upload'), [
+            'idleMonitorVideoUpload' => UploadedFile::fake()->create('playlist-a.mp4', 512, 'video/mp4'),
+        ])->assertRedirect(route('super-admin.live-monitor-videos'));
+
+        $this->actingAs($superAdmin)->post(route('super-admin.live-monitor-videos.upload'), [
+            'idleMonitorVideoUpload' => UploadedFile::fake()->create('playlist-b.mp4', 768, 'video/mp4'),
+        ])->assertRedirect(route('super-admin.live-monitor-videos'));
+
+        $this->actingAs($superAdmin)
+            ->get(route('super-admin.live-monitor-videos.playlist-preview'))
+            ->assertOk()
+            ->assertSee('Live Monitor Playlist Preview')
+            ->assertSee('playlist-b.mp4')
+            ->assertSee('playlist-a.mp4');
     }
 
     private function createSuperAdminUser(): User

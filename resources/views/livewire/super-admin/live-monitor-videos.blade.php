@@ -26,18 +26,18 @@
                 <div class="max-w-3xl">
                     <h1 class="text-4xl font-black tracking-[-0.04em] text-slate-700 sm:text-5xl">Live Monitor Videos</h1>
                     <p class="mt-3 text-base leading-7 text-slate-500">
-                        Upload and manage the videos shown on the live monitor during idle time.
+                        Upload and manage the videos shown on the live monitor during idle time. The selected start video plays first, then the rest of the library follows automatically.
                     </p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-3">
                     <a
-                        href="{{ $activeVideoUrl }}"
+                        href="{{ $playlistPreviewUrl }}"
                         target="_blank"
                         rel="noopener noreferrer"
                         class="inline-flex min-h-12 items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                     >
-                        Preview Active Video
+                        Preview Playlist
                     </a>
 
                     <button
@@ -68,7 +68,7 @@
                 <div class="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
                     <span>{{ number_format($videoCount) }} uploaded {{ \Illuminate\Support\Str::plural('video', $videoCount) }}</span>
                     <span class="h-1.5 w-1.5 rounded-full bg-pink-500"></span>
-                    <span>Active now: {{ $activeVideoName }}</span>
+                    <span>Playlist starts with: {{ $activeVideoName }}</span>
                 </div>
             </div>
         </div>
@@ -89,9 +89,9 @@
                             $uploadedAt = \Illuminate\Support\Carbon::parse($video['uploaded_at'])->setTimezone('Asia/Manila');
                             $sizeInMb = number_format(((int) ($video['size_bytes'] ?? 0)) / 1048576, 2);
                             $searchTokens = strtolower(implode(' ', [
-                                'idle monitor video',
+                                'idle monitor video playlist',
                                 $video['original_name'] ?? '',
-                                $video['is_active'] ? 'active' : 'stored',
+                                $video['is_active'] ? 'starts playlist' : 'in playlist',
                             ]));
                         @endphp
                         <tr x-show="matchesSearch(@js($searchTokens))" x-transition.opacity.duration.150ms class="hover:bg-slate-50/70">
@@ -113,7 +113,7 @@
                             </td>
                             <td class="px-6 py-5 align-middle">
                                 <span class="inline-flex rounded-full px-4 py-2 text-sm font-extrabold uppercase tracking-[0.08em] {{ $video['is_active'] ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700' }}">
-                                    {{ $video['is_active'] ? 'Active' : 'Stored' }}
+                                    {{ $video['is_active'] ? 'Starts Playlist' : 'In Playlist' }}
                                 </span>
                             </td>
                             <td class="px-6 py-5 align-middle">
@@ -137,7 +137,7 @@
                                             type="button"
                                             wire:click="setActiveVideo('{{ $video['id'] }}')"
                                             class="inline-flex h-11 w-12 items-center justify-center border-r border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
-                                            title="Set as active video"
+                                            title="Set as first video in playlist"
                                         >
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                                 <path d="m5 12 5 5L20 7"></path>
@@ -167,7 +167,7 @@
                         <tr>
                             <td colspan="4" class="px-6 py-12 text-center">
                                 <p class="text-lg font-bold text-slate-700">No uploaded idle videos yet.</p>
-                                <p class="mt-2 text-sm text-slate-500">The live monitor is currently using the default tourism video.</p>
+                                <p class="mt-2 text-sm text-slate-500">The live monitor is currently using the default tourism video until you upload a playlist video.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -201,7 +201,7 @@
                     <div>
                         <h2 id="create-live-monitor-video-title" class="text-4xl font-black tracking-[-0.04em] text-slate-700">Upload New Video</h2>
                         <p class="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-                            Add a new MP4 file to the live monitor library. It becomes active only after the upload fully finishes.
+                            Add a new MP4 file to the live monitor library. It becomes the first video in the idle playlist after the upload fully finishes.
                         </p>
                     </div>
 
@@ -260,7 +260,7 @@
                             class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700 shadow-sm file:mr-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-4 file:py-2.5 file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                         >
                         <p class="mt-3 text-sm text-slate-500">Accepted format: MP4. Max 3 GB. Upload speed still depends on your PHP, server, and network limits.</p>
-                        <p class="mt-1 text-sm text-slate-500">The current active video keeps playing on live monitors until this upload finishes and becomes active.</p>
+                        <p class="mt-1 text-sm text-slate-500">The current playlist keeps running on live monitors until this upload finishes and becomes the first video.</p>
                         @if($hasServerUploadLimitMismatch)
                             <p class="mt-1 text-sm font-semibold text-amber-600">
                                 Current PHP upload limit on this server: {{ $serverUploadLimitLabel }}. Increase `upload_max_filesize` and `post_max_size` to use the full 3 GB allowance.

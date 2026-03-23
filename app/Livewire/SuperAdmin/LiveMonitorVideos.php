@@ -46,7 +46,7 @@ class LiveMonitorVideos extends Component
         $this->resetValidation('idleMonitorVideoUpload');
         $this->dispatch('live-monitor-video-saved');
 
-        session()->flash('success', ($video['original_name'] ?? 'The uploaded video').' is now the active live monitor video.');
+        session()->flash('success', ($video['original_name'] ?? 'The uploaded video').' was added to the live monitor playlist and will play first.');
     }
 
     public function deleteVideo(string $videoId): void
@@ -76,7 +76,7 @@ class LiveMonitorVideos extends Component
 
         $this->videoLibrary()->activate($videoId);
 
-        session()->flash('success', ($video['original_name'] ?? 'The selected video').' is now active on live monitors after idle time.');
+        session()->flash('success', ($video['original_name'] ?? 'The selected video').' will now play first on live monitors after idle time.');
     }
 
     public function render()
@@ -87,7 +87,7 @@ class LiveMonitorVideos extends Component
         return view('livewire.super-admin.live-monitor-videos', [
             'videos' => $videos,
             'activeVideo' => $activeVideo,
-            'activeVideoUrl' => route('media.tourism-video'),
+            'playlistPreviewUrl' => route('super-admin.live-monitor-videos.playlist-preview'),
             'serverUploadLimitLabel' => $this->serverUploadLimitLabel(),
             'hasServerUploadLimitMismatch' => $this->hasServerUploadLimitMismatch(),
         ]);

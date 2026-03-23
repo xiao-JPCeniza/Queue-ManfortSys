@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\OfficeAdmin\Dashboard;
 use App\Models\Office;
 use App\Models\QueueEntry;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -305,6 +306,36 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
+    public function test_generic_office_admin_dashboard_shows_sidebar_dashboard_and_quick_actions(): void
+    {
+        $office = $this->createOffice(
+            name: 'Citizen Center',
+            slug: 'citizen-center',
+            prefix: 'CCEN',
+            description: 'Citizen Center services'
+        );
+        $role = Role::create([
+            'name' => 'Office Admin',
+            'slug' => 'office_admin',
+            'description' => 'Office-specific administrator',
+        ]);
+        $user = User::factory()->create([
+            'role_id' => $role->id,
+            'office_id' => $office->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('office.dashboard', $office->slug))
+            ->assertOk()
+            ->assertSee('Menu')
+            ->assertSee('Dashboard')
+            ->assertSee('Reports')
+            ->assertSee('Quick Actions')
+            ->assertSee('Clear Waiting Line')
+            ->assertSee('Reset Queue Number')
+            ->assertSee('Citizen Center Queue Operations Desk');
+    }
+
     public function test_office_admin_can_reset_queue_numbering_for_today(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 11, 0, 0, 'Asia/Manila'));
@@ -363,13 +394,20 @@ class OfficeQueueDashboardTest extends TestCase
             ->assertSee('Clear Waiting Line');
     }
 
-    private function createOffice(int $serviceWindowCount = 1, array $attributes = []): Office
+    private function createOffice(
+        int $serviceWindowCount = 1,
+        string $name = 'Accounting Office',
+        string $slug = 'accounting',
+        string $prefix = 'ACCT',
+        string $description = 'Accounting services',
+        array $attributes = []
+    ): Office
     {
         return Office::create(array_merge([
-            'name' => 'Accounting Office',
-            'slug' => 'accounting',
-            'prefix' => 'ACCT',
-            'description' => 'Accounting services',
+            'name' => $name,
+            'slug' => $slug,
+            'prefix' => $prefix,
+            'description' => $description,
             'next_number' => 1,
             'service_window_count' => $serviceWindowCount,
             'tickets_accommodated_total' => 0,

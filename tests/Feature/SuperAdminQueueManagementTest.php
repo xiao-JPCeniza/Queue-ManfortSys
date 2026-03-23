@@ -39,7 +39,7 @@ class SuperAdminQueueManagementTest extends TestCase
 
         Livewire::test(Dashboard::class, ['office' => $hrmo])
             ->set('hrmoTab', 'queue-management')
-            ->assertSee('Mega Menu')
+            ->assertSee('Records')
             ->assertSee('Queued Today')
             ->assertViewHas('queuedTodayPagination', function (array $pagination) {
                 return $pagination['current_page'] === 1
@@ -130,7 +130,49 @@ class SuperAdminQueueManagementTest extends TestCase
                     && $accountingRow['office_slug'] === 'accounting'
                     && $accountingRow['overall_queued_total'] === 3
                     && $accountingRow['accommodated_total'] === 2
-                    && $accountingRow['completed_queue_numbers'] === ['ACCT-001', 'ACCT-003'];
+                    && $accountingRow['completed_queue_numbers'] === ['ACCT-001', 'ACCT-003']
+                    && $accountingRow['completed_queue_details'] === [
+                        [
+                            'queue_number' => 'ACCT-001',
+                            'queued_at_label' => 'Mar 10, 2026 08:15:00 AM',
+                        ],
+                        [
+                            'queue_number' => 'ACCT-003',
+                            'queued_at_label' => 'Mar 10, 2026 09:00:00 AM',
+                        ],
+                    ];
+            })
+            ->assertSee('Queued: Mar 10, 2026 08:15:00 AM')
+            ->assertSee('Queued: Mar 10, 2026 09:00:00 AM');
+    }
+
+    public function test_newly_saved_public_office_appears_in_super_admin_queued_today_and_overall_data(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 10, 10, 0, 0, 'Asia/Manila'));
+
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', 10);
+        $this->createOffice('OBO', 'obo', 'OBO', 0);
+
+        $superAdmin = $this->createSuperAdminUser();
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(Dashboard::class, ['office' => $hrmo])
+            ->set('hrmoTab', 'queue-management')
+            ->assertViewHas('queuedTodayOfficeActivity', function ($rows) {
+                return $rows->pluck('office.slug')->contains('obo');
+            })
+            ->call('setQueueManagementSection', 'overall-data')
+            ->assertViewHas('queueManagementOfficeOptions', function ($options) {
+                return $options->pluck('slug')->contains('obo');
+            })
+            ->assertViewHas('overallDataRows', function ($rows) {
+                $oboRow = $rows->firstWhere('office_slug', 'obo');
+
+                return $oboRow !== null
+                    && $oboRow['office_name'] === 'OBO'
+                    && $oboRow['overall_queued_total'] === 0
+                    && $oboRow['accommodated_total'] === 0;
             });
     }
 
@@ -166,6 +208,7 @@ class SuperAdminQueueManagementTest extends TestCase
         $this->actingAs($superAdmin);
 
         Livewire::test(Dashboard::class, ['office' => $hrmo])
+            ->set('isSuperAdminRouteContext', true)
             ->set('hrmoTab', 'reports')
             ->assertViewHas('summary', function (array $summary) {
                 return $summary['total_today'] === 3
