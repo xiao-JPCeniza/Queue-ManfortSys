@@ -13,11 +13,20 @@
                 </div>
                 <div class="queue-header-tools">
                     @if(!$ticket)
+                        @php($officeAbbreviations = [
+                            'hrmo' => 'HRMO',
+                            'treasury' => 'MTO',
+                            'civil-registry' => 'MCR',
+                            'business-permits' => 'BPLO',
+                            'bplo' => 'BPLO',
+                            'menro' => 'MENRO',
+                            'mswdo' => 'MSWDO',
+                        ])
                         <label for="office-filter" class="sr-only">Choose office</label>
                         <select id="office-filter" wire:model.live="selectedOfficeSlug" class="queue-office-select">
                             <option value="">All offices</option>
                             @foreach($officeOptions as $option)
-                                <option value="{{ $option->slug }}">{{ $option->name }}</option>
+                                <option value="{{ $option->slug }}">{{ $officeAbbreviations[$option->slug] ?? $option->name }}</option>
                             @endforeach
                         </select>
                     @endif

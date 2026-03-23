@@ -326,6 +326,15 @@
             opacity: 1;
         }
 
+        .gov-slide--contain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(0.55rem, 1.4vw, 0.9rem);
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(234, 241, 249, 0.94));
+        }
+
         .gov-slide img {
             width: 100%;
             height: 100%;
@@ -337,7 +346,11 @@
 
         .gov-slide img.gov-slide-image--contain {
             object-fit: contain;
-            padding: clamp(0.75rem, 2vw, 1.5rem);
+            padding: clamp(0.35rem, 1vw, 0.7rem) clamp(0.35rem, 1vw, 0.7rem) clamp(2.35rem, 4.5vw, 3.25rem);
+            background: #ffffff;
+            border: 1px solid rgba(15, 32, 57, 0.12);
+            border-radius: 1rem;
+            box-shadow: 0 18px 32px -24px rgba(15, 32, 57, 0.42);
         }
 
         .gov-slider-dots {
@@ -397,7 +410,6 @@
             gap: 0.7rem 1rem;
             padding: 1rem 1.15rem;
             border-radius: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.14);
             background: rgba(8, 29, 53, 0.6);
             color: #f8fbff;
             font-size: 0.95rem;
@@ -483,11 +495,12 @@
         $municipalBgPath = public_path('images/municipal-building.jpg');
         $municipalBgAsset = file_exists($municipalBgPath) ? asset('images/municipal-building.jpg') : null;
         $slideAssets = collect([
-            ['name' => 'slide1', 'alt' => 'Municipality of Manolo Fortich commemorative feature slide'],
-            ['name' => 'slide2', 'alt' => 'Municipality of Manolo Fortich public service feature slide'],
-            ['name' => 'slide3', 'alt' => 'Municipality of Manolo Fortich local government feature slide'],
-            ['name' => 'MTO', 'alt' => 'Municipal Treasurer\'s Office service information slide', 'fit' => 'contain'],
-            ['name' => 'MSWDO', 'alt' => 'Municipal Social Welfare and Development Office service information slide', 'fit' => 'contain'],
+            ['name' => 'MTO', 'alt' => 'Municipal Treasurer\'s Office service information slide', 'fit' => 'contain', 'frame' => 'contain'],
+            ['name' => 'MSWDO', 'alt' => 'Municipal Social Welfare and Development Office service information slide', 'fit' => 'contain', 'frame' => 'contain'],
+            ['name' => 'HRMO', 'alt' => 'Municipal Human Resources Management Office service information slide', 'fit' => 'contain', 'frame' => 'contain'],
+            ['name' => 'MENRO', 'alt' => 'Municipal Environment and Natural Resources Office service information slide', 'fit' => 'contain', 'frame' => 'contain'],
+            ['name' => 'BPLO', 'alt' => 'Municipal Business Permit and Licensing Office service information slide', 'fit' => 'contain', 'frame' => 'contain'],
+            ['name' => 'CR', 'alt' => 'Municipal Civil Registry service information slide', 'fit' => 'contain', 'frame' => 'contain'],
         ])
             ->map(function (array $slide) {
                 foreach (['png', 'jpg', 'jpeg', 'webp'] as $extension) {
@@ -497,6 +510,7 @@
                             'src' => asset("images/{$slide['name']}.{$extension}"),
                             'alt' => $slide['alt'],
                             'fit' => $slide['fit'] ?? 'cover',
+                            'frame' => $slide['frame'] ?? 'default',
                         ];
                     }
                 }
@@ -518,7 +532,7 @@
 
                     <div class="gov-brand-copy">
                         <p class="gov-brand-kicker">Local Government Unit of</p>
-                        <h1 class="gov-brand-title">Manolo Fortich</h1>
+                        <h1 class="gov-brand-title">Manolo Fortich Bukidnon</h1>
                     </div>
                 </div>
 
@@ -573,7 +587,6 @@
                         <h2 class="gov-hero-title">Welcome to the LGU Queue System</h2>
                         <p class="gov-hero-text">
                             Get a queue number by selecting the office you need to visit. Your ticket will be generated and announced by voice.
-                            Staff may log in to manage queues and serve clients.
                         </p>
 
                         <div class="gov-hero-actions">
@@ -588,7 +601,7 @@
                             <div class="gov-slider" data-gov-slider>
                                 <div class="gov-slider-track">
                                     @foreach($slideAssets as $slideAsset)
-                                        <figure class="gov-slide {{ $loop->first ? 'is-active' : '' }}" data-gov-slide>
+                                        <figure class="gov-slide {{ $slideAsset['frame'] === 'contain' ? 'gov-slide--contain' : '' }} {{ $loop->first ? 'is-active' : '' }}" data-gov-slide>
                                             <img
                                                 src="{{ $slideAsset['src'] }}"
                                                 alt="{{ $slideAsset['alt'] }}"
