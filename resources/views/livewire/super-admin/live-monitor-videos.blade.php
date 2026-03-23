@@ -259,11 +259,9 @@
                             x-on:change="clearUploadFeedback()"
                             class="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700 shadow-sm file:mr-4 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-4 file:py-2.5 file:font-semibold file:text-indigo-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-100"
                         >
-                        <p class="mt-3 text-sm text-slate-500">Accepted format: MP4. Max 3 GB. Upload speed still depends on your PHP, server, and network limits.</p>
-                        <p class="mt-1 text-sm text-slate-500">The current playlist keeps running on live monitors until this upload finishes and becomes the first video.</p>
+                        <p class="mt-3 text-sm text-slate-500">Accepted format: MP4. Max 3 GB</p>
                         @if($hasServerUploadLimitMismatch)
                             <p class="mt-1 text-sm font-semibold text-amber-600">
-                                Current PHP upload limit on this server: {{ $serverUploadLimitLabel }}. Increase `upload_max_filesize` and `post_max_size` to use the full 3 GB allowance.
                             </p>
                         @endif
                         @php($idleMonitorVideoUploadError = $errors->first('idleMonitorVideoUpload'))

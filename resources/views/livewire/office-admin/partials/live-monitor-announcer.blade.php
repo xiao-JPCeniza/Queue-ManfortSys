@@ -156,14 +156,19 @@
                 return [...candidates].sort((a, b) => scoreVoice(b) - scoreVoice(a))[0] ?? null;
             };
 
+            const toSpokenCharacters = (value) => value
+                .split('')
+                .map((character) => character === '0' ? 'zero' : character)
+                .join(' ');
+
             const toSpokenQueue = (value) => {
                 const [prefix, number] = value.split('-');
 
                 if (!number) {
-                    return value.split('').join(' ');
+                    return toSpokenCharacters(value);
                 }
 
-                return `${prefix.split('').join(' ')} ${number.split('').join(' ')}`;
+                return `${toSpokenCharacters(prefix)} ${toSpokenCharacters(number)}`;
             };
 
             const buildAnnouncementMessage = (type, queueNumber, serviceWindowNumber) => {

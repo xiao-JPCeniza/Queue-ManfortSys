@@ -57,7 +57,6 @@
 <div wire:ignore class="gov-monitor-idle-video" data-live-monitor-idle-video hidden aria-hidden="true">
     <video
         data-live-monitor-idle-video-player
-        muted
         playsinline
         preload="metadata"
     >
@@ -83,6 +82,9 @@
                 if (! video) {
                     return;
                 }
+
+                video.muted = false;
+                video.volume = 1;
 
                 const playPromise = video.play();
 
@@ -151,6 +153,7 @@
                 }
 
                 controller.currentPlaylistIndex = normalizedIndex;
+                controller.isCurrentVideoReady = false;
 
                 if (controller.source.src !== playlistItem.url) {
                     controller.source.src = playlistItem.url;
@@ -176,8 +179,26 @@
                 controller.appliedPlaylistRevision = nextPlaylistRevision;
                 controller.pendingPlaylist = null;
                 controller.pendingPlaylistRevision = null;
+                controller.failedPlaylistItemIds.clear();
 
                 setPlaylistItem(controller, nextIndex >= 0 ? nextIndex : 0);
+            };
+
+            const findNextPlayableIndex = (controller) => {
+                if (controller.appliedPlaylist.length === 0) {
+                    return -1;
+                }
+
+                for (let offset = 1; offset <= controller.appliedPlaylist.length; offset += 1) {
+                    const nextIndex = (controller.currentPlaylistIndex + offset) % controller.appliedPlaylist.length;
+                    const nextItemId = controller.appliedPlaylist[nextIndex]?.id ?? '';
+
+                    if (nextItemId !== '' && ! controller.failedPlaylistItemIds.has(nextItemId)) {
+                        return nextIndex;
+                    }
+                }
+
+                return -1;
             };
 
             const syncVideoSource = (controller) => {
@@ -194,6 +215,8 @@
                     controller.pendingPlaylist = null;
                     controller.pendingPlaylistRevision = null;
                     controller.currentPlaylistIndex = 0;
+                    controller.isCurrentVideoReady = false;
+                    controller.failedPlaylistItemIds.clear();
 
                     return;
                 }
@@ -225,7 +248,43 @@
                 }
 
                 controller.video.loop = false;
+                controller.video.muted = false;
+                controller.video.volume = 1;
+                controller.video.addEventListener('loadedmetadata', () => {
+                    controller.isCurrentVideoReady = true;
+                    controller.hasAvailableVideo = true;
+
+                    const currentItemId = controller.appliedPlaylist[controller.currentPlaylistIndex]?.id ?? '';
+
+                    if (currentItemId !== '') {
+                        controller.failedPlaylistItemIds.delete(currentItemId);
+                    }
+                });
+                controller.video.addEventListener('canplay', () => {
+                    controller.isCurrentVideoReady = true;
+                    controller.hasAvailableVideo = true;
+                });
                 controller.video.addEventListener('error', () => {
+                    controller.isCurrentVideoReady = false;
+
+                    const currentItemId = controller.appliedPlaylist[controller.currentPlaylistIndex]?.id ?? '';
+
+                    if (currentItemId !== '') {
+                        controller.failedPlaylistItemIds.add(currentItemId);
+                    }
+
+                    const nextPlayableIndex = findNextPlayableIndex(controller);
+
+                    if (nextPlayableIndex >= 0) {
+                        setPlaylistItem(
+                            controller,
+                            nextPlayableIndex,
+                            controller.overlay && ! controller.overlay.hidden
+                        );
+
+                        return;
+                    }
+
                     controller.hasAvailableVideo = false;
                     hideOverlay(controller, true);
                 });
@@ -283,7 +342,7 @@
             };
 
             const showOverlay = (controller) => {
-                if (! controller.overlay || ! controller.hasAvailableVideo) {
+                if (! controller.overlay || ! controller.hasAvailableVideo || ! controller.isCurrentVideoReady) {
                     return;
                 }
 
@@ -312,6 +371,8 @@
                         pendingPlaylistRevision: null,
                         currentPlaylistIndex: 0,
                         hasAvailableVideo: false,
+                        isCurrentVideoReady: false,
+                        failedPlaylistItemIds: new Set(),
                         boundVideo: null,
                     };
 
@@ -352,6 +413,12 @@
                 }
 
                 if ((Date.now() - controller.idleSince) >= delayMs) {
+                    if (! controller.isCurrentVideoReady) {
+                        hideOverlay(controller, false);
+
+                        return;
+                    }
+
                     showOverlay(controller);
 
                     return;

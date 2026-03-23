@@ -328,8 +328,7 @@
 
                                     <button
                                         type="button"
-                                        wire:click="deleteOffice({{ $office->id }})"
-                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
+                                        wire:click="promptDeleteOffice({{ $office->id }})"
                                         class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
                                     >
                                         Delete
@@ -346,6 +345,46 @@
             </table>
         </div>
     </section>
+
+    @if($officeIdPendingDeletion)
+        <div
+            class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-office-title"
+            wire:click.self="cancelDeleteOffice"
+        >
+            <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600">Delete Office</p>
+                <h3 id="delete-office-title" class="mt-2 text-xl font-semibold text-slate-900">
+                    Delete {{ $officeNamePendingDeletion }}?
+                </h3>
+                <p class="mt-3 text-sm leading-6 text-slate-600">
+                    This will remove the office, delete its queue entries, and delete any linked users. This action cannot be undone.
+                </p>
+
+                <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                    <button
+                        type="button"
+                        wire:click="cancelDeleteOffice"
+                        class="inline-flex items-center justify-center rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        wire:click="deleteOffice"
+                        wire:loading.attr="disabled"
+                        wire:target="deleteOffice,cancelDeleteOffice"
+                        class="inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-rose-300"
+                    >
+                        Delete Office
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
 @once

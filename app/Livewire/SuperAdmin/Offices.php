@@ -37,6 +37,10 @@ class Offices extends Component
 
     public string $serviceWindowCountSelection = '1';
 
+    public ?int $officeIdPendingDeletion = null;
+
+    public string $officeNamePendingDeletion = '';
+
     public function mount(): void
     {
         $this->syncServiceWindowSelection();
@@ -210,11 +214,37 @@ class Offices extends Component
         ]);
     }
 
-    public function deleteOffice(int $officeId): void
+    public function promptDeleteOffice(int $officeId): void
     {
         $office = Office::query()->find($officeId);
 
         if (! $office) {
+            return;
+        }
+
+        $this->officeIdPendingDeletion = $office->id;
+        $this->officeNamePendingDeletion = (string) ($office->display_name ?: $office->name);
+    }
+
+    public function cancelDeleteOffice(): void
+    {
+        $this->officeIdPendingDeletion = null;
+        $this->officeNamePendingDeletion = '';
+    }
+
+    public function deleteOffice(?int $officeId = null): void
+    {
+        $targetOfficeId = $officeId ?? $this->officeIdPendingDeletion;
+
+        if (! $targetOfficeId) {
+            return;
+        }
+
+        $office = Office::query()->find($targetOfficeId);
+
+        if (! $office) {
+            $this->cancelDeleteOffice();
+
             return;
         }
 
@@ -223,6 +253,8 @@ class Offices extends Component
             $office->users()->delete();
             $office->delete();
         });
+
+        $this->cancelDeleteOffice();
         $this->syncServiceWindowSelection($this->publicQueueOffices());
 
         session()->flash('success', "{$officeName} was deleted from the public queue.");
