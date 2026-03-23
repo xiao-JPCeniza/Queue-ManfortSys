@@ -17,6 +17,57 @@ class Dashboard extends Component
 {
     use HandlesOfficeQueueAnnouncements;
 
+<<<<<<< HEAD
+=======
+    private const ADVANCED_QUEUE_DASHBOARD_SLUGS = [
+        'hrmo',
+        'business-permits',
+        'bplo',
+        'mho',
+        'mswdo',
+        'menro',
+        'treasury',
+        'accounting',
+        'civil-registry',
+        'assessors-office',
+    ];
+
+    private const HIDDEN_OVERALL_ACTIVITY_OFFICES = [
+        'BFP Liaison',
+        'Budget',
+        'DILG',
+        'Engineering',
+        'GSO',
+        'ICT Unit',
+        'Internal Audit',
+        'LDRRMO',
+        'Legal Office',
+        'MAO',
+        "Mayor's Office",
+        'MENRO',
+        'MISO',
+        'Motorpool Division',
+        'MPDO',
+        "Municipal Administrator's Office",
+        'Municipal Library',
+        'NCIP',
+        'Negosyo Center',
+        'OBO',
+        'OSCA',
+        'PDAO',
+        'PESO',
+        'PNP Liaison',
+        'Procurement Division',
+        'Public Market Office',
+        'Sangguniang Bayan',
+        'Slaughter Division',
+        'Special Education Fund',
+        'Sports Development',
+        'Tourism Office',
+        "Vice Mayor's Office",
+    ];
+
+>>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     private const QUEUE_MANAGEMENT_SECTIONS = [
         'queued-today',
         'overall-data',

@@ -330,11 +330,6 @@
                         'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=reports',
                         'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'reports',
                     ];
-                    $sidebarMenuItems[] = [
-                        'label' => 'Queue Management',
-                        'href' => route('office.dashboard', $sidebarOfficeSlug) . '?tab=queue-management',
-                        'active' => $currentDashboardOfficeSlug === $sidebarOfficeSlug && $activeOfficeTab === 'queue-management',
-                    ];
                 }
             }
 
@@ -385,7 +380,7 @@
                                 <a href="{{ route('super-admin.index') }}" wire:navigate class="lgu-topbar-link {{ request()->routeIs('super-admin.index') || request()->routeIs('super-admin.reports') ? 'lgu-topbar-link-active' : '' }}">Dashboard</a>
                             @endif
                             @if($showDashboardShortcut)
-                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}?tab=queue-management" wire:navigate
+                                <a href="{{ route('office.dashboard', $dashboardShortcutOfficeSlug) }}" wire:navigate
                                    class="lgu-topbar-link {{ request()->routeIs('office.dashboard') && $currentDashboardOfficeSlug === $dashboardShortcutOfficeSlug && $activeOfficeTab === 'queue-management' ? 'lgu-topbar-link-active' : '' }}">
                                     Dashboard
                                 </a>

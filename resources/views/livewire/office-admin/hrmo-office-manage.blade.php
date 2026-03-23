@@ -87,26 +87,43 @@
                 </section>
             </div>
 
-            <section class="gov-monitor-panel gov-panel-recent" aria-labelledby="recent-transaction-heading">
+            <section class="gov-monitor-panel gov-panel-windows" aria-labelledby="serving-windows-heading">
                 <div class="gov-panel-head">
-                    <h2 id="recent-transaction-heading" class="gov-font-heading gov-panel-title">Recent Transactions Today</h2>
+                    <h2 id="serving-windows-heading" class="gov-font-heading gov-panel-title">Windows Currently Serving</h2>
+                    <span class="gov-status-badge {{ $servingEntries->isNotEmpty() ? 'gov-status-badge-active' : 'gov-status-badge-idle' }}">
+                        {{ $servingEntries->isNotEmpty() ? $servingEntries->count().' Active' : 'All Idle' }}
+                    </span>
                 </div>
 
                 <div class="gov-panel-body">
-                    @if($recentTransactions->isNotEmpty())
-                        <div class="gov-ticker gov-marquee" aria-label="Recent transaction queue numbers">
-                            <div class="gov-ticker-track">
-                                @foreach($recentTransactions as $entry)
-                                    <span class="gov-ticker-pill">{{ $entry->queue_number }}</span>
-                                @endforeach
-                            </div>
-                        </div>
-                    @else
-                        <div class="gov-ticket-empty gov-ticket-empty-soft">
-                            <p class="gov-ticket-empty-title">No recent transaction yet</p>
-                            <p class="gov-ticket-empty-text">Completed and not served transactions will show here.</p>
-                        </div>
-                    @endif
+                    @php
+                        $servingEntriesByWindow = $servingEntries->keyBy(fn ($entry) => $entry->service_window_number ?? 1);
+                        $windowNumbers = range(1, max(1, $office->resolvedServiceWindowCount()));
+                    @endphp
+
+                    <div class="gov-window-monitor-list" aria-label="Service windows currently serving clients">
+                        @foreach($windowNumbers as $windowNumber)
+                            @php
+                                $entry = $servingEntriesByWindow->get($windowNumber);
+                                $windowLabel = $office->serviceWindowLabel($windowNumber);
+                            @endphp
+                            <article class="gov-window-monitor-card {{ $entry ? '' : 'gov-window-monitor-card-idle' }}">
+                                <div>
+                                    <p class="gov-ticket-label">{{ $windowLabel }}</p>
+                                    @if($entry)
+                                        <p class="gov-window-monitor-ticket">{{ $entry->queue_number }}</p>
+                                    @else
+                                        <div class="gov-window-monitor-placeholder" aria-label="{{ $windowLabel }} is currently idle"></div>
+                                    @endif
+                                </div>
+
+                                <div class="gov-ticket-meta-block {{ $entry ? '' : 'gov-ticket-meta-block-idle' }}">
+                                    <p class="gov-ticket-meta-label">Called at</p>
+                                    <p class="gov-ticket-meta-value {{ $entry ? '' : 'gov-ticket-meta-value-idle' }}">{{ $entry?->displayCalledAt()?->format('h:i:s A') ?? '' }}</p>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
                 </div>
             </section>
         </main>
@@ -139,7 +156,7 @@
             width: 100%;
             height: 100%;
             min-height: 100dvh;
-            overflow: auto;
+            overflow: hidden;
             background:
                 radial-gradient(circle at 10% 5%, rgb(255 255 255 / 0.66), transparent 34%),
                 linear-gradient(180deg, #e6edf5 0%, #dce5f1 100%);
@@ -148,6 +165,7 @@
         .gov-monitor-shell {
             width: 100%;
             min-height: 100%;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             color: var(--gov-ink-900);
@@ -159,8 +177,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1rem;
-            padding: clamp(0.9rem, 2vw, 1.25rem) clamp(1rem, 2vw, 1.45rem);
+            gap: 0.85rem;
+            padding: clamp(0.72rem, 1.5vw, 1rem) clamp(0.85rem, 1.8vw, 1.2rem);
             background:
                 radial-gradient(circle at right top, rgb(255 255 255 / 0.12), transparent 50%),
                 linear-gradient(125deg, var(--gov-blue-950), var(--gov-blue-900));
@@ -184,8 +202,8 @@
         }
 
         .gov-monitor-seal {
-            width: clamp(3rem, 6vw, 4rem);
-            height: clamp(3rem, 6vw, 4rem);
+            width: clamp(2.6rem, 5vw, 3.35rem);
+            height: clamp(2.6rem, 5vw, 3.35rem);
             border-radius: 999px;
             border: 2px solid rgb(255 255 255 / 0.5);
             background: rgb(255 255 255 / 0.92);
@@ -206,7 +224,7 @@
         .gov-monitor-title {
             margin: 0.22rem 0 0;
             color: #fff;
-            font-size: clamp(1.65rem, 3.2vw, 2.9rem);
+            font-size: clamp(1.65rem, 2.8vw, 2.45rem);
             line-height: 1.03;
             font-weight: 700;
         }
@@ -214,7 +232,7 @@
         .gov-monitor-subtitle {
             margin: 0.28rem 0 0;
             color: rgb(226 232 240 / 0.95);
-            font-size: clamp(0.72rem, 1.1vw, 0.88rem);
+            font-size: clamp(0.76rem, 1.12vw, 0.96rem);
             letter-spacing: 0.06em;
             text-transform: uppercase;
             font-weight: 600;
@@ -227,7 +245,7 @@
 
         .gov-monitor-location {
             margin: 0;
-            font-size: clamp(0.62rem, 0.9vw, 0.74rem);
+            font-size: clamp(0.74rem, 1vw, 0.9rem);
             letter-spacing: 0.08em;
             text-transform: uppercase;
             color: rgb(191 219 254 / 0.95);
@@ -237,7 +255,7 @@
         .gov-monitor-time {
             margin: 0.12rem 0 0;
             color: #fff;
-            font-size: clamp(1.5rem, 2.3vw, 2.35rem);
+            font-size: clamp(1.55rem, 2.45vw, 2.45rem);
             line-height: 1;
             font-weight: 800;
             letter-spacing: -0.02em;
@@ -246,7 +264,7 @@
         .gov-monitor-date {
             margin: 0.2rem 0 0;
             color: rgb(219 234 254 / 0.95);
-            font-size: clamp(0.68rem, 0.95vw, 0.84rem);
+            font-size: clamp(0.76rem, 0.96vw, 0.92rem);
             font-weight: 600;
         }
 
@@ -255,8 +273,9 @@
             min-height: 0;
             display: flex;
             flex-direction: column;
-            gap: 0.95rem;
-            padding: clamp(0.75rem, 1.8vw, 1.4rem);
+            gap: 0.65rem;
+            padding: clamp(0.55rem, 1.1vw, 0.9rem);
+            overflow: hidden;
         }
 
         .gov-monitor-alert {
@@ -275,7 +294,7 @@
             min-height: 0;
             display: grid;
             grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-            gap: 0.95rem;
+            gap: 0.65rem;
         }
 
         .gov-monitor-panel {
@@ -291,12 +310,12 @@
         }
 
         .gov-panel-head {
-            padding: 0.9rem 1rem;
+            padding: 0.65rem 0.8rem;
             border-bottom: 1px solid #dce5f1;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 0.7rem;
+            gap: 0.55rem;
             background:
                 radial-gradient(circle at left top, rgb(219 234 254 / 0.52), transparent 40%),
                 linear-gradient(180deg, #fdfefe, #f6f9fd);
@@ -304,15 +323,15 @@
 
         .gov-panel-title {
             margin: 0;
-            font-size: clamp(1.1rem, 1.4vw, 1.6rem);
+            font-size: clamp(1.2rem, 1.35vw, 1.46rem);
             line-height: 1.1;
             color: var(--gov-ink-900);
         }
 
         .gov-status-badge {
             border-radius: 999px;
-            padding: 0.3rem 0.7rem;
-            font-size: 0.72rem;
+            padding: 0.24rem 0.58rem;
+            font-size: 0.78rem;
             letter-spacing: 0.06em;
             text-transform: uppercase;
             font-weight: 700;
@@ -341,7 +360,7 @@
         .gov-panel-body {
             flex: 1;
             min-height: 0;
-            padding: 0.95rem;
+            padding: 0.7rem;
             display: flex;
             flex-direction: column;
         }
@@ -349,12 +368,12 @@
         .gov-ticket-card {
             border-radius: 0.92rem;
             border: 1px solid;
-            padding: 0.95rem;
+            padding: 0.75rem;
             flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            gap: clamp(0.7rem, 1vw, 1rem);
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            align-items: stretch;
+            gap: 0.55rem;
             min-height: 0;
         }
 
@@ -370,39 +389,59 @@
 
         .gov-window-monitor-list {
             display: grid;
-            gap: 0.8rem;
+            grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+            align-items: start;
+            align-content: start;
+            gap: 0.6rem;
+            flex: 0 0 auto;
         }
 
         .gov-window-monitor-card {
             border-radius: 0.92rem;
             border: 1px solid #a7e6cb;
             background: linear-gradient(180deg, #f2fdf8 0%, #e5f8ef 100%);
-            padding: 0.95rem;
+            padding: 0.6rem;
             display: grid;
-            gap: 0.8rem;
+            grid-template-rows: auto auto;
+            align-content: start;
+            gap: 0.4rem;
+            min-height: 0;
+        }
+
+        .gov-window-monitor-card-idle {
+            border-color: #d8e3f0;
+            background: linear-gradient(180deg, #fbfdff 0%, #f2f7fc 100%);
         }
 
         .gov-window-monitor-ticket {
-            margin: 0.35rem 0 0;
+            margin: 0.1rem 0 0;
             color: #067a55;
-            font-size: clamp(2rem, 4vw, 3rem);
+            font-size: clamp(1.7rem, 2.5vw, 2.25rem);
             line-height: 0.95;
             font-weight: 800;
             letter-spacing: -0.03em;
+        }
+
+        .gov-window-monitor-placeholder {
+            margin-top: 0.1rem;
+            min-height: clamp(1.6rem, 2.4vw, 2.15rem);
+            border-radius: 0.78rem;
+            border: 1px dashed #cbd5e1;
+            background: linear-gradient(180deg, rgb(255 255 255 / 0.55), rgb(241 245 249 / 0.82));
         }
 
         .gov-ticket-label {
             margin: 0;
             text-transform: uppercase;
             letter-spacing: 0.11em;
-            font-size: clamp(0.64rem, 0.85vw, 0.8rem);
+            font-size: clamp(0.76rem, 0.95vw, 0.96rem);
             font-weight: 700;
             color: #1f4f7f;
             flex-shrink: 0;
         }
 
         .gov-ticket-number {
-            margin: 0.5rem 0;
+            margin: 0;
             line-height: 0.88;
             text-align: center;
             font-weight: 800;
@@ -413,39 +452,55 @@
             overflow: hidden;
             text-overflow: ellipsis;
             flex-shrink: 0;
+            align-self: center;
         }
 
         .gov-ticket-number-serving {
             color: #067a55;
-            font-size: clamp(3.3rem, 8vw, 8.7rem);
+            font-size: clamp(3.9rem, 7.4vw, 7.6rem);
         }
 
         .gov-ticket-number-next {
             color: #1066a9;
-            font-size: clamp(2.6rem, 6.2vw, 6.8rem);
+            font-size: clamp(2.9rem, 5.6vw, 5.3rem);
         }
 
         .gov-ticket-meta-block {
             border-radius: 0.72rem;
             background: rgb(255 255 255 / 0.58);
             border: 1px solid rgb(203 213 225 / 0.75);
-            padding: 0.65rem 0.78rem;
-            margin-top: auto;
+            padding: 0.42rem 0.56rem;
+            margin-top: 0.15rem;
             flex-shrink: 0;
+        }
+
+        .gov-ticket-card > .gov-ticket-meta-block {
+            margin-top: 0;
+            align-self: stretch;
+        }
+
+        .gov-ticket-meta-block-idle {
+            background: rgb(255 255 255 / 0.46);
+            border-style: dashed;
         }
 
         .gov-ticket-meta-label {
             margin: 0;
             color: var(--gov-ink-700);
-            font-size: 0.86rem;
+            font-size: 0.95rem;
         }
 
         .gov-ticket-meta-value {
             margin: 0.05rem 0 0;
             color: var(--gov-ink-900);
-            font-size: clamp(1.05rem, 1.5vw, 1.4rem);
+            font-size: clamp(1.12rem, 1.25vw, 1.34rem);
             font-weight: 700;
             font-variant-numeric: tabular-nums;
+        }
+
+        .gov-ticket-meta-value-idle {
+            min-height: 1.45em;
+            color: #94a3b8;
         }
 
         .gov-ticket-empty {
@@ -458,7 +513,7 @@
             border-radius: 0.92rem;
             border: 1px dashed #bfd0e6;
             background: #f8fbff;
-            padding: 1rem;
+            padding: 0.8rem;
         }
 
         .gov-ticket-empty-soft {
@@ -469,102 +524,40 @@
         .gov-ticket-empty-title {
             margin: 0;
             color: var(--gov-ink-900);
-            font-size: clamp(1.05rem, 1.3vw, 1.3rem);
+            font-size: clamp(1.3rem, 1.5vw, 1.65rem);
             font-weight: 700;
         }
 
         .gov-ticket-empty-text {
             margin: 0.35rem 0 0;
             color: var(--gov-ink-500);
-            font-size: 0.9rem;
+            font-size: clamp(0.96rem, 1.08vw, 1.16rem);
             line-height: 1.45;
         }
 
-        .gov-panel-recent .gov-panel-head {
+        .gov-panel-windows .gov-panel-head {
             background:
-                radial-gradient(circle at left top, rgb(254 243 199 / 0.56), transparent 40%),
-                linear-gradient(180deg, #fffef7, #fff9eb);
+                radial-gradient(circle at left top, rgb(209 250 229 / 0.55), transparent 40%),
+                linear-gradient(180deg, #fcfffe, #eefcf5);
         }
 
-        .gov-recent-count {
-            border-radius: 999px;
-            background: #fef3c7;
-            border: 1px solid #f4d78f;
-            color: #8a4b06;
-            padding: 0.3rem 0.65rem;
-            font-size: 0.72rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            font-weight: 700;
-            flex-shrink: 0;
+        .gov-panel-windows .gov-panel-body {
+            justify-content: flex-start;
         }
 
-        .gov-ticker {
-            height: 100%;
-            min-height: 5.4rem;
-            border-radius: 0.86rem;
-            border: 1px solid #d8e3f0;
-            background: #f7f9fc;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
+        @media (min-width: 1201px) {
+            .gov-monitor-main > .gov-monitor-grid,
+            .gov-monitor-main > .gov-panel-windows {
+                min-height: 0;
+            }
 
-        .gov-ticker::before,
-        .gov-ticker::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 3rem;
-            pointer-events: none;
-            z-index: 2;
-        }
+            .gov-monitor-main > .gov-monitor-grid {
+                flex: 1.28 1 0%;
+            }
 
-        .gov-ticker::before {
-            left: 0;
-            background: linear-gradient(90deg, #f7f9fc 20%, rgb(247 249 252 / 0));
-        }
-
-        .gov-ticker::after {
-            right: 0;
-            background: linear-gradient(270deg, #f7f9fc 20%, rgb(247 249 252 / 0));
-        }
-
-        .gov-marquee {
-            padding: 1rem 0.95rem;
-            line-height: 1;
-            display: flex;
-            overflow: hidden;
-        }
-
-        .gov-ticker-track {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.7rem;
-            white-space: nowrap;
-            width: max-content;
-            padding: 0 0.95rem;
-            will-change: transform;
-            animation: gov-ticker-scroll 16s linear infinite;
-        }
-
-        .gov-ticker-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 11.5rem;
-            height: 3.2rem;
-            border-radius: 0.72rem;
-            border: 1px solid #d0d9e6;
-            background: #fff;
-            color: #1e2e48;
-            font-size: clamp(1.3rem, 2vw, 2rem);
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            font-variant-numeric: tabular-nums;
-            box-shadow: 0 8px 18px -16px rgb(15 63 115 / 0.95);
+            .gov-monitor-main > .gov-panel-windows {
+                flex: 0.72 1 0%;
+            }
         }
 
         @media (max-width: 1200px) {
@@ -573,11 +566,11 @@
             }
 
             .gov-ticket-number-serving {
-                font-size: clamp(3rem, 11vw, 6.7rem);
+                font-size: clamp(3.8rem, 11.9vw, 7.45rem);
             }
 
             .gov-ticket-number-next {
-                font-size: clamp(2.3rem, 8.5vw, 5.4rem);
+                font-size: clamp(3rem, 9.3vw, 5.75rem);
             }
         }
 
@@ -602,15 +595,53 @@
                 padding: 0.78rem;
             }
 
-            .gov-ticker-pill {
-                min-width: 9rem;
-                height: 2.8rem;
-                font-size: 1.1rem;
+            .gov-window-monitor-list {
+                grid-template-columns: 1fr;
             }
 
-            .gov-ticker-track {
-                gap: 0.55rem;
-                animation-duration: 13s;
+            .gov-window-monitor-ticket {
+                font-size: clamp(1.8rem, 7vw, 2.45rem);
+            }
+        }
+
+        @media (max-height: 900px) {
+            .gov-monitor-header {
+                padding: 0.62rem 0.9rem;
+            }
+
+            .gov-monitor-main {
+                gap: 0.5rem;
+                padding: 0.5rem 0.65rem;
+            }
+
+            .gov-monitor-grid {
+                gap: 0.5rem;
+            }
+
+            .gov-panel-head,
+            .gov-panel-body {
+                padding: 0.55rem 0.68rem;
+            }
+
+            .gov-ticket-card,
+            .gov-window-monitor-card {
+                padding: 0.5rem;
+            }
+
+            .gov-ticket-number-serving {
+                font-size: clamp(3.2rem, 6vw, 5.9rem);
+            }
+
+            .gov-ticket-number-next {
+                font-size: clamp(2.45rem, 4.6vw, 4.15rem);
+            }
+
+            .gov-window-monitor-ticket {
+                font-size: clamp(1.48rem, 2.25vw, 1.95rem);
+            }
+
+            .gov-window-monitor-placeholder {
+                min-height: 1.35rem;
             }
         }
 
@@ -622,15 +653,6 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
-            }
-        }
-
-        @keyframes gov-ticker-scroll {
-            from {
-                transform: translateX(100%);
-            }
-            to {
-                transform: translateX(-100%);
             }
         }
 

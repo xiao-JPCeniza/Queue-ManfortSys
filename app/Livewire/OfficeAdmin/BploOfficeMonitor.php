@@ -102,24 +102,12 @@ class BploOfficeMonitor extends Component
             ->orderedForService()
             ->first();
 
-        $recentTransactions = QueueEntry::where('office_id', $this->office->id)
-            ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
-            ->whereNotNull('served_at')
-            ->whereBetween('served_at', $this->manilaDayBounds())
-            ->whereNull('recent_transaction_cleared_at')
-            ->orderByDesc('served_at')
-            ->limit(20)
-            ->get()
-            ->sortBy('served_at')
-            ->values();
-
         $manilaNow = now('Asia/Manila');
 
         return view('livewire.office-admin.general-office-live-monitor', [
             'serving' => $servingEntries->first(),
             'servingEntries' => $servingEntries,
             'nextInline' => $nextInline,
-            'recentTransactions' => $recentTransactions,
             'manilaNow' => $manilaNow,
             'announcementPayload' => $this->getOfficeAnnouncement($this->office),
         ]);

@@ -11,16 +11,16 @@ class OfficeSeeder extends Seeder
     {
         $offices = [
             // Core offices (existing)
-            ['name' => 'HRMO', 'slug' => 'hrmo', 'prefix' => 'HRMO', 'description' => 'Human Resource Management Office', 'service_window_count' => 1],
-            ['name' => 'Treasury', 'slug' => 'treasury', 'prefix' => 'TRSY', 'description' => 'Municipal Treasurer\'s Office', 'service_window_count' => 8],
+            ['name' => 'HRMO', 'slug' => 'hrmo', 'prefix' => 'HRMO', 'description' => 'Human Resource Management Office', 'service_window_count' => 5],
+            ['name' => 'Treasury', 'slug' => 'treasury', 'prefix' => 'TRSY', 'description' => 'Municipal Treasurer\'s Office', 'service_window_count' => 5],
             ['name' => 'Accounting', 'slug' => 'accounting', 'prefix' => 'ACCT', 'description' => 'Municipal Accounting Office', 'service_window_count' => 1],
             ['name' => 'Civil Registry', 'slug' => 'civil-registry', 'prefix' => 'CR', 'description' => 'Local Civil Registry Office', 'service_window_count' => 1],
-            ['name' => 'Business Permits', 'slug' => 'business-permits', 'prefix' => 'BPLO', 'description' => 'Business Permits and Licensing Office', 'service_window_count' => 1],
+            ['name' => 'Business Permits', 'slug' => 'business-permits', 'prefix' => 'BPLO', 'description' => 'Business Permits and Licensing Office', 'service_window_count' => 5],
             // From OfficeDesignationSeeder (MISO360) – additional offices
             ['name' => 'Assessor\'s Office', 'slug' => 'assessors-office', 'prefix' => 'ASSR', 'description' => 'Municipal Assessor\'s Office', 'service_window_count' => 1],
-            ['name' => 'MENRO', 'slug' => 'menro', 'prefix' => 'MENRO', 'description' => 'Municipal Environment and Natural Resources Office', 'service_window_count' => 1],
+            ['name' => 'MENRO', 'slug' => 'menro', 'prefix' => 'MENRO', 'description' => 'Municipal Environment and Natural Resources Office', 'service_window_count' => 7],
             ['name' => 'MHO', 'slug' => 'mho', 'prefix' => 'MHO', 'description' => 'Municipal Health Office', 'service_window_count' => 1],
-            ['name' => 'MSWDO', 'slug' => 'mswdo', 'prefix' => 'MSWDO', 'description' => 'Municipal Social Welfare and Development Office', 'service_window_count' => 1],
+            ['name' => 'MSWDO', 'slug' => 'mswdo', 'prefix' => 'MSWDO', 'description' => 'Municipal Social Welfare and Development Office', 'service_window_count' => 7],
             ['name' => 'OBO', 'slug' => 'obo', 'prefix' => 'OBO', 'description' => 'Office of the Building Official', 'service_window_count' => 1],
        ];
 

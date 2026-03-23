@@ -18,16 +18,8 @@ class AllOfficesMonitor extends Component
     public function render()
     {
         [$dayStart, $dayEnd] = $this->manilaDayBounds();
-        $todayRecentTransactions = $this->todayRecentTransactions($dayStart, $dayEnd);
-        $recentTransactionsByOffice = $todayRecentTransactions
-            ->groupBy('office_id')
-            ->map(fn (Collection $entries) => $entries
-                ->take(7)
-                ->sortBy('served_at')
-                ->values());
-
         $todayEntries = QueueEntry::query()
-            ->with('office:id,name,slug,prefix')
+            ->with('office:id,name,slug,prefix,service_window_count')
             ->whereBetween('created_at', [$dayStart, $dayEnd])
             ->orderBy('created_at')
             ->orderBy('id')
@@ -38,11 +30,6 @@ class AllOfficesMonitor extends Component
             ->groupBy('office_id')
             ->map(fn (Collection $officeEntries) => $this->buildOfficeRow($officeEntries))
             ->filter()
-            ->map(function (array $row) use ($recentTransactionsByOffice) {
-                $row['recentTransactions'] = $recentTransactionsByOffice->get($row['office']->id, collect());
-
-                return $row;
-            })
             ->sort(fn (array $left, array $right) => $this->compareOfficeRows($left, $right))
             ->values();
 
@@ -134,18 +121,6 @@ class AllOfficesMonitor extends Component
         }
 
         return strtotime($triggeredAt) ?: 0;
-    }
-
-    private function todayRecentTransactions($dayStart, $dayEnd): Collection
-    {
-        return QueueEntry::query()
-            ->with('office:id,name,slug,prefix')
-            ->whereIn('status', [QueueEntry::STATUS_COMPLETED, QueueEntry::STATUS_NOT_SERVED])
-            ->whereNotNull('served_at')
-            ->whereBetween('served_at', [$dayStart, $dayEnd])
-            ->whereNull('recent_transaction_cleared_at')
-            ->orderByDesc('served_at')
-            ->get();
     }
 
     private function manilaDayBounds(): array

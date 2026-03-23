@@ -3,7 +3,11 @@
     @php($isAccountingOffice = $office->slug === 'accounting')
     @php($isMhoOffice = $office->slug === 'mho')
     @php($isMswdoOffice = $office->slug === 'mswdo')
+<<<<<<< HEAD
     @php($usesAdvancedQueueDashboard = true)
+=======
+    @php($usesAdvancedQueueDashboard = in_array($office->slug, ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'menro', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
+>>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     @php($reportOfficeLabels = [
         'hrmo' => 'HRMO',
         'business-permits' => 'BPLO',

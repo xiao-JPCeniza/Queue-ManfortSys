@@ -30,7 +30,7 @@ class AllOfficesMonitorTest extends TestCase
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
-        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO');
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', 2);
         $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY');
         $mswdo = $this->createOffice('MSWDO', 'mswdo', 'MSWDO');
 
@@ -116,6 +116,7 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertStringContainsString(route('media.tourism-video'), $html);
     }
 
+<<<<<<< HEAD
     public function test_public_live_monitor_page_includes_the_idle_video_playlist(): void
     {
         $storageRoot = $this->fakeLiveMonitorStorage();
@@ -153,10 +154,13 @@ class AllOfficesMonitorTest extends TestCase
     }
 
     public function test_it_shows_recent_transactions_for_the_featured_office_only(): void
+=======
+    public function test_it_shows_active_windows_for_the_featured_office_only(): void
+>>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
-        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO');
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', 2);
         $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY');
 
         $hrmoServing = $this->createQueueEntry(
@@ -193,11 +197,14 @@ class AllOfficesMonitorTest extends TestCase
         $this->setServedAt($treasurySkipped, Carbon::create(2026, 3, 9, 9, 10, 0, 'Asia/Manila'));
 
         $html = Livewire::test(AllOfficesMonitor::class)->html();
+        $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</section>');
 
-        $this->assertSame(1, substr_count($html, 'Recent Transactions Today'));
+        $this->assertSame(1, substr_count($html, 'Windows Currently Serving'));
         $this->assertStringContainsString('HRMO', $html);
-        $this->assertStringContainsString('HRMO-009', $html);
-        $this->assertStringContainsString('gov-ticker-track', $html);
+        $this->assertStringContainsString('HRMO-001', $windowsSection);
+        $this->assertStringContainsString('Window 2', $windowsSection);
+        $this->assertStringContainsString('gov-window-monitor-card-idle', $windowsSection);
+        $this->assertStringContainsString('1 Active', $windowsSection);
         $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringNotContainsString('TRSY-004', $html);
     }
@@ -289,11 +296,11 @@ class AllOfficesMonitorTest extends TestCase
         $this->setServedAt($treasuryRecent, Carbon::create(2026, 3, 9, 8, 55, 0, 'Asia/Manila'));
 
         $html = Livewire::test(AllOfficesMonitor::class)->html();
+        $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</section>');
 
-        $this->assertSame(1, substr_count($html, 'Recent Transactions Today'));
-        $this->assertStringContainsString('ACCT-009', $html);
-        $this->assertSame(0, substr_count($html, 'TRSY-004'));
-        $this->assertStringContainsString('gov-ticker-track', $html);
+        $this->assertSame(1, substr_count($html, 'Windows Currently Serving'));
+        $this->assertStringContainsString('ACCT-001', $windowsSection);
+        $this->assertStringNotContainsString('TRSY-004', $html);
         $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringContainsString('Accounting', $html);
         $this->assertStringNotContainsString('Treasury', $html);
@@ -303,7 +310,7 @@ class AllOfficesMonitorTest extends TestCase
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 18, 12, 52, 14, 'Asia/Manila'));
 
-        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO');
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', 4);
 
         $olderServing = $this->createQueueEntry(
             office: $hrmo,
@@ -342,15 +349,21 @@ class AllOfficesMonitorTest extends TestCase
         $this->setCalledAt($middleServing, Carbon::create(2026, 3, 18, 12, 45, 36, 'Asia/Manila'));
 
         $html = Livewire::test(AllOfficesMonitor::class)->html();
+        $servingNowSection = $this->extractSection($html, 'Serving Now', 'Next in Line');
+        $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</section>');
 
         $this->assertStringContainsString('1 Active', $html);
-        $this->assertStringContainsString($latestServing->queue_number, $html);
-        $this->assertStringContainsString('Window 4', $html);
-        $this->assertStringNotContainsString($olderServing->queue_number, $html);
-        $this->assertStringNotContainsString($middleServing->queue_number, $html);
+        $this->assertStringContainsString($latestServing->queue_number, $servingNowSection);
+        $this->assertStringContainsString('Window 4', $servingNowSection);
+        $this->assertStringNotContainsString($olderServing->queue_number, $servingNowSection);
+        $this->assertStringNotContainsString($middleServing->queue_number, $servingNowSection);
+        $this->assertStringContainsString('3 Active', $windowsSection);
+        $this->assertStringContainsString($olderServing->queue_number, $windowsSection);
+        $this->assertStringContainsString($middleServing->queue_number, $windowsSection);
+        $this->assertStringContainsString($latestServing->queue_number, $windowsSection);
     }
 
-    private function createOffice(string $name, string $slug, string $prefix): Office
+    private function createOffice(string $name, string $slug, string $prefix, int $serviceWindowCount = 1): Office
     {
         return Office::create([
             'name' => $name,
@@ -358,6 +371,7 @@ class AllOfficesMonitorTest extends TestCase
             'prefix' => $prefix,
             'description' => $name.' services',
             'next_number' => 1,
+            'service_window_count' => $serviceWindowCount,
             'tickets_accommodated_total' => 0,
             'is_active' => true,
         ]);
@@ -399,6 +413,7 @@ class AllOfficesMonitorTest extends TestCase
         ]);
     }
 
+<<<<<<< HEAD
     private function fakeLiveMonitorStorage(): string
     {
         $storageRoot = storage_path('framework/testing/live-monitor-videos/'.Str::uuid());
@@ -413,5 +428,18 @@ class AllOfficesMonitorTest extends TestCase
     private function liveMonitorAbsolutePath(string $storageRoot, string $relativePath): string
     {
         return rtrim($storageRoot, '\\/').DIRECTORY_SEPARATOR.str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath);
+=======
+    private function extractSection(string $html, string $startMarker, string $endMarker): string
+    {
+        $start = strpos($html, $startMarker);
+
+        $this->assertNotFalse($start, sprintf('Failed to find start marker [%s].', $startMarker));
+
+        $end = strpos($html, $endMarker, $start);
+
+        $this->assertNotFalse($end, sprintf('Failed to find end marker [%s].', $endMarker));
+
+        return substr($html, $start, $end - $start);
+>>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     }
 }

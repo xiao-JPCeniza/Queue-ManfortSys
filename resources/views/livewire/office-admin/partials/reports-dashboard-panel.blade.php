@@ -359,12 +359,12 @@
                     <p class="gov-report-card-meta">Peak month: {{ $monthlyPeakMonthLabel }}</p>
                 </div>
 
-                <div class="gov-report-chart-wrap mt-5 overflow-x-auto">
-                    <div class="gov-report-chart-canvas min-w-[680px]">
-                        <div class="gov-report-axis-stage gov-report-axis-stage-compact">
+                <div class="gov-report-chart-wrap gov-report-chart-wrap-monthly mt-5">
+                    <div class="gov-report-chart-canvas gov-report-chart-canvas-monthly">
+                        <div class="gov-report-axis-stage gov-report-axis-stage-compact gov-report-axis-stage-monthly">
                             @foreach($monthlyVolumeSeries as $monthPoint)
                                 @php($monthBarHeight = $monthPoint['total'] > 0 ? max(8, (int) round(($monthPoint['total'] / $monthlyVolumeMax) * 185)) : 8)
-                                <div class="gov-report-axis-column gov-report-axis-column-compact">
+                                <div class="gov-report-axis-column gov-report-axis-column-compact gov-report-axis-column-monthly">
                                     <div
                                         class="gov-report-chart-bar gov-report-chart-bar-secondary {{ $monthPoint['total'] > 0 ? 'bg-amber-500' : 'bg-slate-200' }}"
                                         style="height: {{ $monthBarHeight }}px;"
@@ -903,6 +903,16 @@
             padding: 1rem 0.9rem 0.85rem;
         }
 
+        .gov-report-chart-wrap-monthly {
+            overflow: hidden;
+        }
+
+        .gov-report-chart-canvas-monthly {
+            width: 100%;
+            min-width: 0;
+            padding-right: 0.7rem;
+        }
+
         .gov-report-axis-stage {
             display: flex;
             align-items: flex-end;
@@ -922,6 +932,10 @@
             gap: 0.7rem;
         }
 
+        .gov-report-axis-stage-monthly {
+            gap: 0.35rem;
+        }
+
         .gov-report-axis-column {
             display: flex;
             min-width: 24px;
@@ -934,6 +948,10 @@
 
         .gov-report-axis-column-compact {
             min-width: 34px;
+        }
+
+        .gov-report-axis-column-monthly {
+            min-width: 0;
         }
 
         .gov-report-chart-bar {

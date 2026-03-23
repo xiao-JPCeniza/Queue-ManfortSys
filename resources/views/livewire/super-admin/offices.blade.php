@@ -316,14 +316,25 @@
                             <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
                             <td class="px-6 py-4">
-                                <button
-                                    type="button"
-                                    wire:click="deleteOffice({{ $office->id }})"
-                                    wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
-                                    class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                                >
-                                    Delete
-                                </button>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        wire:click="resetNumbering({{ $office->id }})"
+                                        wire:confirm="Reset queue numbering for {{ $office->name }} to 1? This will clear this office's generated tickets for today."
+                                        class="inline-flex items-center rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                                    >
+                                        Reset Queue #
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="deleteOffice({{ $office->id }})"
+                                        wire:confirm="Delete {{ $office->display_name }}? This will remove the office, delete its queue entries, and delete any linked users."
+                                        class="inline-flex items-center rounded-lg bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     @empty
