@@ -9,12 +9,20 @@ use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\OfficeSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class SuperAdminOfficesTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+
+        parent::tearDown();
+    }
 
     public function test_super_admin_can_view_the_offices_page_and_only_public_queue_offices_are_listed(): void
     {
@@ -154,6 +162,50 @@ class SuperAdminOfficesTest extends TestCase
             'id' => $treasury->id,
             'slug' => 'treasury',
             'service_window_count' => 5,
+        ]);
+    }
+
+    public function test_super_admin_can_reset_queue_numbering_for_a_specific_office_from_the_offices_page(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 23, 10, 0, 0, 'Asia/Manila'));
+
+        $superAdmin = $this->createSuperAdminUser();
+        $office = $this->createOffice('HRMO', 'hrmo', 'HRMO', true, 5);
+        $office->update(['next_number' => 14]);
+
+        $yesterdayEntry = QueueEntry::create([
+            'office_id' => $office->id,
+            'queue_number' => 'HRMO-013',
+            'status' => QueueEntry::STATUS_WAITING,
+        ]);
+
+        $todayEntry = QueueEntry::create([
+            'office_id' => $office->id,
+            'queue_number' => 'HRMO-014',
+            'status' => QueueEntry::STATUS_WAITING,
+        ]);
+
+        QueueEntry::whereKey($yesterdayEntry)->update([
+            'created_at' => Carbon::create(2026, 3, 22, 16, 0, 0, 'Asia/Manila')
+                ->setTimezone((string) config('app.timezone', 'UTC')),
+        ]);
+
+        QueueEntry::whereKey($todayEntry)->update([
+            'created_at' => Carbon::create(2026, 3, 23, 9, 45, 0, 'Asia/Manila')
+                ->setTimezone((string) config('app.timezone', 'UTC')),
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->call('resetNumbering', $office->id)
+            ->assertSee('Queue numbering reset for HRMO. The next generated number will start from 001.');
+
+        $this->assertDatabaseMissing('queue_entries', ['id' => $todayEntry->id]);
+        $this->assertDatabaseHas('queue_entries', ['id' => $yesterdayEntry->id]);
+        $this->assertDatabaseHas('offices', [
+            'id' => $office->id,
+            'next_number' => 1,
         ]);
     }
 

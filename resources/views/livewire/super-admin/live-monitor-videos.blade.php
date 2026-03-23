@@ -44,7 +44,7 @@
                         type="button"
                         x-on:click="openUploadModal()"
                         class="inline-flex min-h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition whitespace-nowrap"
-                        style="background: linear-gradient(135deg, #db2777, #ec4899); box-shadow: 0 12px 24px rgba(219, 39, 119, 0.25);"
+                        style="background: linear-gradient(135deg, #61a212, #61a212); box-shadow: 0 12px 24px rgba(192, 219, 39, 0.25);"
                     >
                         + Add Video
                     </button>
@@ -304,7 +304,7 @@
                             type="submit"
                             x-bind:disabled="isUploading"
                             class="inline-flex min-h-12 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-70"
-                            style="background: linear-gradient(135deg, #db2777, #ec4899); box-shadow: 0 12px 24px rgba(219, 39, 119, 0.25);"
+                            style="background: linear-gradient(135deg, #61a212, #61a212); box-shadow: 0 12px 24px rgba(192, 219, 39, 0.25);"
                         >
                             Save
                         </button>

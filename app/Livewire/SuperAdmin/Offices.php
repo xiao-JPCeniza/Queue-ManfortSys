@@ -228,6 +228,30 @@ class Offices extends Component
         session()->flash('success', "{$officeName} was deleted from the public queue.");
     }
 
+    public function resetNumbering(int $officeId): void
+    {
+        $office = Office::query()->find($officeId);
+
+        if (! $office) {
+            return;
+        }
+
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+        QueueEntry::query()
+            ->where('office_id', $office->id)
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->delete();
+
+        $office->update(['next_number' => 1]);
+        $office->refresh();
+
+        session()->flash(
+            'success',
+            "Queue numbering reset for {$office->name}. The next generated number will start from 001."
+        );
+    }
+
     public function updateServiceWindowCount(?string $officeSlug = null, int|string|null $windowCountSelection = null): void
     {
         if ($officeSlug !== null) {
@@ -326,6 +350,17 @@ class Offices extends Component
                 ->activePublicQueue()
                 ->get(['id', 'name', 'slug', 'prefix', 'description', 'service_window_count'])
         );
+    }
+
+    private function manilaDayBounds(): array
+    {
+        $manilaNow = now('Asia/Manila');
+        $dbTimezone = (string) config('app.timezone', 'UTC');
+
+        return [
+            $manilaNow->copy()->startOfDay()->setTimezone($dbTimezone),
+            $manilaNow->copy()->endOfDay()->setTimezone($dbTimezone),
+        ];
     }
 
     private function syncServiceWindowSelection(?Collection $officeOptions = null): void

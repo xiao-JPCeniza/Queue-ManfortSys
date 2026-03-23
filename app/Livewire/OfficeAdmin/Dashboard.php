@@ -23,6 +23,7 @@ class Dashboard extends Component
         'bplo',
         'mho',
         'mswdo',
+        'menro',
         'treasury',
         'accounting',
         'civil-registry',

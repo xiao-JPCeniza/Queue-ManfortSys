@@ -1,0 +1,25 @@
+
+   FAIL  Tests\Feature\OfficeQueueDashboardTest
+  ⨯ menro dashboard shows clear waiting line quick action                                                        0.85s  
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\OfficeQueueDashboardTest > menro dashboard shows clear waiting line quick ac…  ViewException   
+  tempnam(): file created in the system's temporary directory (View: C:\Users\Jorjien\Desktop\Queue-ManfortSys\resources\views\livewire\office-admin\dashboard.blade.php)
+
+  at vendor\laravel\framework\src\Illuminate\Filesystem\Filesystem.php:222
+    218▕         clearstatcache(true, $path);
+    219▕ 
+    220▕         $path = realpath($path) ?: $path;
+    221▕ 
+  ➜ 222▕         $tempPath = tempnam(dirname($path), basename($path));
+    223▕ 
+    224▕         // Fix permissions of tempPath because `tempnam()` creates it with permissions set to 0600...
+    225▕         if (! is_null($mode)) {
+    226▕             chmod($tempPath, $mode);
+
+  1   vendor\laravel\framework\src\Illuminate\Filesystem\Filesystem.php:222
+  2   vendor\livewire\livewire\src\Mechanisms\ExtendBlade\ExtendedCompilerEngine.php:58
+
+
+  Tests:    1 failed (0 assertions)
+  Duration: 1.01s
+

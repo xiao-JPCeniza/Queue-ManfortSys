@@ -305,9 +305,67 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
-    private function createOffice(int $serviceWindowCount = 1): Office
+    public function test_office_admin_can_reset_queue_numbering_for_today(): void
     {
-        return Office::create([
+        Carbon::setTestNow(Carbon::create(2026, 3, 9, 11, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice();
+        $office->update(['next_number' => 12]);
+
+        $user = User::factory()->create(['office_id' => $office->id]);
+
+        $yesterdayEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'ACCT-009',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 8, 15, 0, 0, 'Asia/Manila')
+        );
+
+        $todayEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'ACCT-010',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 9, 10, 45, 0, 'Asia/Manila')
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class, ['office' => $office])
+            ->call('resetTickets')
+            ->assertSee('Tickets reset. The next generated number will start from 001.');
+
+        $this->assertDatabaseMissing('queue_entries', ['id' => $todayEntry->id]);
+        $this->assertDatabaseHas('queue_entries', ['id' => $yesterdayEntry->id]);
+        $this->assertDatabaseHas('offices', [
+            'id' => $office->id,
+            'next_number' => 1,
+        ]);
+    }
+
+    public function test_menro_dashboard_shows_clear_waiting_line_quick_action(): void
+    {
+        $office = $this->createOffice(
+            serviceWindowCount: 7,
+            attributes: [
+                'name' => 'MENRO',
+                'slug' => 'menro',
+                'prefix' => 'MENRO',
+                'description' => 'Municipal Environment and Natural Resources Office',
+            ]
+        );
+
+        $user = User::factory()->create(['office_id' => $office->id]);
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class, ['office' => $office])
+            ->assertSee('Quick Actions')
+            ->assertSee('Clear Waiting Line');
+    }
+
+    private function createOffice(int $serviceWindowCount = 1, array $attributes = []): Office
+    {
+        return Office::create(array_merge([
             'name' => 'Accounting Office',
             'slug' => 'accounting',
             'prefix' => 'ACCT',
@@ -316,7 +374,7 @@ class OfficeQueueDashboardTest extends TestCase
             'service_window_count' => $serviceWindowCount,
             'tickets_accommodated_total' => 0,
             'is_active' => true,
-        ]);
+        ], $attributes));
     }
 
     private function createQueueEntry(

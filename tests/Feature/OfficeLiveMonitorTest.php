@@ -43,10 +43,17 @@ class OfficeLiveMonitorTest extends TestCase
         );
 
         $html = Livewire::test(BploOfficeMonitor::class, ['office' => $office])->html();
+        $servingNowSection = $this->extractSection($html, 'Serving Now', 'Next in Line');
+        $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</main>');
 
         $this->assertStringContainsString('1 Active', $html);
-        $this->assertStringContainsString($latestServing->queue_number, $html);
-        $this->assertStringContainsString('Window 3', $html);
+        $this->assertStringContainsString($latestServing->queue_number, $servingNowSection);
+        $this->assertStringContainsString('Window 3', $servingNowSection);
+        $this->assertStringContainsString('Windows Currently Serving', $html);
+        $this->assertStringContainsString('2 Active', $windowsSection);
+        $this->assertStringContainsString($latestServing->queue_number, $windowsSection);
+        $this->assertStringContainsString($olderServing->queue_number, $windowsSection);
+        $this->assertStringContainsString('Window 4', $windowsSection);
         $this->assertStringContainsString('data-has-current-transaction="true"', $html);
         $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
         $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
@@ -54,8 +61,8 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString('wire:ignore', $html);
         $this->assertStringContainsString(route('media.tourism-video'), $html);
         $this->assertStringNotContainsString('records</span>', $html);
-        $this->assertStringNotContainsString($olderServing->queue_number, $html);
-        $this->assertStringNotContainsString('Window 4', $html);
+        $this->assertStringNotContainsString($olderServing->queue_number, $servingNowSection);
+        $this->assertStringNotContainsString('Window 4', $servingNowSection);
     }
 
     public function test_hrmo_monitor_displays_only_the_latest_called_ticket(): void
@@ -79,10 +86,17 @@ class OfficeLiveMonitorTest extends TestCase
         );
 
         $html = Livewire::test(HrmoOfficeMonitor::class, ['office' => $office])->html();
+        $servingNowSection = $this->extractSection($html, 'Serving Now', 'Next in Line');
+        $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</main>');
 
         $this->assertStringContainsString('1 Active', $html);
-        $this->assertStringContainsString($latestServing->queue_number, $html);
-        $this->assertStringContainsString('Window 2', $html);
+        $this->assertStringContainsString($latestServing->queue_number, $servingNowSection);
+        $this->assertStringContainsString('Window 2', $servingNowSection);
+        $this->assertStringContainsString('Windows Currently Serving', $html);
+        $this->assertStringContainsString('2 Active', $windowsSection);
+        $this->assertStringContainsString($latestServing->queue_number, $windowsSection);
+        $this->assertStringContainsString($olderServing->queue_number, $windowsSection);
+        $this->assertStringContainsString('Window 1', $windowsSection);
         $this->assertStringContainsString('data-has-current-transaction="true"', $html);
         $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
         $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
@@ -90,8 +104,8 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString('wire:ignore', $html);
         $this->assertStringContainsString(route('media.tourism-video'), $html);
         $this->assertStringNotContainsString('records</span>', $html);
-        $this->assertStringNotContainsString($olderServing->queue_number, $html);
-        $this->assertStringNotContainsString('Window 1', $html);
+        $this->assertStringNotContainsString($olderServing->queue_number, $servingNowSection);
+        $this->assertStringNotContainsString('Window 1', $servingNowSection);
     }
 
     public function test_bplo_monitor_marks_a_waiting_next_ticket_as_non_idle(): void
@@ -177,5 +191,18 @@ class OfficeLiveMonitorTest extends TestCase
         ]);
 
         return $entry->fresh();
+    }
+
+    private function extractSection(string $html, string $startMarker, string $endMarker): string
+    {
+        $start = strpos($html, $startMarker);
+
+        $this->assertNotFalse($start, sprintf('Failed to find start marker [%s].', $startMarker));
+
+        $end = strpos($html, $endMarker, $start);
+
+        $this->assertNotFalse($end, sprintf('Failed to find end marker [%s].', $endMarker));
+
+        return substr($html, $start, $end - $start);
     }
 }

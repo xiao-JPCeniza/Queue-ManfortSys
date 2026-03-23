@@ -1,7 +1,7 @@
 @php($showLiveMonitor = $showLiveMonitor ?? false)
 @php($liveMonitorRoute = $liveMonitorRoute ?? '')
 @php($liveMonitorLabel = $liveMonitorLabel ?? 'Open Live Monitor')
-@php($isAdvancedQueueOffice = in_array($office->slug, ['hrmo', 'mho', 'mswdo', 'business-permits', 'bplo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
+@php($isAdvancedQueueOffice = in_array($office->slug, ['hrmo', 'mho', 'mswdo', 'menro', 'business-permits', 'bplo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
 @php($manilaNow = now('Asia/Manila'))
 
 <div class="gov-queue-shell">
@@ -105,7 +105,6 @@
             <section class="gov-card gov-quick-card" aria-labelledby="quick-actions-heading">
                 <div class="gov-card-head">
                     <h2 id="quick-actions-heading" class="gov-font-heading gov-card-title">Quick Actions</h2>
-                    <p class="gov-card-subtitle">Open official links used by staff and clients during operations.</p>
                 </div>
 
                 <div class="gov-card-body pt-4">
@@ -113,14 +112,22 @@
                         @if($showLiveMonitor && $liveMonitorRoute !== '')
                             <a
                                 href="{{ route($liveMonitorRoute, $office->slug) }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onclick="return confirm('{{ $liveMonitorLabel }} in a new tab?');"
                                 class="gov-btn gov-btn-primary"
                             >
                                 {{ $liveMonitorLabel }}
                             </a>
                         @endif
+
+                        <button
+                            type="button"
+                            wire:click="resetTickets"
+                            wire:confirm="Reset queue numbering for {{ $office->name }} to 1? This will clear this office's generated tickets for today."
+                            wire:loading.attr="disabled"
+                            wire:target="resetTickets"
+                            class="gov-btn gov-btn-secondary"
+                        >
+                            Reset Queue Number
+                        </button>
 
                         @if($isAdvancedQueueOffice)
                             <button
@@ -497,6 +504,13 @@
             color: #1f2937;
             border-color: #e59f17;
             box-shadow: 0 10px 16px -14px rgb(180 83 9 / 0.65);
+        }
+
+        .gov-btn-secondary {
+            background: linear-gradient(180deg, #fff8e8 0%, #fef0cf 100%);
+            color: #9a5d06;
+            border-color: #f0cf8e;
+            box-shadow: 0 10px 16px -14px rgb(180 83 9 / 0.45);
         }
 
         .gov-btn-complete {
