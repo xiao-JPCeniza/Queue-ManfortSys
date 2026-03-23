@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
 
 class QueueEntry extends Model
@@ -15,6 +16,9 @@ class QueueEntry extends Model
     public const STATUS_NOT_SERVED = 'not_served';
     public const STATUS_CANCELLED = 'cancelled';
     public const TYPE_REGULAR = 'regular';
+    public const TYPE_PWD = 'pwd';
+    public const TYPE_SENIOR_CITIZEN = 'senior_citizen';
+    public const TYPE_PREGNANT = 'pregnant';
     public const TYPE_SENIOR_PREGNANT = 'senior_pregnant';
 
     protected $fillable = [
@@ -69,7 +73,6 @@ class QueueEntry extends Model
     public function scopeOrderedForService(Builder $query): Builder
     {
         return $query
-            ->orderByRaw('CASE WHEN client_type = ? THEN 0 ELSE 1 END', [self::TYPE_SENIOR_PREGNANT])
             ->orderBy('created_at')
             ->orderBy('id');
     }
@@ -81,11 +84,57 @@ class QueueEntry extends Model
                 'label' => 'Regular',
                 'description' => 'Standard queue ticket for the selected office.',
             ],
+            self::TYPE_PWD => [
+                'label' => 'PWD',
+                'description' => 'Priority assistance ticket for persons with disabilities.',
+            ],
+            self::TYPE_SENIOR_CITIZEN => [
+                'label' => 'Senior Citizen',
+                'description' => 'Priority assistance ticket for senior citizens.',
+            ],
+            self::TYPE_PREGNANT => [
+                'label' => 'Pregnant',
+                'description' => 'Priority assistance ticket for pregnant clients.',
+            ],
             self::TYPE_SENIOR_PREGNANT => [
                 'label' => 'Priority',
-                'description' => 'Priority assistance ticket for senior citizens and pregnant clients.',
+                'description' => 'Legacy priority assistance ticket.',
             ],
         ];
+    }
+
+    public static function selectableClientTypeOptions(): array
+    {
+        return [
+            self::TYPE_REGULAR => self::clientTypeOptions()[self::TYPE_REGULAR],
+            ...self::priorityClientTypeOptions(),
+        ];
+    }
+
+    public static function priorityClientTypeOptions(): array
+    {
+        $options = self::clientTypeOptions();
+
+        return [
+            self::TYPE_PWD => $options[self::TYPE_PWD],
+            self::TYPE_SENIOR_CITIZEN => $options[self::TYPE_SENIOR_CITIZEN],
+            self::TYPE_PREGNANT => $options[self::TYPE_PREGNANT],
+        ];
+    }
+
+    public static function priorityClientTypes(bool $includeLegacy = false): array
+    {
+        $priorityTypes = [
+            self::TYPE_PWD,
+            self::TYPE_SENIOR_CITIZEN,
+            self::TYPE_PREGNANT,
+        ];
+
+        if ($includeLegacy) {
+            $priorityTypes[] = self::TYPE_SENIOR_PREGNANT;
+        }
+
+        return $priorityTypes;
     }
 
     public static function normalizeClientType(?string $clientType): string
@@ -109,17 +158,79 @@ class QueueEntry extends Model
 
     public function isPriorityClient(): bool
     {
-        return self::normalizeClientType($this->client_type) === self::TYPE_SENIOR_PREGNANT;
+        return in_array(
+            self::normalizeClientType($this->client_type),
+            self::priorityClientTypes(includeLegacy: true),
+            true
+        );
     }
 
     public function serviceOrderKey(): string
     {
         return sprintf(
-            '%d-%020d-%010d',
-            $this->isPriorityClient() ? 0 : 1,
+            '%020d-%010d',
             $this->created_at?->getTimestamp() ?? 0,
             $this->id
         );
+    }
+
+    public static function sortWaitingEntriesForService(Collection $waitingEntries, ?self $lastCalledEntry = null): Collection
+    {
+        $orderedWaitingEntries = $waitingEntries
+            ->sortBy(fn (self $entry) => sprintf(
+                '%020d-%010d',
+                $entry->created_at?->getTimestamp() ?? 0,
+                $entry->id
+            ))
+            ->values();
+
+        if ($orderedWaitingEntries->count() <= 1) {
+            return $orderedWaitingEntries;
+        }
+
+        $priorityEntries = $orderedWaitingEntries
+            ->filter(fn (self $entry) => $entry->isPriorityClient())
+            ->values()
+            ->all();
+
+        $regularEntries = $orderedWaitingEntries
+            ->reject(fn (self $entry) => $entry->isPriorityClient())
+            ->values()
+            ->all();
+
+        if ($priorityEntries === [] || $regularEntries === []) {
+            return $orderedWaitingEntries;
+        }
+
+        $preferPriority = $lastCalledEntry !== null
+            ? ! $lastCalledEntry->isPriorityClient()
+            : (bool) $orderedWaitingEntries->first()?->isPriorityClient();
+
+        $serviceOrder = collect();
+
+        while ($priorityEntries !== [] || $regularEntries !== []) {
+            if ($preferPriority && $priorityEntries !== []) {
+                $nextEntry = array_shift($priorityEntries);
+            } elseif (! $preferPriority && $regularEntries !== []) {
+                $nextEntry = array_shift($regularEntries);
+            } elseif ($priorityEntries !== []) {
+                $nextEntry = array_shift($priorityEntries);
+            } else {
+                $nextEntry = array_shift($regularEntries);
+            }
+
+            if (! $nextEntry instanceof self) {
+                continue;
+            }
+
+            $serviceOrder->push($nextEntry);
+
+            if ($priorityEntries !== [] && $regularEntries !== []) {
+                $preferPriority = ! $nextEntry->isPriorityClient();
+            }
+        }
+
+        return $serviceOrder->values();
     }
 
     public function resolvedServiceWindowNumber(): ?int

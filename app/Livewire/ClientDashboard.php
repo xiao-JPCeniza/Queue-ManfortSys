@@ -125,7 +125,8 @@ class ClientDashboard extends Component
         return view('livewire.client-dashboard', [
             'offices' => $offices,
             'officeOptions' => $officeOptions,
-            'clientTypeOptions' => QueueEntry::clientTypeOptions(),
+            'clientTypeOptions' => QueueEntry::selectableClientTypeOptions(),
+            'priorityClientTypeOptions' => QueueEntry::priorityClientTypeOptions(),
         ]);
     }
 

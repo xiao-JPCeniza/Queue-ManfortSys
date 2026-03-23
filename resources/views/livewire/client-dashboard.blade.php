@@ -58,7 +58,7 @@
         @if(!$ticket)
             <section class="queue-intro-card">
                 <h2 class="queue-intro-title">Select an Office to Get Your Queue Number</h2>
-                <p class="queue-intro-copy">Please choose the office you need to visit. You will be asked to choose either a regular ticket or a priority ticket before the queue number is generated.</p>
+                <p class="queue-intro-copy">Please choose the office you need to visit. You can select a regular ticket, or open the priority option and choose PWD, Senior Citizen, or Pregnant before the queue number is generated.</p>
             </section>
 
             <div class="gov-office-grid mt-5" role="list">
@@ -149,24 +149,71 @@
                 <h2 id="queue-client-type-title" class="queue-modal-title">{{ $pendingOfficeName }}</h2>
                 <p class="queue-modal-copy">Choose the ticket type before generating the queue number.</p>
 
-                <div class="queue-modal-option-grid">
-                    @foreach($clientTypeOptions as $clientType => $option)
-                        @php($isPriorityType = $clientType === \App\Models\QueueEntry::TYPE_SENIOR_PREGNANT)
+                <div class="queue-modal-option-grid" x-data="{ showPriorityOptions: false }">
+                    @php($regularOption = $clientTypeOptions[\App\Models\QueueEntry::TYPE_REGULAR] ?? null)
+                    @if($regularOption)
                         <button
                             type="button"
-                            wire:click="confirmOfficeSelection('{{ $clientType }}')"
+                            wire:click="confirmOfficeSelection('{{ \App\Models\QueueEntry::TYPE_REGULAR }}')"
                             wire:loading.attr="disabled"
                             wire:target="confirmOfficeSelection"
-                            class="queue-modal-option {{ $isPriorityType ? 'queue-modal-option-priority' : 'queue-modal-option-regular' }}"
+                            class="queue-modal-option queue-modal-option-regular"
                         >
-                            <span class="queue-modal-option-title">{{ $option['label'] }}</span>
+                            <span class="queue-modal-option-copy-wrap">
+                                <span class="queue-modal-option-title">{{ $regularOption['label'] }}</span>
+                                <span class="queue-modal-option-description">{{ $regularOption['description'] }}</span>
+                            </span>
                             <span class="queue-modal-option-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
                                 </svg>
                             </span>
                         </button>
-                    @endforeach
+                    @endif
+
+                    <div class="queue-priority-picker" x-on:click.outside="showPriorityOptions = false">
+                        <button
+                            type="button"
+                            x-on:click="showPriorityOptions = !showPriorityOptions"
+                            x-bind:aria-expanded="showPriorityOptions.toString()"
+                            class="queue-modal-option queue-modal-option-priority"
+                        >
+                            <span class="queue-modal-option-copy-wrap">
+                                <span class="queue-modal-option-title">Priority</span>
+                                <span class="queue-modal-option-description">Choose PWD, Senior Citizen, or Pregnant.</span>
+                            </span>
+                            <span
+                                class="queue-modal-option-icon queue-modal-option-toggle-icon"
+                                x-bind:class="showPriorityOptions ? 'queue-modal-option-icon-open' : ''"
+                                aria-hidden="true"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
+                                </svg>
+                            </span>
+                        </button>
+
+                        <div
+                            x-show="showPriorityOptions"
+                            x-transition.opacity.duration.150ms
+                            x-transition.scale.origin.top.duration.150ms
+                            style="display: none;"
+                            class="queue-priority-dropdown"
+                        >
+                            @foreach($priorityClientTypeOptions as $clientType => $option)
+                                <button
+                                    type="button"
+                                    wire:click="confirmOfficeSelection('{{ $clientType }}')"
+                                    wire:loading.attr="disabled"
+                                    wire:target="confirmOfficeSelection"
+                                    class="queue-priority-choice"
+                                >
+                                    <span class="queue-priority-choice-title">{{ $option['label'] }}</span>
+                                    <span class="queue-priority-choice-description">{{ $option['description'] }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
 
                 <button
@@ -711,6 +758,20 @@
         font-weight: 800;
     }
 
+    .queue-modal-option-copy-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+    }
+
+    .queue-modal-option-description {
+        color: #475569;
+        font-size: 0.86rem;
+        line-height: 1.45;
+        font-weight: 600;
+    }
+
     .queue-modal-option-icon {
         display: inline-flex;
         align-items: center;
@@ -733,9 +794,66 @@
         border: 1px solid #efcf90;
     }
 
+    .queue-modal-option-toggle-icon {
+        transition: transform 0.18s ease;
+    }
+
+    .queue-modal-option-icon-open {
+        transform: rotate(90deg);
+    }
+
     .queue-modal-option-icon svg {
         width: 1rem;
         height: 1rem;
+    }
+
+    .queue-priority-picker {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .queue-priority-dropdown {
+        display: grid;
+        gap: 0.6rem;
+        padding: 0.85rem;
+        border-radius: 1rem;
+        border: 1px solid #ead8a4;
+        background: linear-gradient(180deg, #fffdf4 0%, #fff8e7 100%);
+    }
+
+    .queue-priority-choice {
+        display: flex;
+        flex-direction: column;
+        gap: 0.18rem;
+        width: 100%;
+        text-align: left;
+        border-radius: 0.9rem;
+        border: 1px solid #efcf90;
+        background: #fff6dc;
+        padding: 0.9rem 1rem;
+        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .queue-priority-choice:hover,
+    .queue-priority-choice:focus {
+        outline: none;
+        transform: translateY(-1px);
+        border-color: #d7a84d;
+        background: #fff1ca;
+        box-shadow: 0 12px 20px rgba(138, 82, 4, 0.1);
+    }
+
+    .queue-priority-choice-title {
+        color: #0f172a;
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .queue-priority-choice-description {
+        color: #6b7280;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        font-weight: 600;
     }
 
     .queue-modal-cancel {

@@ -20,10 +20,14 @@
             let observerBound = false;
             let isSpeaking = false;
             let syncFrameId = null;
+            let attentionAudio = null;
+            let attentionAudioWarmupPromise = null;
 
             const queuedAnnouncementIds = new Set();
             const pendingAnnouncements = [];
             const MAX_ANNOUNCEMENT_AGE_MS = 30000;
+            const ATTENTION_SOUND_URL = @js(asset('images/Attention.mp3'));
+            const ATTENTION_SOUND_MAX_DURATION_MS = 5000;
             const ANNOUNCEMENT_VOICE_PROFILE = {
                 exactNames: [
                     'microsoft aria online (natural) - english (united states)',
@@ -44,6 +48,42 @@
 
             const getAnnouncementElements = () => Array.from(document.querySelectorAll('[data-queue-monitor-announcement]'));
             const getSeenAnnouncementKey = (officeSlug) => `queue-monitor:last-announcement:${officeSlug}`;
+
+            const getAttentionAudio = () => {
+                if (attentionAudio) {
+                    return attentionAudio;
+                }
+
+                if (!ATTENTION_SOUND_URL) {
+                    return null;
+                }
+
+                attentionAudio = new Audio(ATTENTION_SOUND_URL);
+                attentionAudio.preload = 'auto';
+                attentionAudio.setAttribute('playsinline', '');
+
+                attentionAudioWarmupPromise = new Promise((resolve) => {
+                    let settled = false;
+
+                    const finish = () => {
+                        if (settled) {
+                            return;
+                        }
+
+                        settled = true;
+                        resolve(attentionAudio);
+                    };
+
+                    attentionAudio.addEventListener('canplaythrough', finish, { once: true });
+                    attentionAudio.addEventListener('error', finish, { once: true });
+                    window.setTimeout(finish, 1200);
+                });
+
+                attentionAudio.load();
+
+                return attentionAudio;
+            };
+
             const scheduleSyncAnnouncements = () => {
                 if (syncFrameId !== null) {
                     return;
@@ -211,6 +251,45 @@
                 });
             };
 
+            const playAttentionSound = async () => {
+                const audio = getAttentionAudio();
+
+                if (!audio) {
+                    return;
+                }
+
+                if (attentionAudioWarmupPromise) {
+                    await attentionAudioWarmupPromise;
+                }
+
+                await new Promise((resolve) => {
+                    let settled = false;
+
+                    const finish = () => {
+                        if (settled) {
+                            return;
+                        }
+
+                        settled = true;
+                        audio.removeEventListener('ended', finish);
+                        audio.removeEventListener('error', finish);
+                        resolve();
+                    };
+
+                    audio.currentTime = 0;
+                    audio.addEventListener('ended', finish, { once: true });
+                    audio.addEventListener('error', finish, { once: true });
+
+                    const playPromise = audio.play();
+
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(finish);
+                    }
+
+                    window.setTimeout(finish, ATTENTION_SOUND_MAX_DURATION_MS);
+                });
+            };
+
             const flushAnnouncementQueue = async () => {
                 if (isSpeaking || !pendingAnnouncements.length) {
                     return;
@@ -226,6 +305,7 @@
                     }
 
                     queuedAnnouncementIds.delete(nextAnnouncement.announcementId);
+                    await playAttentionSound();
                     await speakMessage(nextAnnouncement.message);
                 }
 
@@ -318,6 +398,8 @@
                 if ('speechSynthesis' in window) {
                     window.speechSynthesis.getVoices();
                 }
+
+                getAttentionAudio();
             };
 
             return {

@@ -78,6 +78,15 @@ class HrmoOfficeMonitor extends Component
             ->whereBetween('created_at', [$dayStart, $dayEnd]);
     }
 
+    private function latestCalledOfficeEntry(): ?QueueEntry
+    {
+        return $this->todayOfficeQueueEntries()
+            ->whereNotNull('called_at')
+            ->orderByDesc('called_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
     public function render()
     {
         $servingEntries = $this->todayOfficeQueueEntries()
@@ -93,10 +102,16 @@ class HrmoOfficeMonitor extends Component
                 return $entry;
             });
 
-        $nextInline = $this->todayOfficeQueueEntries()
+        $waitingEntries = $this->todayOfficeQueueEntries()
             ->waiting()
-            ->orderedForService()
-            ->first();
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $nextInline = QueueEntry::sortWaitingEntriesForService(
+            $waitingEntries,
+            $this->latestCalledOfficeEntry()
+        )->first();
 
         $manilaNow = now('Asia/Manila');
 

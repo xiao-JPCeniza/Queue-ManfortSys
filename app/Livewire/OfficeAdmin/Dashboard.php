@@ -197,10 +197,7 @@ class Dashboard extends Component
             }
         }
 
-        $next = $this->todayOfficeQueueEntries()
-            ->waiting()
-            ->orderedForService()
-            ->first();
+        $next = $this->orderedWaitingEntries()->first();
 
         if (! $next) {
             session()->flash('office_message', 'No one waiting in queue.');
@@ -290,12 +287,32 @@ class Dashboard extends Component
             ->whereBetween('created_at', [$dayStart, $dayEnd]);
     }
 
+    private function orderedWaitingEntries(): Collection
+    {
+        $waitingEntries = $this->todayOfficeQueueEntries()
+            ->waiting()
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        return QueueEntry::sortWaitingEntriesForService(
+            $waitingEntries,
+            $this->latestCalledOfficeEntry()
+        );
+    }
+
+    private function latestCalledOfficeEntry(): ?QueueEntry
+    {
+        return $this->todayOfficeQueueEntries()
+            ->whereNotNull('called_at')
+            ->orderByDesc('called_at')
+            ->orderByDesc('id')
+            ->first();
+    }
+
     public function render()
     {
-        $waiting = $this->todayOfficeQueueEntries()
-            ->waiting()
-            ->orderedForService()
-            ->get();
+        $waiting = $this->orderedWaitingEntries();
 
         $servingEntries = $this->todayOfficeQueueEntries()
             ->serving()

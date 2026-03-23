@@ -38,15 +38,6 @@ class Dashboard extends Component
 
         $offices = Office::query()
             ->activePublicQueue()
-            ->addSelect([
-                'next_waiting_ticket' => QueueEntry::query()
-                    ->select('queue_number')
-                    ->whereColumn('office_id', 'offices.id')
-                    ->where('status', QueueEntry::STATUS_WAITING)
-                    ->whereBetween('created_at', [$dayStart, $dayEnd])
-                    ->orderedForService()
-                    ->limit(1),
-            ])
             ->withCount(['queueEntries as waiting_count' => function ($query) use ($dayStart, $dayEnd) {
                 $query->where('status', QueueEntry::STATUS_WAITING)
                     ->whereBetween('created_at', [$dayStart, $dayEnd]);
@@ -54,6 +45,25 @@ class Dashboard extends Component
             ->get();
 
         $offices = Office::sortPublicQueueOffices($offices);
+
+        $waitingEntriesByOffice = QueueEntry::query()
+            ->whereIn('office_id', $offices->pluck('id'))
+            ->where('status', QueueEntry::STATUS_WAITING)
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('office_id');
+
+        $latestCalledEntriesByOffice = QueueEntry::query()
+            ->whereIn('office_id', $offices->pluck('id'))
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->whereNotNull('called_at')
+            ->orderByDesc('called_at')
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('office_id')
+            ->map(fn ($entries) => $entries->first());
 
         $servingEntriesByOffice = QueueEntry::query()
             ->whereIn('office_id', $offices->pluck('id'))
@@ -72,14 +82,19 @@ class Dashboard extends Component
             })
             ->groupBy('office_id');
 
-        $offices->each(function (Office $office) use ($servingEntriesByOffice): void {
+        $offices->each(function (Office $office) use ($servingEntriesByOffice, $waitingEntriesByOffice, $latestCalledEntriesByOffice): void {
             $servingEntries = $servingEntriesByOffice->get($office->id, collect())->values();
+            $orderedWaitingEntries = QueueEntry::sortWaitingEntriesForService(
+                $waitingEntriesByOffice->get($office->id, collect())->values(),
+                $latestCalledEntriesByOffice->get($office->id)
+            );
             $windowCount = $office->resolvedServiceWindowCount();
 
             $office->serving_entries = $servingEntries;
             $office->active_window_count = $servingEntries->count();
             $office->available_window_count = max(0, $windowCount - $office->active_window_count);
             $office->window_count = $windowCount;
+            $office->next_waiting_ticket = $orderedWaitingEntries->first()?->queue_number;
             $office->serving_ticket = $servingEntries
                 ->map(function (QueueEntry $entry) use ($office): string {
                     return sprintf(

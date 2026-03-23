@@ -15,13 +15,33 @@
                     >
                         Regular
                     </button>
-                    <button
-                        wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_PRIORITY
-                        type="button"
-                        class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-4 rounded-xl text-lg transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-                    >
-                        Priority
-                    </button>
+
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                        <p class="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-amber-700">Priority</p>
+                        <div class="grid gap-2">
+                            <button
+                                wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_PWD }}')"
+                                type="button"
+                                class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                            >
+                                PWD
+                            </button>
+                            <button
+                                wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_SENIOR_CITIZEN }}')"
+                                type="button"
+                                class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                            >
+                                Senior Citizen
+                            </button>
+                            <button
+                                wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_PREGNANT }}')"
+                                type="button"
+                                class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                            >
+                                Pregnant
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
