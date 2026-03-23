@@ -4,11 +4,8 @@
     ? 'Validated service-delivery analytics for all municipal offices within the LGU queue operations workflow.'
     : 'Validated service-delivery analytics for the ' . $reportOfficeLabel . ' office within the LGU queue operations workflow.')
 @php($dailyQueueCounts = collect($queueReportDailyCounts ?? []))
-@php($weeklyQueueCounts = collect($queueReportWeeklyCounts ?? []))
 @php($dailyMax = max(1, (int) $dailyQueueCounts->max('total_tickets')))
-@php($weeklyMax = max(1, (int) $weeklyQueueCounts->max('total_tickets')))
 @php($dailyPeak = $dailyQueueCounts->sortByDesc('total_tickets')->first())
-@php($weeklyPeak = $weeklyQueueCounts->sortByDesc('total_tickets')->first())
 
 <div class="gov-report-shell space-y-6">
     <section class="gov-report-masthead" aria-labelledby="reports-overview-heading">
@@ -206,54 +203,34 @@
                 </div>
             </section>
 
-            <section class="gov-report-card p-6" aria-labelledby="weekly-queue-counts-heading">
+            <section class="gov-report-card p-6" aria-labelledby="annual-analytics-heading">
                 <div class="gov-report-card-head gov-report-card-head-wide">
                     <div>
-                        <p class="gov-report-card-kicker">Five-Week Ledger</p>
-                        <h2 id="weekly-queue-counts-heading" class="gov-font-heading gov-report-card-title">Weekly Queue Counts</h2>
+                        <p class="gov-report-card-kicker">Annual Analytics</p>
+                        <h2 id="annual-analytics-heading" class="gov-font-heading gov-report-card-title">Ticket Volume Per Month (Last 12 Months)</h2>
                     </div>
-                    <p class="gov-report-card-meta">
-                        @if($weeklyPeak)
-                            Peak week: {{ 'Week ' . ltrim(substr($weeklyPeak['week'], 4), '0') . ', ' . substr($weeklyPeak['week'], 0, 4) }} ({{ number_format($weeklyPeak['total_tickets']) }} tickets)
-                        @else
-                            No queue activity recorded in the last 5 weeks.
-                        @endif
-                    </p>
+                    <p class="gov-report-card-meta">Peak month: {{ $monthlyPeakMonthLabel }}</p>
                 </div>
 
-                <div class="gov-report-table-wrap mt-5 overflow-x-auto">
-                    <table class="gov-report-table">
-                        <thead>
-                            <tr>
-                                <th>Week</th>
-                                <th>Activity Load</th>
-                                <th class="text-right">Total Tickets</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($weeklyQueueCounts as $row)
-                                @php($weekLabel = 'Week ' . ltrim(substr($row['week'], 4), '0') . ', ' . substr($row['week'], 0, 4))
-                                @php($weeklyBarWidth = $row['total_tickets'] > 0 ? max(8, round(($row['total_tickets'] / $weeklyMax) * 100, 1)) : 0)
-                                <tr>
-                                    <td>
-                                        <div class="gov-report-table-primary">{{ $weekLabel }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="gov-report-activity-track" aria-hidden="true">
-                                            @if($weeklyBarWidth > 0)
-                                                <span class="gov-report-activity-fill gov-report-activity-fill-weekly" style="width: {{ $weeklyBarWidth }}%;"></span>
-                                            @endif
-                                        </div>
-                                    </td>
-                                    <td class="gov-report-table-value text-right">{{ number_format($row['total_tickets']) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="3" class="gov-report-table-empty">No queue activity in the last 5 weeks.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="gov-report-chart-wrap gov-report-chart-wrap-monthly mt-5">
+                    <div class="gov-report-chart-canvas gov-report-chart-canvas-monthly">
+                        <div class="gov-report-axis-stage gov-report-axis-stage-compact gov-report-axis-stage-monthly">
+                            @foreach($monthlyVolumeSeries as $monthPoint)
+                                @php($monthBarHeight = $monthPoint['total'] > 0 ? max(8, (int) round(($monthPoint['total'] / $monthlyVolumeMax) * 185)) : 8)
+                                <div class="gov-report-axis-column gov-report-axis-column-compact gov-report-axis-column-monthly">
+                                    <div
+                                        class="gov-report-chart-bar gov-report-chart-bar-secondary {{ $monthPoint['total'] > 0 ? 'bg-amber-500' : 'bg-slate-200' }}"
+                                        style="height: {{ $monthBarHeight }}px;"
+                                        title="{{ $monthPoint['label'] }}: {{ $monthPoint['total'] }} ticket(s)"
+                                    >
+                                        <span class="sr-only">{{ $monthPoint['label'] }}: {{ $monthPoint['total'] }} ticket(s)</span>
+                                    </div>
+                                    <span class="gov-report-axis-label">{{ $monthPoint['short_label'] }}</span>
+                                    <span class="gov-report-axis-year">{{ $monthPoint['year_short'] }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
