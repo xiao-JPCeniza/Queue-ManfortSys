@@ -39,7 +39,9 @@ Route::get('/media/mf-tourism-video', function (LiveMonitorVideoLibrary $videoLi
 
     $videoPath = public_path('images/MF TOURISM VIDEO.mp4');
 
-    abort_unless(is_file($videoPath), 404);
+    if (! is_file($videoPath)) {
+        return response()->noContent();
+    }
 
     return response()->file($videoPath, [
         'Content-Type' => 'video/mp4',

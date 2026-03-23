@@ -1,18 +1,24 @@
 @php
-    $idleMonitorVideoUrl = $idleMonitorVideoUrl ?? route('media.tourism-video');
     $defaultIdleMonitorVideoPath = public_path('images/MF TOURISM VIDEO.mp4');
     $videoLibrary = app(\App\Support\LiveMonitorVideoLibrary::class);
     $customIdleMonitorVideoPath = $videoLibrary->activeVideoPath();
-    $idleMonitorVideoRevision = ($customIdleMonitorVideoPath !== null && $videoLibrary->exists($customIdleMonitorVideoPath))
+    $hasCustomIdleMonitorVideo = $customIdleMonitorVideoPath !== null && $videoLibrary->exists($customIdleMonitorVideoPath);
+    $hasDefaultIdleMonitorVideo = is_file($defaultIdleMonitorVideoPath);
+    $hasIdleMonitorVideo = $hasCustomIdleMonitorVideo || $hasDefaultIdleMonitorVideo;
+    $idleMonitorVideoUrl = $hasIdleMonitorVideo ? ($idleMonitorVideoUrl ?? route('media.tourism-video')) : '';
+    $idleMonitorVideoRevision = $hasCustomIdleMonitorVideo
         ? (string) filemtime($videoLibrary->absolutePath($customIdleMonitorVideoPath))
-        : (is_file($defaultIdleMonitorVideoPath) ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
-    $idleMonitorVideoSource = $idleMonitorVideoUrl.(str_contains($idleMonitorVideoUrl, '?') ? '&' : '?').'v='.rawurlencode($idleMonitorVideoRevision);
+        : ($hasDefaultIdleMonitorVideo ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
+    $idleMonitorVideoSource = $idleMonitorVideoUrl !== ''
+        ? $idleMonitorVideoUrl.(str_contains($idleMonitorVideoUrl, '?') ? '&' : '?').'v='.rawurlencode($idleMonitorVideoRevision)
+        : '';
 @endphp
 
 <div
     data-live-monitor-idle-video-config
     data-idle-video-url="{{ $idleMonitorVideoUrl }}"
     data-idle-video-revision="{{ $idleMonitorVideoRevision }}"
+    data-idle-video-available="{{ $hasIdleMonitorVideo ? 'true' : 'false' }}"
     hidden
     aria-hidden="true"
 ></div>
@@ -111,6 +117,10 @@
                 }
 
                 controller.video.loop = false;
+                controller.video.addEventListener('error', () => {
+                    controller.hasAvailableVideo = false;
+                    hideOverlay(controller, true);
+                });
                 controller.video.addEventListener('ended', () => {
                     if (! controller.overlay || controller.overlay.hidden) {
                         return;
@@ -159,7 +169,7 @@
             };
 
             const showOverlay = (controller) => {
-                if (! controller.overlay) {
+                if (! controller.overlay || ! controller.hasAvailableVideo) {
                     return;
                 }
 
@@ -185,6 +195,7 @@
                         appliedVideoRevision: null,
                         pendingVideoUrl: null,
                         pendingVideoRevision: null,
+                        hasAvailableVideo: false,
                         boundVideo: null,
                     };
 
@@ -197,6 +208,8 @@
                 controller.source = root.querySelector('[data-live-monitor-idle-video-source]');
                 bindVideoEvents(controller);
                 syncVideoSource(controller);
+                controller.hasAvailableVideo = controller.config?.dataset.idleVideoAvailable === 'true'
+                    && (controller.config?.dataset.idleVideoUrl ?? '') !== '';
 
                 const hasCurrentTransaction = root.dataset.hasCurrentTransaction === 'true';
                 const hasQueuedNextInline = root.dataset.hasQueuedNextInline === 'true';
@@ -204,6 +217,12 @@
                 const delayMs = Number.isFinite(parsedDelayMs) && parsedDelayMs > 0
                     ? parsedDelayMs
                     : defaultDelayMs;
+
+                if (! controller.hasAvailableVideo) {
+                    hideOverlay(controller, true);
+
+                    return;
+                }
 
                 if (hasCurrentTransaction || hasQueuedNextInline) {
                     hideOverlay(controller, true);
