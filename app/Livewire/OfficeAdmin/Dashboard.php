@@ -17,53 +17,6 @@ class Dashboard extends Component
 {
     use HandlesOfficeQueueAnnouncements;
 
-    private const ADVANCED_QUEUE_DASHBOARD_SLUGS = [
-        'hrmo',
-        'business-permits',
-        'bplo',
-        'mho',
-        'mswdo',
-        'treasury',
-        'accounting',
-        'civil-registry',
-        'assessors-office',
-    ];
-
-    private const HIDDEN_OVERALL_ACTIVITY_OFFICES = [
-        'BFP Liaison',
-        'Budget',
-        'DILG',
-        'Engineering',
-        'GSO',
-        'ICT Unit',
-        'Internal Audit',
-        'LDRRMO',
-        'Legal Office',
-        'MAO',
-        "Mayor's Office",
-        'MENRO',
-        'MISO',
-        'Motorpool Division',
-        'MPDO',
-        "Municipal Administrator's Office",
-        'Municipal Library',
-        'NCIP',
-        'Negosyo Center',
-        'OBO',
-        'OSCA',
-        'PDAO',
-        'PESO',
-        'PNP Liaison',
-        'Procurement Division',
-        'Public Market Office',
-        'Sangguniang Bayan',
-        'Slaughter Division',
-        'Special Education Fund',
-        'Sports Development',
-        'Tourism Office',
-        "Vice Mayor's Office",
-    ];
-
     private const QUEUE_MANAGEMENT_SECTIONS = [
         'queued-today',
         'overall-data',
@@ -720,8 +673,7 @@ class Dashboard extends Component
     private function queueManagementOffices(): Collection
     {
         return Office::query()
-            ->where('is_active', true)
-            ->whereNotIn('name', self::HIDDEN_OVERALL_ACTIVITY_OFFICES)
+            ->activePublicQueue()
             ->orderBy('name')
             ->get(['id', 'name', 'slug']);
     }
@@ -737,9 +689,10 @@ class Dashboard extends Component
 
         $accommodatedCounts = $this->completedQueueCountsByOffice($officeIds);
         $completedQueueNumbers = $this->completedQueueNumbersByOffice($officeIds);
+        $completedQueueDetails = $this->completedQueueDetailsByOffice($officeIds);
 
         return $officeList
-            ->map(function (Office $office) use ($overallQueuedCounts, $accommodatedCounts, $completedQueueNumbers) {
+            ->map(function (Office $office) use ($overallQueuedCounts, $accommodatedCounts, $completedQueueNumbers, $completedQueueDetails) {
                 return [
                     'office_id' => $office->id,
                     'office_slug' => $office->slug,
@@ -747,6 +700,7 @@ class Dashboard extends Component
                     'overall_queued_total' => (int) ($overallQueuedCounts->get($office->id, 0)),
                     'accommodated_total' => (int) ($accommodatedCounts->get($office->id, 0)),
                     'completed_queue_numbers' => $completedQueueNumbers->get($office->id, []),
+                    'completed_queue_details' => $completedQueueDetails->get($office->id, []),
                 ];
             })
             ->sortBy([
@@ -1084,6 +1038,35 @@ class Dashboard extends Component
             ->map(fn (Collection $entries) => $entries->pluck('queue_number')->values()->all());
     }
 
+    private function completedQueueDetailsByOffice(Collection $officeIds): Collection
+    {
+        if ($officeIds->isEmpty()) {
+            return collect();
+        }
+
+        return QueueEntry::query()
+            ->select(['office_id', 'queue_number', 'created_at'])
+            ->whereIn('office_id', $officeIds)
+            ->where('status', QueueEntry::STATUS_COMPLETED)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('office_id')
+            ->map(function (Collection $entries) {
+                return $entries
+                    ->map(function (QueueEntry $entry) {
+                        $queuedAt = $entry->displayCreatedAt('Asia/Manila');
+
+                        return [
+                            'queue_number' => $entry->queue_number,
+                            'queued_at_label' => $queuedAt?->format('M d, Y h:i:s A') ?? 'Unknown queue time',
+                        ];
+                    })
+                    ->values()
+                    ->all();
+            });
+    }
+
     private function statusMetadata(): array
     {
         return [
@@ -1142,7 +1125,7 @@ class Dashboard extends Component
 
     private function supportsAdvancedQueueDashboard(): bool
     {
-        return in_array($this->office->slug, self::ADVANCED_QUEUE_DASHBOARD_SLUGS, true);
+        return true;
     }
 
     private function resolveUserManagementPasswordInfo(User $user): array

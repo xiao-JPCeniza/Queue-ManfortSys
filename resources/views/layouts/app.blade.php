@@ -285,12 +285,10 @@
             $activeOffice = request()->attributes->get('office');
             $authUser = auth()->user();
             $isSuperAdmin = $authUser?->isSuperAdmin() ?? false;
-            $specialOfficeSlugs = ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'];
-            $dashboardShortcutSlugs = $specialOfficeSlugs;
             $dashboardShortcutOfficeSlug = $authUser?->isOfficeAdmin() ? $authUser?->office?->slug : null;
-            $showDashboardShortcut = $dashboardShortcutOfficeSlug && in_array($dashboardShortcutOfficeSlug, $dashboardShortcutSlugs, true);
+            $showDashboardShortcut = (bool) $dashboardShortcutOfficeSlug;
             $isOfficeDashboard = request()->routeIs('office.dashboard') && $activeOffice;
-            $supportsAdvancedOfficeMenu = $isOfficeDashboard && in_array($activeOffice->slug, $specialOfficeSlugs, true);
+            $supportsAdvancedOfficeMenu = $isOfficeDashboard;
             $sidebarOfficeSlug = $activeOffice?->slug ?? 'hrmo';
             $currentDashboardOfficeSlug = $activeOffice?->slug ?? (string) request()->route('office');
             $activeOfficeTab = (string) request()->query('tab', $isOfficeDashboard ? 'queue-management' : 'reports');

@@ -5,9 +5,13 @@ namespace Tests\Feature;
 use App\Livewire\OfficeAdmin\AllOfficesMonitor;
 use App\Models\Office;
 use App\Models\QueueEntry;
+use App\Support\LiveMonitorVideoLibrary;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -110,6 +114,42 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertStringContainsString('data-idle-video-revision=', $html);
         $this->assertStringContainsString('wire:ignore', $html);
         $this->assertStringContainsString(route('media.tourism-video'), $html);
+    }
+
+    public function test_public_live_monitor_page_includes_the_idle_video_playlist(): void
+    {
+        $storageRoot = $this->fakeLiveMonitorStorage();
+        $videoLibrary = app(LiveMonitorVideoLibrary::class);
+
+        $firstVideo = $videoLibrary->upload(
+            UploadedFile::fake()->create('playlist-a.mp4', 512, 'video/mp4')
+        );
+
+        $secondVideo = $videoLibrary->upload(
+            UploadedFile::fake()->create('playlist-b.mp4', 768, 'video/mp4')
+        );
+
+        $response = $this->get(route('live-monitor.public'));
+        $html = $response->getContent();
+        $firstVideoUrl = str_replace('/', '\\/', route('media.live-monitor-video', $firstVideo['id']));
+        $secondVideoUrl = str_replace('/', '\\/', route('media.live-monitor-video', $secondVideo['id']));
+
+        $response
+            ->assertOk()
+            ->assertSee('data-live-monitor-idle-video-playlist', false);
+
+        $this->assertStringContainsString($firstVideoUrl, $html);
+        $this->assertStringContainsString($secondVideoUrl, $html);
+
+        $firstPosition = strpos($html, $secondVideoUrl);
+        $secondPosition = strpos($html, $firstVideoUrl);
+
+        $this->assertNotFalse($firstPosition);
+        $this->assertNotFalse($secondPosition);
+        $this->assertTrue($firstPosition < $secondPosition, 'The active video should appear first in the /live-monitor playlist.');
+
+        $this->assertFileExists($this->liveMonitorAbsolutePath($storageRoot, $firstVideo['stored_path']));
+        $this->assertFileExists($this->liveMonitorAbsolutePath($storageRoot, $secondVideo['stored_path']));
     }
 
     public function test_it_shows_recent_transactions_for_the_featured_office_only(): void
@@ -357,5 +397,21 @@ class AllOfficesMonitorTest extends TestCase
         QueueEntry::whereKey($entry)->update([
             'served_at' => $timestamp,
         ]);
+    }
+
+    private function fakeLiveMonitorStorage(): string
+    {
+        $storageRoot = storage_path('framework/testing/live-monitor-videos/'.Str::uuid());
+
+        File::ensureDirectoryExists($storageRoot);
+
+        config()->set('filesystems.disks.'.LiveMonitorVideoLibrary::DISK.'.root', $storageRoot);
+
+        return $storageRoot;
+    }
+
+    private function liveMonitorAbsolutePath(string $storageRoot, string $relativePath): string
+    {
+        return rtrim($storageRoot, '\\/').DIRECTORY_SEPARATOR.str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath);
     }
 }

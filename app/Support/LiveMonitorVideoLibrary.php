@@ -158,6 +158,39 @@ class LiveMonitorVideoLibrary
         return $this->listVideos()->firstWhere('is_active', true);
     }
 
+    public function playlistVideos(): Collection
+    {
+        $videos = $this->listVideos()->values();
+
+        if ($videos->count() <= 1) {
+            return $videos;
+        }
+
+        $activeIndex = $videos->search(fn (array $video): bool => (bool) ($video['is_active'] ?? false));
+
+        if (! is_int($activeIndex) || $activeIndex <= 0) {
+            return $videos;
+        }
+
+        return $videos
+            ->slice($activeIndex)
+            ->concat($videos->take($activeIndex))
+            ->values();
+    }
+
+    public function videoRevision(array|string $video): string
+    {
+        $storedPath = is_array($video)
+            ? (string) ($video['stored_path'] ?? '')
+            : (string) $video;
+
+        if ($storedPath === '' || ! $this->exists($storedPath)) {
+            return 'missing';
+        }
+
+        return (string) (@filemtime($this->absolutePath($storedPath)) ?: 'unknown');
+    }
+
     public function activeVideoPath(): ?string
     {
         $activeVideo = $this->activeVideo();

@@ -3,7 +3,7 @@
     @php($isAccountingOffice = $office->slug === 'accounting')
     @php($isMhoOffice = $office->slug === 'mho')
     @php($isMswdoOffice = $office->slug === 'mswdo')
-    @php($usesAdvancedQueueDashboard = in_array($office->slug, ['hrmo', 'business-permits', 'bplo', 'mho', 'mswdo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
+    @php($usesAdvancedQueueDashboard = true)
     @php($reportOfficeLabels = [
         'hrmo' => 'HRMO',
         'business-permits' => 'BPLO',
@@ -189,12 +189,15 @@
                                                             <tr class="border-b border-slate-100 last:border-b-0">
                                                                 <td class="px-3 py-3 font-medium text-slate-800">{{ $row['office_name'] }}</td>
                                                                 <td class="px-3 py-3 align-top">
-                                                                    @php($completedQueueNumbers = collect($row['completed_queue_numbers'])->unique()->values())
+                                                                    @php($completedQueueDetails = collect($row['completed_queue_details'] ?? [])->unique('queue_number')->values())
 
                                                                     <div class="flex flex-wrap gap-2">
-                                                                        @forelse($completedQueueNumbers as $queueNumber)
-                                                                            <span class="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700">
-                                                                                {{ $queueNumber }}
+                                                                        @forelse($completedQueueDetails as $queueDetail)
+                                                                            <span
+                                                                                class="inline-flex cursor-help rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold tracking-wide text-emerald-700"
+                                                                                title="Queued: {{ $queueDetail['queued_at_label'] }}"
+                                                                            >
+                                                                                {{ $queueDetail['queue_number'] }}
                                                                             </span>
                                                                         @empty
                                                                             <p class="text-xs text-slate-400">No completed queue numbers yet.</p>

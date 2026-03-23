@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\OfficeAdmin\Dashboard;
 use App\Livewire\SuperAdmin\Offices as SuperAdminOffices;
 use App\Models\Office;
 use App\Models\QueueEntry;
@@ -279,6 +280,38 @@ class SuperAdminOfficesTest extends TestCase
         $this->get(route('super-admin.reports'))
             ->assertOk()
             ->assertSee('Accommodated Tickets by Office');
+    }
+
+    public function test_deleted_office_no_longer_appears_in_super_admin_queue_management_records(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+        $officeToDelete = $this->createOffice('OBO', 'obo', 'OBO', true);
+
+        QueueEntry::create([
+            'office_id' => $officeToDelete->id,
+            'queue_number' => 'OBO-001',
+            'status' => QueueEntry::STATUS_COMPLETED,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->call('deleteOffice', $officeToDelete->id)
+            ->assertSee('was deleted from the public queue.');
+
+        Livewire::test(Dashboard::class, ['office' => $hrmo])
+            ->set('hrmoTab', 'queue-management')
+            ->assertViewHas('queuedTodayOfficeActivity', function ($rows) {
+                return ! $rows->pluck('office.slug')->contains('obo');
+            })
+            ->call('setQueueManagementSection', 'overall-data')
+            ->assertViewHas('queueManagementOfficeOptions', function ($options) {
+                return ! $options->pluck('slug')->contains('obo');
+            })
+            ->assertViewHas('overallDataRows', function ($rows) {
+                return $rows->firstWhere('office_slug', 'obo') === null;
+            });
     }
 
     private function createSuperAdminUser(): User

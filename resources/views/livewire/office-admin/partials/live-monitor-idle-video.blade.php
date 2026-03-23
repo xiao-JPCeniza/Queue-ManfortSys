@@ -2,20 +2,53 @@
     $idleMonitorVideoUrl = $idleMonitorVideoUrl ?? route('media.tourism-video');
     $defaultIdleMonitorVideoPath = public_path('images/MF TOURISM VIDEO.mp4');
     $videoLibrary = app(\App\Support\LiveMonitorVideoLibrary::class);
+    $playlistVideos = $videoLibrary->playlistVideos();
     $customIdleMonitorVideoPath = $videoLibrary->activeVideoPath();
     $idleMonitorVideoRevision = ($customIdleMonitorVideoPath !== null && $videoLibrary->exists($customIdleMonitorVideoPath))
-        ? (string) filemtime($videoLibrary->absolutePath($customIdleMonitorVideoPath))
+        ? $videoLibrary->videoRevision($customIdleMonitorVideoPath)
         : (is_file($defaultIdleMonitorVideoPath) ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
     $idleMonitorVideoSource = $idleMonitorVideoUrl.(str_contains($idleMonitorVideoUrl, '?') ? '&' : '?').'v='.rawurlencode($idleMonitorVideoRevision);
+    $idleMonitorVideoPlaylist = $playlistVideos
+        ->map(function (array $video) use ($videoLibrary): array {
+            $revision = $videoLibrary->videoRevision($video);
+            $videoUrl = route('media.live-monitor-video', $video['id']);
+
+            return [
+                'id' => $video['id'],
+                'name' => $video['original_name'] ?? 'Live monitor video',
+                'url' => $videoUrl.(str_contains($videoUrl, '?') ? '&' : '?').'v='.rawurlencode($revision),
+                'revision' => $revision,
+                'is_active' => (bool) ($video['is_active'] ?? false),
+            ];
+        })
+        ->values()
+        ->all();
+
+    if ($idleMonitorVideoPlaylist === []) {
+        $idleMonitorVideoPlaylist = [[
+            'id' => 'default-tourism-video',
+            'name' => 'MF TOURISM VIDEO.mp4',
+            'url' => $idleMonitorVideoSource,
+            'revision' => $idleMonitorVideoRevision,
+            'is_active' => true,
+        ]];
+    }
+
+    $idleMonitorVideoPlaylistRevision = sha1(json_encode($idleMonitorVideoPlaylist));
 @endphp
 
 <div
     data-live-monitor-idle-video-config
     data-idle-video-url="{{ $idleMonitorVideoUrl }}"
     data-idle-video-revision="{{ $idleMonitorVideoRevision }}"
+    data-idle-video-playlist-revision="{{ $idleMonitorVideoPlaylistRevision }}"
     hidden
     aria-hidden="true"
 ></div>
+
+<script type="application/json" data-live-monitor-idle-video-playlist>
+    @json($idleMonitorVideoPlaylist)
+</script>
 
 <div wire:ignore class="gov-monitor-idle-video" data-live-monitor-idle-video hidden aria-hidden="true">
     <video
@@ -41,6 +74,7 @@
         (() => {
             const controllers = new Map();
             const defaultDelayMs = 60_000;
+
             const playVideo = (video) => {
                 if (! video) {
                     return;
@@ -53,56 +87,122 @@
                 }
             };
 
-            const applyVideoSource = (controller, nextUrl, nextRevision) => {
-                if (! controller.video || ! controller.source || nextUrl === '') {
+            const parsePlaylist = (controller) => {
+                const fallbackUrl = controller.config?.dataset.idleVideoUrl ?? '';
+                const fallbackRevision = controller.config?.dataset.idleVideoRevision ?? 'default';
+                const playlistText = controller.playlistConfig?.textContent?.trim() ?? '';
+
+                if (playlistText !== '') {
+                    try {
+                        const parsedPlaylist = JSON.parse(playlistText);
+
+                        if (Array.isArray(parsedPlaylist)) {
+                            const normalizedPlaylist = parsedPlaylist
+                                .filter((item) => item && typeof item.url === 'string' && item.url.trim() !== '')
+                                .map((item) => ({
+                                    id: typeof item.id === 'string' ? item.id : '',
+                                    name: typeof item.name === 'string' ? item.name : 'Live monitor video',
+                                    url: item.url,
+                                    revision: typeof item.revision === 'string' ? item.revision : 'default',
+                                    is_active: item.is_active === true,
+                                }));
+
+                            if (normalizedPlaylist.length > 0) {
+                                return normalizedPlaylist;
+                            }
+                        }
+                    } catch (error) {
+                    }
+                }
+
+                if (fallbackUrl === '') {
+                    return [];
+                }
+
+                const separator = fallbackUrl.includes('?') ? '&' : '?';
+
+                return [{
+                    id: 'fallback-idle-video',
+                    name: 'Idle mode video',
+                    url: `${fallbackUrl}${separator}v=${encodeURIComponent(fallbackRevision)}`,
+                    revision: fallbackRevision,
+                    is_active: true,
+                }];
+            };
+
+            const setPlaylistItem = (controller, playlistIndex, shouldAutoplay = true) => {
+                if (! controller.video || ! controller.source || controller.appliedPlaylist.length === 0) {
                     return;
                 }
 
-                const separator = nextUrl.includes('?') ? '&' : '?';
-                controller.source.src = `${nextUrl}${separator}v=${encodeURIComponent(nextRevision)}`;
+                const normalizedIndex = (
+                    Number.isInteger(playlistIndex)
+                    && playlistIndex >= 0
+                    && playlistIndex < controller.appliedPlaylist.length
+                ) ? playlistIndex : 0;
+                const playlistItem = controller.appliedPlaylist[normalizedIndex];
+
+                if (! playlistItem || typeof playlistItem.url !== 'string' || playlistItem.url === '') {
+                    return;
+                }
+
+                controller.currentPlaylistIndex = normalizedIndex;
+
+                if (controller.source.src !== playlistItem.url) {
+                    controller.source.src = playlistItem.url;
+                }
+
                 controller.video.load();
                 controller.video.loop = false;
 
-                if (controller.overlay && ! controller.overlay.hidden) {
+                if (shouldAutoplay && controller.overlay && ! controller.overlay.hidden) {
                     playVideo(controller.video);
                 }
+            };
 
-                controller.appliedVideoUrl = nextUrl;
-                controller.appliedVideoRevision = nextRevision;
-                controller.pendingVideoUrl = null;
-                controller.pendingVideoRevision = null;
+            const applyPlaylist = (controller, nextPlaylist, nextPlaylistRevision) => {
+                if (! controller.video || ! controller.source || nextPlaylist.length === 0) {
+                    return;
+                }
+
+                const currentItemId = controller.appliedPlaylist[controller.currentPlaylistIndex]?.id ?? null;
+                const nextIndex = nextPlaylist.findIndex((item) => item.id === currentItemId);
+
+                controller.appliedPlaylist = nextPlaylist;
+                controller.appliedPlaylistRevision = nextPlaylistRevision;
+                controller.pendingPlaylist = null;
+                controller.pendingPlaylistRevision = null;
+
+                setPlaylistItem(controller, nextIndex >= 0 ? nextIndex : 0);
             };
 
             const syncVideoSource = (controller) => {
-                const nextUrl = controller.config?.dataset.idleVideoUrl ?? '';
-                const nextRevision = controller.config?.dataset.idleVideoRevision ?? 'default';
+                const nextPlaylist = parsePlaylist(controller);
+                const nextPlaylistRevision = controller.config?.dataset.idleVideoPlaylistRevision ?? 'default';
 
-                if (! controller.video || ! controller.source || nextUrl === '') {
+                if (! controller.video || ! controller.source || nextPlaylist.length === 0) {
                     return;
                 }
 
-                const hasAppliedVideo = controller.appliedVideoUrl !== null;
-                const sourceChanged = (
-                    controller.appliedVideoUrl !== nextUrl
-                    || controller.appliedVideoRevision !== nextRevision
-                );
+                const hasAppliedPlaylist = controller.appliedPlaylist.length > 0;
+                const playlistChanged = controller.appliedPlaylistRevision !== nextPlaylistRevision;
 
-                if (! sourceChanged) {
+                if (! playlistChanged) {
                     return;
                 }
 
-                const shouldWaitForCurrentPlaybackToEnd = hasAppliedVideo
+                const shouldWaitForCurrentPlaybackToEnd = hasAppliedPlaylist
                     && controller.overlay
                     && ! controller.overlay.hidden;
 
                 if (shouldWaitForCurrentPlaybackToEnd) {
-                    controller.pendingVideoUrl = nextUrl;
-                    controller.pendingVideoRevision = nextRevision;
+                    controller.pendingPlaylist = nextPlaylist;
+                    controller.pendingPlaylistRevision = nextPlaylistRevision;
 
                     return;
                 }
 
-                applyVideoSource(controller, nextUrl, nextRevision);
+                applyPlaylist(controller, nextPlaylist, nextPlaylistRevision);
             };
 
             const bindVideoEvents = (controller) => {
@@ -116,21 +216,27 @@
                         return;
                     }
 
-                    if (
-                        controller.pendingVideoUrl !== null
-                        && controller.pendingVideoRevision !== null
-                    ) {
-                        applyVideoSource(
+                    if (controller.pendingPlaylist !== null) {
+                        applyPlaylist(
                             controller,
-                            controller.pendingVideoUrl,
-                            controller.pendingVideoRevision
+                            controller.pendingPlaylist,
+                            controller.pendingPlaylistRevision ?? 'default'
                         );
 
                         return;
                     }
 
-                    controller.video.currentTime = 0;
-                    playVideo(controller.video);
+                    if (controller.appliedPlaylist.length <= 1) {
+                        controller.video.currentTime = 0;
+                        playVideo(controller.video);
+
+                        return;
+                    }
+
+                    setPlaylistItem(
+                        controller,
+                        (controller.currentPlaylistIndex + 1) % controller.appliedPlaylist.length
+                    );
                 });
 
                 controller.boundVideo = controller.video;
@@ -180,11 +286,13 @@
                         overlay: null,
                         video: null,
                         source: null,
+                        playlistConfig: null,
                         idleSince: null,
-                        appliedVideoUrl: null,
-                        appliedVideoRevision: null,
-                        pendingVideoUrl: null,
-                        pendingVideoRevision: null,
+                        appliedPlaylist: [],
+                        appliedPlaylistRevision: null,
+                        pendingPlaylist: null,
+                        pendingPlaylistRevision: null,
+                        currentPlaylistIndex: 0,
                         boundVideo: null,
                     };
 
@@ -195,6 +303,7 @@
                 controller.overlay = root.querySelector('[data-live-monitor-idle-video]');
                 controller.video = root.querySelector('[data-live-monitor-idle-video-player]');
                 controller.source = root.querySelector('[data-live-monitor-idle-video-source]');
+                controller.playlistConfig = root.querySelector('[data-live-monitor-idle-video-playlist]');
                 bindVideoEvents(controller);
                 syncVideoSource(controller);
 

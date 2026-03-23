@@ -46,6 +46,16 @@ Route::get('/media/mf-tourism-video', function (LiveMonitorVideoLibrary $videoLi
         'Cache-Control' => 'public, max-age=3600',
     ]);
 })->name('media.tourism-video');
+Route::get('/media/live-monitor-videos/{videoId}', function (string $videoId, LiveMonitorVideoLibrary $videoLibrary) {
+    $video = $videoLibrary->find($videoId);
+
+    abort_unless(is_array($video) && $videoLibrary->exists($video['stored_path']), 404);
+
+    return response()->file($videoLibrary->absolutePath($video['stored_path']), [
+        'Content-Type' => 'video/mp4',
+        'Cache-Control' => 'public, max-age=3600',
+    ]);
+})->name('media.live-monitor-video');
 
 Route::get('/session/pulse', function (Request $request) {
     $request->session()->put('_session_pulse_at', now()->timestamp);
@@ -214,6 +224,9 @@ Route::post('/logout', function () {
         Route::get('/live-monitor-videos', function () {
             return view('super-admin.live-monitor-videos');
         })->name('live-monitor-videos');
+        Route::get('/live-monitor-videos/playlist-preview', function () {
+            return view('super-admin.live-monitor-video-playlist-preview');
+        })->name('live-monitor-videos.playlist-preview');
         Route::post('/live-monitor-videos/upload', function (Request $request, LiveMonitorVideoLibrary $videoLibrary) {
             $validated = $request->validate(
                 SuperAdminLiveMonitorVideos::idleMonitorVideoUploadRules(),
@@ -236,7 +249,7 @@ Route::post('/logout', function () {
                 ]);
             }
 
-            $successMessage = ($video['original_name'] ?? 'The uploaded video').' is now the active live monitor video.';
+            $successMessage = ($video['original_name'] ?? 'The uploaded video').' was added to the live monitor playlist and will play first.';
 
             if ($request->expectsJson()) {
                 return response()->json([
