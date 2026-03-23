@@ -1,10 +1,6 @@
 @php($showLiveMonitor = $showLiveMonitor ?? false)
 @php($liveMonitorRoute = $liveMonitorRoute ?? '')
 @php($liveMonitorLabel = $liveMonitorLabel ?? 'Open Live Monitor')
-<<<<<<< HEAD
-=======
-@php($isAdvancedQueueOffice = in_array($office->slug, ['hrmo', 'mho', 'mswdo', 'menro', 'business-permits', 'bplo', 'treasury', 'accounting', 'civil-registry', 'assessors-office'], true))
->>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
 @php($manilaNow = now('Asia/Manila'))
 
 <div class="gov-queue-shell">
@@ -123,15 +119,6 @@
 
                         <button
                             type="button"
-<<<<<<< HEAD
-                            wire:click="clearTransaction"
-                            wire:loading.attr="disabled"
-                            wire:target="clearTransaction"
-                            class="gov-btn gov-btn-danger"
-                        >
-                            Clear Waiting Line
-                        </button>
-=======
                             wire:click="resetTickets"
                             wire:confirm="Reset queue numbering for {{ $office->name }} to 1? This will clear this office's generated tickets for today."
                             wire:loading.attr="disabled"
@@ -141,18 +128,15 @@
                             Reset Queue Number
                         </button>
 
-                        @if($isAdvancedQueueOffice)
-                            <button
-                                type="button"
-                                wire:click="clearTransaction"
-                                wire:loading.attr="disabled"
-                                wire:target="clearTransaction"
-                                class="gov-btn gov-btn-danger"
-                            >
-                                Clear Waiting Line
-                            </button>
-                        @endif
->>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
+                        <button
+                            type="button"
+                            wire:click="clearTransaction"
+                            wire:loading.attr="disabled"
+                            wire:target="clearTransaction"
+                            class="gov-btn gov-btn-danger"
+                        >
+                            Clear Waiting Line
+                        </button>
                     </div>
                 </div>
             </section>

@@ -17,8 +17,6 @@ class Dashboard extends Component
 {
     use HandlesOfficeQueueAnnouncements;
 
-<<<<<<< HEAD
-=======
     private const ADVANCED_QUEUE_DASHBOARD_SLUGS = [
         'hrmo',
         'business-permits',
@@ -66,8 +64,6 @@ class Dashboard extends Component
         'Tourism Office',
         "Vice Mayor's Office",
     ];
-
->>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     private const QUEUE_MANAGEMENT_SECTIONS = [
         'queued-today',
         'overall-data',

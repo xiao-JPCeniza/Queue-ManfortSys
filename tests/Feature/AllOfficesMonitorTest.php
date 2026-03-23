@@ -116,7 +116,6 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertStringContainsString(route('media.tourism-video'), $html);
     }
 
-<<<<<<< HEAD
     public function test_public_live_monitor_page_includes_the_idle_video_playlist(): void
     {
         $storageRoot = $this->fakeLiveMonitorStorage();
@@ -153,10 +152,7 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertFileExists($this->liveMonitorAbsolutePath($storageRoot, $secondVideo['stored_path']));
     }
 
-    public function test_it_shows_recent_transactions_for_the_featured_office_only(): void
-=======
     public function test_it_shows_active_windows_for_the_featured_office_only(): void
->>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
@@ -413,7 +409,6 @@ class AllOfficesMonitorTest extends TestCase
         ]);
     }
 
-<<<<<<< HEAD
     private function fakeLiveMonitorStorage(): string
     {
         $storageRoot = storage_path('framework/testing/live-monitor-videos/'.Str::uuid());
@@ -428,7 +423,8 @@ class AllOfficesMonitorTest extends TestCase
     private function liveMonitorAbsolutePath(string $storageRoot, string $relativePath): string
     {
         return rtrim($storageRoot, '\\/').DIRECTORY_SEPARATOR.str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $relativePath);
-=======
+    }
+
     private function extractSection(string $html, string $startMarker, string $endMarker): string
     {
         $start = strpos($html, $startMarker);
@@ -440,6 +436,5 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertNotFalse($end, sprintf('Failed to find end marker [%s].', $endMarker));
 
         return substr($html, $start, $end - $start);
->>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
     }
 }

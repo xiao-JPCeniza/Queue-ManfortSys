@@ -306,7 +306,6 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
-<<<<<<< HEAD
     public function test_generic_office_admin_dashboard_shows_sidebar_dashboard_and_quick_actions(): void
     {
         $office = $this->createOffice(
@@ -331,26 +330,12 @@ class OfficeQueueDashboardTest extends TestCase
             ->assertSee('Menu')
             ->assertSee('Dashboard')
             ->assertSee('Reports')
-            ->assertSee('Queue Management')
             ->assertSee('Quick Actions')
             ->assertSee('Clear Waiting Line')
+            ->assertSee('Reset Queue Number')
             ->assertSee('Citizen Center Queue Operations Desk');
     }
 
-    private function createOffice(
-        int $serviceWindowCount = 1,
-        string $name = 'Accounting Office',
-        string $slug = 'accounting',
-        string $prefix = 'ACCT',
-        string $description = 'Accounting services'
-    ): Office
-    {
-        return Office::create([
-            'name' => $name,
-            'slug' => $slug,
-            'prefix' => $prefix,
-            'description' => $description,
-=======
     public function test_office_admin_can_reset_queue_numbering_for_today(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 11, 0, 0, 'Asia/Manila'));
@@ -409,14 +394,20 @@ class OfficeQueueDashboardTest extends TestCase
             ->assertSee('Clear Waiting Line');
     }
 
-    private function createOffice(int $serviceWindowCount = 1, array $attributes = []): Office
+    private function createOffice(
+        int $serviceWindowCount = 1,
+        string $name = 'Accounting Office',
+        string $slug = 'accounting',
+        string $prefix = 'ACCT',
+        string $description = 'Accounting services',
+        array $attributes = []
+    ): Office
     {
         return Office::create(array_merge([
-            'name' => 'Accounting Office',
-            'slug' => 'accounting',
-            'prefix' => 'ACCT',
-            'description' => 'Accounting services',
->>>>>>> 250b7837ca5d70bdb0729efd1ec106c8c2334abd
+            'name' => $name,
+            'slug' => $slug,
+            'prefix' => $prefix,
+            'description' => $description,
             'next_number' => 1,
             'service_window_count' => $serviceWindowCount,
             'tickets_accommodated_total' => 0,
