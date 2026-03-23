@@ -3,21 +3,13 @@
     $videoLibrary = app(\App\Support\LiveMonitorVideoLibrary::class);
     $playlistVideos = $videoLibrary->playlistVideos();
     $customIdleMonitorVideoPath = $videoLibrary->activeVideoPath();
-<<<<<<< HEAD
     $hasCustomIdleMonitorVideo = $customIdleMonitorVideoPath !== null && $videoLibrary->exists($customIdleMonitorVideoPath);
     $hasDefaultIdleMonitorVideo = is_file($defaultIdleMonitorVideoPath);
     $hasIdleMonitorVideo = $hasCustomIdleMonitorVideo || $hasDefaultIdleMonitorVideo;
-    $idleMonitorVideoUrl = $hasIdleMonitorVideo ? ($idleMonitorVideoUrl ?? route('media.tourism-video')) : '';
+    $idleMonitorVideoUrl = $idleMonitorVideoUrl ?? route('media.tourism-video');
     $idleMonitorVideoRevision = $hasCustomIdleMonitorVideo
-        ? (string) filemtime($videoLibrary->absolutePath($customIdleMonitorVideoPath))
-        : ($hasDefaultIdleMonitorVideo ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
-    $idleMonitorVideoSource = $idleMonitorVideoUrl !== ''
-        ? $idleMonitorVideoUrl.(str_contains($idleMonitorVideoUrl, '?') ? '&' : '?').'v='.rawurlencode($idleMonitorVideoRevision)
-        : '';
-=======
-    $idleMonitorVideoRevision = ($customIdleMonitorVideoPath !== null && $videoLibrary->exists($customIdleMonitorVideoPath))
         ? $videoLibrary->videoRevision($customIdleMonitorVideoPath)
-        : (is_file($defaultIdleMonitorVideoPath) ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
+        : ($hasDefaultIdleMonitorVideo ? (string) filemtime($defaultIdleMonitorVideoPath) : 'default');
     $idleMonitorVideoSource = $idleMonitorVideoUrl.(str_contains($idleMonitorVideoUrl, '?') ? '&' : '?').'v='.rawurlencode($idleMonitorVideoRevision);
     $idleMonitorVideoPlaylist = $playlistVideos
         ->map(function (array $video) use ($videoLibrary): array {
@@ -35,7 +27,7 @@
         ->values()
         ->all();
 
-    if ($idleMonitorVideoPlaylist === []) {
+    if ($idleMonitorVideoPlaylist === [] && $hasIdleMonitorVideo) {
         $idleMonitorVideoPlaylist = [[
             'id' => 'default-tourism-video',
             'name' => 'MF TOURISM VIDEO.mp4',
@@ -46,18 +38,14 @@
     }
 
     $idleMonitorVideoPlaylistRevision = sha1(json_encode($idleMonitorVideoPlaylist));
->>>>>>> a32c52daef4b024fe8cc426d5be60f665cbbdb54
 @endphp
 
 <div
     data-live-monitor-idle-video-config
     data-idle-video-url="{{ $idleMonitorVideoUrl }}"
     data-idle-video-revision="{{ $idleMonitorVideoRevision }}"
-<<<<<<< HEAD
     data-idle-video-available="{{ $hasIdleMonitorVideo ? 'true' : 'false' }}"
-=======
     data-idle-video-playlist-revision="{{ $idleMonitorVideoPlaylistRevision }}"
->>>>>>> a32c52daef4b024fe8cc426d5be60f665cbbdb54
     hidden
     aria-hidden="true"
 ></div>
@@ -196,7 +184,17 @@
                 const nextPlaylist = parsePlaylist(controller);
                 const nextPlaylistRevision = controller.config?.dataset.idleVideoPlaylistRevision ?? 'default';
 
-                if (! controller.video || ! controller.source || nextPlaylist.length === 0) {
+                if (! controller.video || ! controller.source) {
+                    return;
+                }
+
+                if (nextPlaylist.length === 0) {
+                    controller.appliedPlaylist = [];
+                    controller.appliedPlaylistRevision = nextPlaylistRevision;
+                    controller.pendingPlaylist = null;
+                    controller.pendingPlaylistRevision = null;
+                    controller.currentPlaylistIndex = 0;
+
                     return;
                 }
 
@@ -308,19 +306,12 @@
                         source: null,
                         playlistConfig: null,
                         idleSince: null,
-<<<<<<< HEAD
-                        appliedVideoUrl: null,
-                        appliedVideoRevision: null,
-                        pendingVideoUrl: null,
-                        pendingVideoRevision: null,
-                        hasAvailableVideo: false,
-=======
                         appliedPlaylist: [],
                         appliedPlaylistRevision: null,
                         pendingPlaylist: null,
                         pendingPlaylistRevision: null,
                         currentPlaylistIndex: 0,
->>>>>>> a32c52daef4b024fe8cc426d5be60f665cbbdb54
+                        hasAvailableVideo: false,
                         boundVideo: null,
                     };
 
@@ -335,7 +326,7 @@
                 bindVideoEvents(controller);
                 syncVideoSource(controller);
                 controller.hasAvailableVideo = controller.config?.dataset.idleVideoAvailable === 'true'
-                    && (controller.config?.dataset.idleVideoUrl ?? '') !== '';
+                    && controller.appliedPlaylist.length > 0;
 
                 const hasCurrentTransaction = root.dataset.hasCurrentTransaction === 'true';
                 const hasQueuedNextInline = root.dataset.hasQueuedNextInline === 'true';
