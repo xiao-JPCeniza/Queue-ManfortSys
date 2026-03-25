@@ -37,6 +37,8 @@ class Offices extends Component
 
     public string $serviceWindowCountSelection = '1';
 
+    public array $serviceWindowLabels = [];
+
     public ?int $officeIdPendingDeletion = null;
 
     public string $officeNamePendingDeletion = '';
@@ -44,12 +46,14 @@ class Offices extends Component
     public function mount(): void
     {
         $this->syncServiceWindowSelection();
+        $this->syncServiceWindowLabels();
     }
 
     public function updatedServiceWindowOfficeSlug(string $officeSlug): void
     {
         $this->serviceWindowOfficeSlug = $officeSlug;
         $this->syncServiceWindowSelection();
+        $this->syncServiceWindowLabels();
     }
 
     public function toggleCreateForm(): void
@@ -205,6 +209,7 @@ class Offices extends Component
         $this->resetForm();
         $this->showCreateForm = false;
         $this->syncServiceWindowSelection($this->publicQueueOffices());
+        $this->syncServiceWindowLabels();
 
         session()->flash('success', "{$office->name} was added, is now visible on the public queue page, and already has its own office login.");
         session()->flash('generatedOfficeAccount', [
@@ -256,6 +261,7 @@ class Offices extends Component
 
         $this->cancelDeleteOffice();
         $this->syncServiceWindowSelection($this->publicQueueOffices());
+        $this->syncServiceWindowLabels();
 
         session()->flash('success', "{$officeName} was deleted from the public queue.");
     }
@@ -341,13 +347,59 @@ class Offices extends Component
             return;
         }
 
-        $selectedOffice->update(['service_window_count' => $requestedWindowCount]);
+        $selectedOffice->update([
+            'service_window_count' => $requestedWindowCount,
+            'service_window_labels' => $selectedOffice->sanitizeServiceWindowLabels(
+                $selectedOffice->service_window_labels ?? [],
+                $requestedWindowCount
+            ),
+        ]);
         $this->syncServiceWindowSelection($this->publicQueueOffices());
+        $this->syncServiceWindowLabels();
 
         session()->flash(
             'success',
             $selectedOffice->name.' service windows updated to '.$requestedWindowCount.'.'
         );
+    }
+
+    public function saveServiceWindowLabels(): void
+    {
+        $officeOptions = $this->publicQueueOffices();
+        $selectedOffice = $officeOptions->firstWhere('slug', $this->serviceWindowOfficeSlug);
+
+        if (! $selectedOffice instanceof Office) {
+            $this->syncServiceWindowSelection($officeOptions);
+            $this->syncServiceWindowLabels();
+            session()->flash('error', 'Please select a valid office for the service window labels.');
+
+            return;
+        }
+
+        $rules = [];
+        $attributes = [];
+
+        foreach ($selectedOffice->serviceWindowNumbers() as $windowNumber) {
+            $rules["serviceWindowLabels.$windowNumber"] = ['nullable', 'string', 'max:40'];
+            $attributes["serviceWindowLabels.$windowNumber"] = 'service window '.$windowNumber.' label';
+        }
+
+        $validated = Validator::make(
+            ['serviceWindowLabels' => $this->serviceWindowLabels],
+            $rules,
+            [],
+            $attributes
+        )->validate();
+
+        $selectedOffice->update([
+            'service_window_labels' => $selectedOffice->sanitizeServiceWindowLabels(
+                $validated['serviceWindowLabels'] ?? []
+            ),
+        ]);
+
+        $this->syncServiceWindowLabels($selectedOffice->fresh());
+
+        session()->flash('success', $selectedOffice->name.' service window labels updated.');
     }
 
     public function render()
@@ -357,6 +409,7 @@ class Offices extends Component
 
         return view('livewire.super-admin.offices', [
             'offices' => $offices,
+            'selectedOffice' => $selectedOffice,
             'serviceWindowCountOptions' => $this->serviceWindowCountOptions(),
             'serviceWindowSelectedOfficeLabel' => $selectedOffice?->name ?? 'No office selected',
             'serviceWindowCurrentCount' => $selectedOffice?->resolvedServiceWindowCount() ?? 1,
@@ -380,7 +433,7 @@ class Offices extends Component
         return Office::sortPublicQueueOffices(
             Office::query()
                 ->activePublicQueue()
-                ->get(['id', 'name', 'slug', 'prefix', 'description', 'service_window_count'])
+                ->get(['id', 'name', 'slug', 'prefix', 'description', 'service_window_count', 'service_window_labels'])
         );
     }
 
@@ -400,6 +453,13 @@ class Offices extends Component
         $selectedOffice = $this->resolveSelectedOffice($officeOptions);
         $this->serviceWindowOfficeSlug = $selectedOffice?->slug ?? '';
         $this->serviceWindowCountSelection = (string) ($selectedOffice?->resolvedServiceWindowCount() ?? 1);
+    }
+
+    private function syncServiceWindowLabels(?Office $selectedOffice = null): void
+    {
+        $selectedOffice ??= $this->resolveSelectedOffice();
+
+        $this->serviceWindowLabels = $selectedOffice?->editableServiceWindowLabels()->all() ?? [];
     }
 
     private function resolveSelectedOffice(?Collection $officeOptions = null): ?Office

@@ -41,7 +41,7 @@
                                 rel="noopener"
                                 class="gov-btn gov-btn-primary"
                             >
-                                Open Window {{ $serviceWindowNumber }} Tab
+                                {{ $office->serviceWindowLabel($serviceWindowNumber) }}
                             </a>
                         @endforeach
                     </div>

@@ -87,6 +87,8 @@ class WindowDesk extends Component
 
     public function render()
     {
+        $this->office->refresh();
+
         $windowEntry = $this->servingEntryQuery()->first();
         $waiting = $this->orderedWaitingEntries();
 

@@ -96,6 +96,7 @@
                 <select
                     id="service-window-office"
                     x-model="selectedOfficeSlug"
+                    wire:model.live="serviceWindowOfficeSlug"
                     x-on:change="syncWindowCount()"
                     @disabled($offices->isEmpty())
                     class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100"
@@ -134,6 +135,49 @@
                 Apply Window Count
             </button>
         </form>
+
+        @if($selectedOffice)
+            <form wire:submit="saveServiceWindowLabels" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div class="max-w-2xl">
+                        <h3 class="text-base font-semibold text-slate-900">Service Window Labels</h3>
+                        <p class="mt-1 text-sm text-slate-500">
+                            Rename the tabs for {{ $selectedOffice->name }}. Leave a field blank to use the default window name.
+                        </p>
+                    </div>
+
+                    <button
+                        type="submit"
+                        wire:loading.attr="disabled"
+                        wire:target="saveServiceWindowLabels"
+                        class="lgu-btn inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    >
+                        Save Window Labels
+                    </button>
+                </div>
+
+                <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    @foreach($selectedOffice->serviceWindowNumbers() as $windowNumber)
+                        <div>
+                            <label for="service-window-label-{{ $windowNumber }}" class="mb-2 block text-sm font-medium text-slate-700">
+                                Window {{ $windowNumber }}
+                            </label>
+                            <input
+                                id="service-window-label-{{ $windowNumber }}"
+                                type="text"
+                                wire:model.defer="serviceWindowLabels.{{ $windowNumber }}"
+                                maxlength="40"
+                                placeholder="Window {{ $windowNumber }}"
+                                class="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            >
+                            @error('serviceWindowLabels.'.$windowNumber)
+                                <p class="mt-2 text-sm text-rose-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    @endforeach
+                </div>
+            </form>
+        @endif
     </section>
 
     @if($showCreateForm)

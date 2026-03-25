@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Office extends Model
 {
@@ -42,6 +43,7 @@ class Office extends Model
         'description',
         'next_number',
         'service_window_count',
+        'service_window_labels',
         'tickets_accommodated_total',
         'is_active',
         'show_in_public_queue',
@@ -49,6 +51,7 @@ class Office extends Model
 
     protected $casts = [
         'service_window_count' => 'integer',
+        'service_window_labels' => 'array',
         'tickets_accommodated_total' => 'integer',
         'is_active' => 'boolean',
         'show_in_public_queue' => 'boolean',
@@ -148,8 +151,50 @@ class Office extends Model
     public function serviceWindowLabel(int $windowNumber): string
     {
         $windowNumber = max(1, $windowNumber);
+        $customLabel = $this->sanitizeServiceWindowLabels($this->service_window_labels ?? [])
+            [$windowNumber] ?? null;
+
+        if ($customLabel !== null) {
+            return $customLabel;
+        }
 
         return 'Window '.$windowNumber;
+    }
+
+    public function editableServiceWindowLabels(): Collection
+    {
+        $customLabels = $this->sanitizeServiceWindowLabels($this->service_window_labels ?? []);
+
+        return $this->serviceWindowNumbers()
+            ->mapWithKeys(fn (int $windowNumber) => [
+                (string) $windowNumber => $customLabels[$windowNumber] ?? '',
+            ]);
+    }
+
+    public function sanitizeServiceWindowLabels(array $labels, ?int $maxWindowCount = null): array
+    {
+        $maxWindowCount ??= $this->resolvedServiceWindowCount();
+        $normalizedLabels = [];
+
+        foreach ($labels as $windowNumber => $label) {
+            $windowNumber = (int) $windowNumber;
+
+            if ($windowNumber < 1 || $windowNumber > $maxWindowCount) {
+                continue;
+            }
+
+            $normalizedLabel = trim((string) $label);
+
+            if ($normalizedLabel === '') {
+                continue;
+            }
+
+            $normalizedLabels[$windowNumber] = Str::limit($normalizedLabel, 40, '');
+        }
+
+        ksort($normalizedLabels);
+
+        return $normalizedLabels;
     }
 
     public function getQueueJoinUrl(): string
