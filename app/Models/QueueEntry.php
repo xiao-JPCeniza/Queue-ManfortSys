@@ -204,7 +204,7 @@ class QueueEntry extends Model
 
         $preferPriority = $lastCalledEntry !== null
             ? ! $lastCalledEntry->isPriorityClient()
-            : (bool) $orderedWaitingEntries->first()?->isPriorityClient();
+            : true;
 
         $serviceOrder = collect();
 

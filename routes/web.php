@@ -5,6 +5,7 @@ use App\Http\Controllers\HrmoOfficeController;
 use App\Http\Controllers\OfficeDashboardController;
 use App\Http\Controllers\OfficeLiveMonitorController;
 use App\Http\Controllers\OfficeQueueReportsPdfController;
+use App\Http\Controllers\OfficeWindowController;
 use App\Livewire\Auth\Login;
 use App\Livewire\ClientDashboard;
 use App\Livewire\QueueJoin;
@@ -286,6 +287,9 @@ Route::post('/logout', function () {
 
     Route::middleware(['office.access'])->group(function () {
         Route::get('/office/{office}', OfficeDashboardController::class)->name('office.dashboard');
+        Route::get('/office/{office}/window{windowNumber}', OfficeWindowController::class)
+            ->whereNumber('windowNumber')
+            ->name('office.window');
         Route::get('/office/{office}/live-monitor', OfficeLiveMonitorController::class)->name('office.monitor');
         Route::get('/office/{office}/monitor', HrmoOfficeController::class)->name('office.hrmo.monitor');
         Route::get('/office/{office}/bplo-monitor', BploOfficeController::class)->name('office.bplo.monitor');

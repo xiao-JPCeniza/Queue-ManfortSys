@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Livewire\OfficeAdmin\Dashboard;
+use App\Livewire\OfficeAdmin\WindowDesk;
 use App\Models\Office;
 use App\Models\QueueEntry;
 use App\Models\Role;
@@ -29,7 +30,7 @@ class OfficeQueueDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 9, 30, 0, 'Asia/Manila'));
 
         $office = $this->createOffice();
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $this->createQueueEntry(
             office: $office,
@@ -58,7 +59,7 @@ class OfficeQueueDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 9, 30, 0, 'Asia/Manila'));
 
         $office = $this->createOffice();
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $oldEntry = $this->createQueueEntry(
             office: $office,
@@ -95,7 +96,7 @@ class OfficeQueueDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
         $office = $this->createOffice(serviceWindowCount: 2);
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $currentServing = $this->createQueueEntry(
             office: $office,
@@ -148,7 +149,7 @@ class OfficeQueueDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
         $office = $this->createOffice();
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $currentServing = $this->createQueueEntry(
             office: $office,
@@ -186,7 +187,7 @@ class OfficeQueueDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));
 
         $office = $this->createOffice();
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $regularEntry = $this->createQueueEntry(
             office: $office,
@@ -208,7 +209,7 @@ class OfficeQueueDashboardTest extends TestCase
         Livewire::test(Dashboard::class, ['office' => $office])
             ->call('callNext')
             ->assertSee($priorityEntry->queue_number)
-            ->assertSee('Priority');
+            ->assertSee('Now serving ACCT-011 at Window 1.');
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $priorityEntry->id,
@@ -226,7 +227,7 @@ class OfficeQueueDashboardTest extends TestCase
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 9, 30, 0, 'Asia/Manila'));
 
         $office = $this->createOffice();
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $oldWaiting = $this->createQueueEntry(
             office: $office,
@@ -333,7 +334,10 @@ class OfficeQueueDashboardTest extends TestCase
             ->assertSee('Quick Actions')
             ->assertSee('Clear Waiting Line')
             ->assertSee('Reset Queue Number')
-            ->assertSee('Citizen Center Queue Operations Desk');
+            ->assertSee('Citizen Center Queue Operations Desk')
+            ->assertSee('Service Window Tabs')
+            ->assertSee('Open Window 1 Tab')
+            ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 1]), false);
     }
 
     public function test_office_admin_can_reset_queue_numbering_for_today(): void
@@ -343,7 +347,7 @@ class OfficeQueueDashboardTest extends TestCase
         $office = $this->createOffice();
         $office->update(['next_number' => 12]);
 
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $yesterdayEntry = $this->createQueueEntry(
             office: $office,
@@ -385,13 +389,111 @@ class OfficeQueueDashboardTest extends TestCase
             ]
         );
 
-        $user = User::factory()->create(['office_id' => $office->id]);
+        $user = $this->createOfficeAdminUser($office);
 
         $this->actingAs($user);
 
         Livewire::test(Dashboard::class, ['office' => $office])
             ->assertSee('Quick Actions')
             ->assertSee('Clear Waiting Line');
+    }
+
+    public function test_bplo_dashboard_shows_window_tab_buttons(): void
+    {
+        $office = $this->createOffice(
+            serviceWindowCount: 2,
+            name: 'Business Permits',
+            slug: 'business-permits',
+            prefix: 'BPLO',
+            description: 'Business permit services'
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $this->actingAs($user)
+            ->get(route('office.dashboard', $office->slug))
+            ->assertOk()
+            ->assertSee('Service Window Tabs')
+            ->assertSee('Open Window 1 Tab')
+            ->assertSee('Open Window 2 Tab')
+            ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 1]), false);
+    }
+
+    public function test_multi_window_office_dashboard_shows_window_tabs_for_each_window(): void
+    {
+        $office = $this->createOffice(
+            serviceWindowCount: 3,
+            name: 'Treasury',
+            slug: 'treasury',
+            prefix: 'TRSY',
+            description: 'Treasury services'
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $this->actingAs($user)
+            ->get(route('office.dashboard', $office->slug))
+            ->assertOk()
+            ->assertSee('Service Window Tabs')
+            ->assertSee('Open Window 1 Tab')
+            ->assertSee('Open Window 2 Tab')
+            ->assertSee('Open Window 3 Tab')
+            ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 3]), false);
+    }
+
+    public function test_office_window_route_renders_the_requested_window_tab(): void
+    {
+        $office = $this->createOffice(
+            serviceWindowCount: 2,
+            name: 'Business Permits',
+            slug: 'business-permits',
+            prefix: 'BPLO',
+            description: 'Business permit services'
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $this->actingAs($user)
+            ->get('/office/business-permits/window1')
+            ->assertOk()
+            ->assertSee('Business Permits Window 1')
+            ->assertSee('Call Next')
+            ->assertSee('Back to Operations Desk');
+    }
+
+    public function test_window_tab_call_next_assigns_the_ticket_to_the_requested_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 23, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: 2,
+            name: 'Business Permits',
+            slug: 'business-permits',
+            prefix: 'BPLO',
+            description: 'Business permit services'
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $waitingEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'BPLO-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 23, 9, 45, 0, 'Asia/Manila')
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 1])
+            ->call('callNext')
+            ->assertSee('Now serving BPLO-001 at Window 1.')
+            ->assertSee('BPLO-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $waitingEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 1,
+        ]);
     }
 
     private function createOffice(
@@ -413,6 +515,22 @@ class OfficeQueueDashboardTest extends TestCase
             'tickets_accommodated_total' => 0,
             'is_active' => true,
         ], $attributes));
+    }
+
+    private function createOfficeAdminUser(Office $office): User
+    {
+        $role = Role::firstOrCreate(
+            ['slug' => 'office_admin'],
+            [
+                'name' => 'Office Admin',
+                'description' => 'Office-specific administrator',
+            ]
+        );
+
+        return User::factory()->create([
+            'role_id' => $role->id,
+            'office_id' => $office->id,
+        ]);
     }
 
     private function createQueueEntry(

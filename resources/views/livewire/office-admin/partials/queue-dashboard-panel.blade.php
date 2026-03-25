@@ -20,9 +20,7 @@
         <section class="gov-card gov-serving-card xl:col-span-3" aria-labelledby="serving-heading">
             <div class="gov-card-head">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 id="serving-heading" class="gov-font-heading gov-card-title">
-                        {{ $usesMultipleServiceWindows ? 'Service Windows' : 'Currently Serving' }}
-                    </h2>
+                    <h2 id="serving-heading" class="gov-font-heading gov-card-title">Service Windows</h2>
                     <span class="gov-status-chip {{ $servingEntries->isNotEmpty() ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
                         {{ $servingEntries->count() }} active
                     </span>
@@ -33,69 +31,20 @@
             </div>
 
             <div class="gov-card-body">
-                <div class="gov-window-grid">
-                    @foreach($serviceWindows as $window)
-                        @php($windowEntry = $window['entry'])
-
-                        <article class="gov-window-card">
-                            <div class="gov-window-head">
-                                <div>
-                                    <p class="gov-window-kicker">{{ $window['label'] }}</p>
-                                    <h3 class="gov-window-title">
-                                        {{ $windowEntry?->queue_number ?? 'Available' }}
-                                    </h3>
-                                </div>
-
-                                <span class="gov-status-chip {{ $windowEntry ? 'gov-status-chip-active' : 'gov-status-chip-idle' }}">
-                                    {{ $windowEntry ? 'Serving' : 'Idle' }}
-                                </span>
-                            </div>
-
-                            @if($windowEntry)
-                                <div class="gov-ticket-board gov-ticket-board-window">
-                                    <p class="gov-ticket-label">Ticket Number</p>
-                                    <p class="gov-ticket-number" aria-label="{{ $window['label'] }} serving {{ $windowEntry->queue_number }}">
-                                        {{ $windowEntry->queue_number }}
-                                    </p>
-                                    <p class="gov-client-type-chip {{ $windowEntry->isPriorityClient() ? 'gov-client-type-chip-priority' : 'gov-client-type-chip-regular' }}">
-                                        {{ $windowEntry->client_type_label }}
-                                    </p>
-                                    <p class="gov-ticket-meta">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
-                                </div>
-                            @else
-                                <div class="gov-ticket-empty gov-ticket-empty-window">
-                                    <p>{{ $window['label'] }} is ready for the next client.</p>
-                                </div>
-                            @endif
-
-                            <div class="gov-window-actions">
-                                <button
-                                    wire:click="callNext({{ $window['number'] }})"
-                                    wire:loading.attr="disabled"
-                                    wire:target="callNext"
-                                    type="button"
-                                    class="gov-btn gov-btn-warning"
-                                >
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5 6 9H3v6h3l5 4V5Z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M18.5 6a9 9 0 0 1 0 12" />
-                                    </svg>
-                                    Call Next
-                                </button>
-
-                                @if($windowEntry)
-                                    <button
-                                        wire:click="complete({{ $windowEntry->id }})"
-                                        type="button"
-                                        class="gov-btn gov-btn-complete"
-                                    >
-                                        Mark Completed
-                                    </button>
-                                @endif
-                            </div>
-                        </article>
-                    @endforeach
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Service Window Tabs</p>
+                    <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        @foreach($office->serviceWindowNumbers() as $serviceWindowNumber)
+                            <a
+                                href="{{ route('office.window', ['office' => $office->slug, 'windowNumber' => $serviceWindowNumber]) }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="gov-btn gov-btn-primary"
+                            >
+                                Open Window {{ $serviceWindowNumber }} Tab
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         </section>
