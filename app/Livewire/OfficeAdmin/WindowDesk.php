@@ -89,13 +89,14 @@ class WindowDesk extends Component
     {
         $this->office->refresh();
 
-        $windowEntry = $this->servingEntryQuery()->first();
+        $windowEntry = $this->servingEntryQuery()->first()?->setRelation('office', $this->office);
         $waiting = $this->orderedWaitingEntries();
 
         return view('livewire.office-admin.window-desk', [
             'windowEntry' => $windowEntry,
             'waiting' => $waiting,
             'windowLabel' => $this->office->serviceWindowLabel($this->windowNumber),
+            'windowDisplayTitle' => $this->office->serviceWindowDisplayTitle($this->windowNumber),
         ]);
     }
 
@@ -124,11 +125,20 @@ class WindowDesk extends Component
 
     private function orderedWaitingEntries(): Collection
     {
-        $waitingEntries = $this->todayOfficeQueueEntries()
+        $waitingQuery = $this->todayOfficeQueueEntries()
             ->waiting()
             ->orderBy('created_at')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        $this->applyQueueRoutingFilter($waitingQuery);
+
+        $waitingEntries = $waitingQuery
+            ->get()
+            ->map(function (QueueEntry $entry) {
+                $entry->setRelation('office', $this->office);
+
+                return $entry;
+            });
 
         return QueueEntry::sortWaitingEntriesForService(
             $waitingEntries,
@@ -138,11 +148,15 @@ class WindowDesk extends Component
 
     private function latestCalledOfficeEntry(): ?QueueEntry
     {
-        return $this->todayOfficeQueueEntries()
-            ->whereNotNull('called_at')
+        $query = $this->todayOfficeQueueEntries()
+            ->whereNotNull('called_at');
+
+        $this->applyQueueRoutingFilter($query);
+
+        return $query
             ->orderByDesc('called_at')
             ->orderByDesc('id')
-            ->first();
+            ->first()?->setRelation('office', $this->office);
     }
 
     private function manilaDayBounds(): array
@@ -154,5 +168,22 @@ class WindowDesk extends Component
             $manilaNow->copy()->startOfDay()->setTimezone($dbTimezone),
             $manilaNow->copy()->endOfDay()->setTimezone($dbTimezone),
         ];
+    }
+
+    private function applyQueueRoutingFilter($query): void
+    {
+        if (! $this->office->hasQueueServiceOptions()) {
+            return;
+        }
+
+        $serviceKeys = $this->office->queueServiceKeysForWindow($this->windowNumber);
+
+        if ($serviceKeys === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->whereIn('service_key', $serviceKeys);
     }
 }

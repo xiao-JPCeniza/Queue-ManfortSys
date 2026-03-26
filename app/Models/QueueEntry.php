@@ -25,6 +25,7 @@ class QueueEntry extends Model
         'office_id',
         'queue_number',
         'client_type',
+        'service_key',
         'status',
         'service_window_number',
         'served_by',
@@ -244,7 +245,22 @@ class QueueEntry extends Model
     {
         $windowNumber = $this->resolvedServiceWindowNumber();
 
-        return $windowNumber === null ? null : 'Window '.$windowNumber;
+        if ($windowNumber === null) {
+            return null;
+        }
+
+        return $this->office?->serviceWindowLabel($windowNumber)
+            ?? 'Window '.$windowNumber;
+    }
+
+    public function getServiceLabelAttribute(): ?string
+    {
+        return $this->office?->queueServiceLabel($this->service_key);
+    }
+
+    public function getServiceDestinationLabelAttribute(): ?string
+    {
+        return $this->office?->queueServiceDestinationLabel($this->service_key);
     }
 
     public function displayCreatedAt(string $timezone = 'Asia/Manila'): ?Carbon

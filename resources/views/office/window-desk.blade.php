@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $office->name . ' ' . $office->serviceWindowLabel($windowNumber))
+@section('title', $office->name . ' ' . $office->serviceWindowDisplayTitle($windowNumber))
 @section('full_width', '1')
 
 @section('content')

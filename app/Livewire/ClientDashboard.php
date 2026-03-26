@@ -16,6 +16,7 @@ class ClientDashboard extends Component
     public string $selectedOfficeSlug = '';
     public ?int $pendingOfficeId = null;
     public ?string $pendingOfficeName = null;
+    public ?string $pendingServiceKey = null;
     public bool $showClientTypeModal = false;
 
     public function getOfficeOptions()
@@ -60,7 +61,24 @@ class ClientDashboard extends Component
     {
         $this->pendingOfficeId = null;
         $this->pendingOfficeName = null;
+        $this->pendingServiceKey = null;
         $this->showClientTypeModal = false;
+    }
+
+    public function selectPendingService(string $serviceKey): void
+    {
+        $office = $this->pendingOffice();
+
+        if (! $office?->queueServiceOption($serviceKey)) {
+            return;
+        }
+
+        $this->pendingServiceKey = $serviceKey;
+    }
+
+    public function backToServiceSelection(): void
+    {
+        $this->pendingServiceKey = null;
     }
 
     public function confirmOfficeSelection(string $clientType): void
@@ -69,10 +87,10 @@ class ClientDashboard extends Component
             return;
         }
 
-        $this->selectOffice($this->pendingOfficeId, $clientType);
+        $this->selectOffice($this->pendingOfficeId, $clientType, $this->pendingServiceKey);
     }
 
-    public function selectOffice(int $officeId, string $clientType = QueueEntry::TYPE_REGULAR): void
+    public function selectOffice(int $officeId, string $clientType = QueueEntry::TYPE_REGULAR, ?string $serviceKey = null): void
     {
         $office = Office::query()
             ->activePublicQueue()
@@ -84,12 +102,23 @@ class ClientDashboard extends Component
         }
 
         $normalizedClientType = QueueEntry::normalizeClientType($clientType);
+        $resolvedServiceKey = $office->queueServiceOption($serviceKey) !== null ? $serviceKey : null;
+
+        if ($office->hasQueueServiceOptions() && $resolvedServiceKey === null) {
+            $this->pendingOfficeId = $office->id;
+            $this->pendingOfficeName = $office->name;
+            $this->showClientTypeModal = true;
+
+            return;
+        }
+
         $queueNumber = $office->generateNextQueueNumber();
 
         $entry = QueueEntry::create([
             'office_id' => $office->id,
             'queue_number' => $queueNumber,
             'client_type' => $normalizedClientType,
+            'service_key' => $resolvedServiceKey,
             'status' => QueueEntry::STATUS_WAITING,
         ]);
 
@@ -103,6 +132,9 @@ class ClientDashboard extends Component
             'prefix' => $office->prefix,
             'client_type' => $normalizedClientType,
             'client_type_label' => QueueEntry::clientTypeLabel($normalizedClientType),
+            'service_key' => $resolvedServiceKey,
+            'service_label' => $office->queueServiceLabel($resolvedServiceKey),
+            'service_destination_label' => $office->queueServiceDestinationLabel($resolvedServiceKey),
             'issued_date' => $issuedAt->format('F j, Y'),
             'issued_time' => $issuedAt->format('g:i A'),
         ];
@@ -127,6 +159,8 @@ class ClientDashboard extends Component
             'officeOptions' => $officeOptions,
             'clientTypeOptions' => QueueEntry::selectableClientTypeOptions(),
             'priorityClientTypeOptions' => QueueEntry::priorityClientTypeOptions(),
+            'pendingQueueServiceOptions' => $this->pendingOffice()?->queueServiceOptions() ?? [],
+            'pendingQueueService' => $this->pendingOffice()?->queueServiceOption($this->pendingServiceKey),
         ]);
     }
 
@@ -142,5 +176,17 @@ class ClientDashboard extends Component
         if (! $selectedOfficeStillExists) {
             $this->selectedOfficeSlug = '';
         }
+    }
+
+    private function pendingOffice(): ?Office
+    {
+        if ($this->pendingOfficeId === null) {
+            return null;
+        }
+
+        return Office::query()
+            ->activePublicQueue()
+            ->where('id', $this->pendingOfficeId)
+            ->first();
     }
 }

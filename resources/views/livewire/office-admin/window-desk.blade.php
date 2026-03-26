@@ -10,7 +10,7 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.32em] text-blue-100">Window Control Tab</p>
-                    <h1 class="mt-2 text-3xl font-semibold">{{ $office->name }} {{ $windowLabel }}</h1>
+                    <h1 class="mt-2 text-3xl font-semibold">{{ $windowDisplayTitle }}</h1>
                     <p class="mt-2 max-w-2xl text-sm text-blue-100/95">
                         Focused service window screen for calling the next client and completing the current transaction.
                     </p>
@@ -51,6 +51,9 @@
                         <p class="mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] {{ $windowEntry->isPriorityClient() ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600' }}">
                             {{ $windowEntry->client_type_label }}
                         </p>
+                        @if($windowEntry->service_label)
+                            <p class="mt-4 text-sm font-semibold text-slate-800">{{ $windowEntry->service_label }}</p>
+                        @endif
                         <p class="mt-4 text-sm text-slate-500">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
                     </div>
                 @else
@@ -103,6 +106,9 @@
                                 <p class="mt-1 text-xs font-medium uppercase tracking-[0.12em] {{ $entry->isPriorityClient() ? 'text-amber-700' : 'text-slate-500' }}">
                                     {{ $entry->client_type_label }}
                                 </p>
+                                @if($entry->service_label)
+                                    <p class="mt-2 text-xs font-semibold text-slate-700">{{ $entry->service_label }}</p>
+                                @endif
                                 <p class="mt-2 text-xs text-slate-500">Joined {{ $entry->displayCreatedAt()?->format('h:i A') }}</p>
                             </div>
 

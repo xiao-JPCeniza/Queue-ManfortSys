@@ -58,7 +58,7 @@
         @if(!$ticket)
             <section class="queue-intro-card">
                 <h2 class="queue-intro-title">Select an Office to Get Your Queue Number</h2>
-                <p class="queue-intro-copy">Please choose the office you need to visit. You can select a regular ticket, or open the priority option and choose PWD, Senior Citizen, or Pregnant before the queue number is generated.</p>
+                <p class="queue-intro-copy">Please choose the office you need to visit. Offices like MTO will ask you to pick a service first, then choose Regular or Priority before the queue number is generated.</p>
             </section>
 
             <div class="gov-office-grid mt-5" role="list">
@@ -114,6 +114,15 @@
                     </div>
                     <div class="queue-ticket-body">
                         <p class="queue-ticket-type">{{ $ticket['client_type_label'] }}</p>
+                        @if(!empty($ticket['service_label']))
+                            <div class="mx-auto mb-3 max-w-[30ch] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-left">
+                                <p class="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-slate-500">Service</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-900">{{ $ticket['service_label'] }}</p>
+                                @if(!empty($ticket['service_destination_label']))
+                                    <p class="mt-1 text-[0.72rem] font-medium uppercase tracking-[0.08em] text-blue-700">{{ $ticket['service_destination_label'] }}</p>
+                                @endif
+                            </div>
+                        @endif
                         <p class="queue-ticket-label">Queue Number</p>
                         <p class="queue-ticket-number" id="ticket-number-display" aria-label="Your queue number is {{ $ticket['queue_number'] }}">{{ $ticket['queue_number'] }}</p>
                         <p class="queue-ticket-timestamp" aria-label="Ticket issue date and time">
@@ -144,77 +153,123 @@
             aria-labelledby="queue-client-type-title"
             wire:click.self="cancelOfficeSelection"
         >
-            <div class="queue-modal-card">
+            <div class="queue-modal-card {{ $pendingQueueServiceOptions !== [] && !$pendingQueueService ? 'queue-modal-card-wide' : '' }}">
                 <p class="queue-modal-kicker">Ticket Option</p>
                 <h2 id="queue-client-type-title" class="queue-modal-title">{{ $pendingOfficeName }}</h2>
-                <p class="queue-modal-copy">Choose the ticket type before generating the queue number.</p>
+                @if($pendingQueueServiceOptions !== [] && !$pendingQueueService)
+                    <p class="queue-modal-copy">Choose the MTO service first so the queue number can be routed to the correct teller or window.</p>
+                @else
+                    <p class="queue-modal-copy">Choose the ticket type before generating the queue number.</p>
+                @endif
 
-                <div class="queue-modal-option-grid" x-data="{ showPriorityOptions: false }">
-                    @php($regularOption = $clientTypeOptions[\App\Models\QueueEntry::TYPE_REGULAR] ?? null)
-                    @if($regularOption)
-                        <button
-                            type="button"
-                            wire:click="confirmOfficeSelection('{{ \App\Models\QueueEntry::TYPE_REGULAR }}')"
-                            wire:loading.attr="disabled"
-                            wire:target="confirmOfficeSelection"
-                            class="queue-modal-option queue-modal-option-regular"
-                        >
-                            <span class="queue-modal-option-copy-wrap">
-                                <span class="queue-modal-option-title">{{ $regularOption['label'] }}</span>
-                                <span class="queue-modal-option-description">{{ $regularOption['description'] }}</span>
-                            </span>
-                            <span class="queue-modal-option-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
-                                </svg>
-                            </span>
-                        </button>
+                @if($pendingQueueServiceOptions !== [] && !$pendingQueueService)
+                    <div class="queue-modal-option-grid queue-modal-service-grid">
+                        @foreach($pendingQueueServiceOptions as $serviceKey => $serviceOption)
+                            <button
+                                type="button"
+                                wire:click="selectPendingService('{{ $serviceKey }}')"
+                                wire:loading.attr="disabled"
+                                wire:target="selectPendingService"
+                                class="queue-modal-option queue-modal-option-service"
+                            >
+                                <span class="queue-modal-option-copy-wrap">
+                                    <span class="queue-modal-option-title">{{ $serviceOption['label'] }}</span>
+                                </span>
+                                <span class="queue-modal-option-icon queue-modal-option-icon-service" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
+                                    </svg>
+                                </span>
+                            </button>
+                        @endforeach
+                    </div>
+                @else
+                    @if($pendingQueueService)
+                        <div class="queue-selected-service">
+                            <p class="queue-selected-service-kicker">Selected Service</p>
+                            <p class="queue-selected-service-title">{{ $pendingQueueService['label'] }}</p>
+                        </div>
                     @endif
 
-                    <div class="queue-priority-picker" x-on:click.outside="showPriorityOptions = false">
-                        <button
-                            type="button"
-                            x-on:click="showPriorityOptions = !showPriorityOptions"
-                            x-bind:aria-expanded="showPriorityOptions.toString()"
-                            class="queue-modal-option queue-modal-option-priority"
-                        >
-                            <span class="queue-modal-option-copy-wrap">
-                                <span class="queue-modal-option-title">Priority</span>
-                                <span class="queue-modal-option-description">Choose PWD, Senior Citizen, or Pregnant.</span>
-                            </span>
-                            <span
-                                class="queue-modal-option-icon queue-modal-option-toggle-icon"
-                                x-bind:class="showPriorityOptions ? 'queue-modal-option-icon-open' : ''"
-                                aria-hidden="true"
+                    <div class="queue-modal-option-grid" x-data="{ showPriorityOptions: false }">
+                        @php($regularOption = $clientTypeOptions[\App\Models\QueueEntry::TYPE_REGULAR] ?? null)
+                        @if($regularOption)
+                            <button
+                                type="button"
+                                wire:click="confirmOfficeSelection('{{ \App\Models\QueueEntry::TYPE_REGULAR }}')"
+                                wire:loading.attr="disabled"
+                                wire:target="confirmOfficeSelection"
+                                class="queue-modal-option queue-modal-option-regular"
                             >
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
-                                </svg>
-                            </span>
-                        </button>
+                                <span class="queue-modal-option-copy-wrap">
+                                    <span class="queue-modal-option-title">{{ $regularOption['label'] }}</span>
+                                    <span class="queue-modal-option-description">{{ $regularOption['description'] }}</span>
+                                </span>
+                                <span class="queue-modal-option-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
+                                    </svg>
+                                </span>
+                            </button>
+                        @endif
 
-                        <div
-                            x-show="showPriorityOptions"
-                            x-transition.opacity.duration.150ms
-                            x-transition.scale.origin.top.duration.150ms
-                            style="display: none;"
-                            class="queue-priority-dropdown"
-                        >
-                            @foreach($priorityClientTypeOptions as $clientType => $option)
-                                <button
-                                    type="button"
-                                    wire:click="confirmOfficeSelection('{{ $clientType }}')"
-                                    wire:loading.attr="disabled"
-                                    wire:target="confirmOfficeSelection"
-                                    class="queue-priority-choice"
+                        <div class="queue-priority-picker" x-on:click.outside="showPriorityOptions = false">
+                            <button
+                                type="button"
+                                x-on:click="showPriorityOptions = !showPriorityOptions"
+                                x-bind:aria-expanded="showPriorityOptions.toString()"
+                                class="queue-modal-option queue-modal-option-priority"
+                            >
+                                <span class="queue-modal-option-copy-wrap">
+                                    <span class="queue-modal-option-title">Priority</span>
+                                    <span class="queue-modal-option-description">Choose PWD, Senior Citizen, or Pregnant.</span>
+                                </span>
+                                <span
+                                    class="queue-modal-option-icon queue-modal-option-toggle-icon"
+                                    x-bind:class="showPriorityOptions ? 'queue-modal-option-icon-open' : ''"
+                                    aria-hidden="true"
                                 >
-                                    <span class="queue-priority-choice-title">{{ $option['label'] }}</span>
-                                    <span class="queue-priority-choice-description">{{ $option['description'] }}</span>
-                                </button>
-                            @endforeach
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5l8 7-8 7" />
+                                    </svg>
+                                </span>
+                            </button>
+
+                            <div
+                                x-show="showPriorityOptions"
+                                x-transition.opacity.duration.150ms
+                                x-transition.scale.origin.top.duration.150ms
+                                style="display: none;"
+                                class="queue-priority-dropdown"
+                            >
+                                @foreach($priorityClientTypeOptions as $clientType => $option)
+                                    <button
+                                        type="button"
+                                        wire:click="confirmOfficeSelection('{{ $clientType }}')"
+                                        wire:loading.attr="disabled"
+                                        wire:target="confirmOfficeSelection"
+                                        class="queue-priority-choice"
+                                    >
+                                        <span class="queue-priority-choice-title">{{ $option['label'] }}</span>
+                                        <span class="queue-priority-choice-description">{{ $option['description'] }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
                         </div>
+
+                        @if($pendingQueueServiceOptions !== [] && $pendingQueueService)
+                            <button
+                                type="button"
+                                wire:click="backToServiceSelection"
+                                wire:loading.attr="disabled"
+                                wire:target="backToServiceSelection"
+                                class="queue-modal-secondary"
+                            >
+                                Choose Another Service
+                            </button>
+                        @endif
                     </div>
-                </div>
+                @endif
 
                 <button
                     type="button"
@@ -673,6 +728,10 @@
         padding: 1.35rem;
     }
 
+    .queue-modal-card-wide {
+        width: min(100%, 56rem);
+    }
+
     .queue-modal-kicker {
         margin: 0;
         color: #14539e;
@@ -701,6 +760,11 @@
         display: grid;
         gap: 0.85rem;
         margin-top: 1.15rem;
+    }
+
+    .queue-modal-service-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: stretch;
     }
 
     .queue-modal-option {
@@ -752,6 +816,19 @@
         border-color: #d7a84d;
     }
 
+    .queue-modal-option-service {
+        border-color: #cbd5e1;
+        background:
+            linear-gradient(135deg, rgb(255, 255, 255), rgb(239, 246, 255) 58%),
+            linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        min-height: 100%;
+    }
+
+    .queue-modal-option-service:hover,
+    .queue-modal-option-service:focus {
+        border-color: #93c5fd;
+    }
+
     .queue-modal-option-title {
         color: #0f172a;
         font-size: 1.08rem;
@@ -794,6 +871,12 @@
         border: 1px solid #efcf90;
     }
 
+    .queue-modal-option-icon-service {
+        background: #eff6ff;
+        color: #14539e;
+        border: 1px solid #bfdbfe;
+    }
+
     .queue-modal-option-toggle-icon {
         transition: transform 0.18s ease;
     }
@@ -810,6 +893,74 @@
     .queue-priority-picker {
         display: grid;
         gap: 0.65rem;
+    }
+
+    .queue-modal-service-destination,
+    .queue-selected-service-destination {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        margin-top: 0.65rem;
+        padding: 0.28rem 0.65rem;
+        border-radius: 999px;
+        background: #e0ecff;
+        color: #14539e;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .queue-selected-service {
+        margin-top: 1.1rem;
+        margin-bottom: 1rem;
+        border-radius: 1rem;
+        border: 1px solid #dbeafe;
+        background: linear-gradient(180deg, #f8fbff 0%, #eff6ff 100%);
+        padding: 1rem;
+    }
+
+    .queue-selected-service-kicker {
+        margin: 0;
+        color: #14539e;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .queue-selected-service-title {
+        margin: 0.45rem 0 0;
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .queue-selected-service-copy {
+        margin: 0.35rem 0 0;
+        color: #475569;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        font-weight: 600;
+    }
+
+    .queue-modal-secondary {
+        width: 100%;
+        border-radius: 0.95rem;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 0.9rem 1rem;
+        transition: background 0.18s ease, border-color 0.18s ease;
+    }
+
+    .queue-modal-secondary:hover,
+    .queue-modal-secondary:focus {
+        outline: none;
+        background: #f8fafc;
+        border-color: #94a3b8;
     }
 
     .queue-priority-dropdown {
@@ -881,6 +1032,10 @@
 
         .gov-office-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .queue-modal-service-grid {
+            grid-template-columns: 1fr;
         }
     }
 

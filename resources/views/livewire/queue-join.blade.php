@@ -1,48 +1,79 @@
 <div class="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
     @if(!$joined)
-        <div class="lgu-card rounded-2xl max-w-md w-full overflow-hidden border-2 border-slate-200">
+        <div class="lgu-card rounded-2xl {{ $queueServiceOptions !== [] && !$selectedQueueService ? 'max-w-5xl' : 'max-w-md' }} w-full overflow-hidden border-2 border-slate-200">
             <div class="bg-blue-800 px-6 py-5 text-center">
                 <h1 class="text-xl font-bold text-white">{{ $office->name }}</h1>
                 <p class="text-blue-200 text-sm mt-0.5">{{ $office->description }}</p>
             </div>
             <div class="p-8">
-                <p class="text-slate-600 mb-6">Select the ticket type you need for this office. Your queue number will be generated right away after you choose.</p>
-                <div class="grid gap-3">
-                    <button
-                        wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_REGULAR }}')"
-                        type="button"
-                        class="lgu-btn w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-xl text-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                    >
-                        Regular
-                    </button>
-
-                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                        <p class="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-amber-700">Priority</p>
-                        <div class="grid gap-2">
+                @if($queueServiceOptions !== [] && !$selectedQueueService)
+                    <p class="text-slate-600 mb-6">Select the MTO service you need first. After that, you can choose whether your ticket is Regular or Priority.</p>
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach($queueServiceOptions as $serviceKey => $serviceOption)
                             <button
-                                wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_PWD }}')"
+                                wire:click="selectService('{{ $serviceKey }}')"
                                 type="button"
-                                class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >
-                                PWD
+                                <span class="block text-base font-semibold text-slate-900">{{ $serviceOption['label'] }}</span>
+                                <span class="mt-1 block text-sm text-slate-500">{{ $serviceOption['description'] }}</span>
+                                <span class="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
+                                    {{ $serviceOption['destination'] }}
+                                </span>
                             </button>
-                            <button
-                                wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_SENIOR_CITIZEN }}')"
-                                type="button"
-                                class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-                            >
-                                Senior Citizen
-                            </button>
-                            <button
-                                wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_PREGNANT }}')"
-                                type="button"
-                                class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-                            >
-                                Pregnant
-                            </button>
-                        </div>
+                        @endforeach
                     </div>
-                </div>
+                @else
+                    <p class="text-slate-600 mb-6">
+                        Select the ticket type you need for this office. Your queue number will be generated right away after you choose.
+                    </p>
+
+                    @if($selectedQueueService)
+                        <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Selected Service</p>
+                            <p class="mt-2 text-lg font-semibold text-slate-900">{{ $selectedQueueService['label'] }}</p>
+                            <p class="mt-1 text-sm text-slate-500">{{ $selectedQueueService['description'] }}</p>
+                            <p class="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
+                                {{ $selectedQueueService['destination'] }}
+                            </p>
+                        </div>
+                    @endif
+
+                    <div class="grid gap-3">
+                        <button
+                            wire:click="joinQueue('{{ \App\Models\QueueEntry::TYPE_REGULAR }}')"
+                            type="button"
+                            class="lgu-btn w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-xl text-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                        >
+                            Regular
+                        </button>
+
+                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <p class="mb-3 text-sm font-semibold uppercase tracking-[0.14em] text-amber-700">Priority</p>
+                            <div class="grid gap-2">
+                                @foreach($priorityClientTypeOptions as $clientType => $option)
+                                    <button
+                                        wire:click="joinQueue('{{ $clientType }}')"
+                                        type="button"
+                                        class="lgu-btn w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-xl text-base transition focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                                    >
+                                        {{ $option['label'] }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        @if($queueServiceOptions !== [] && $selectedQueueService)
+                            <button
+                                wire:click="resetServiceSelection"
+                                type="button"
+                                class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                            >
+                                Choose Another Service
+                            </button>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
     @else
@@ -52,6 +83,15 @@
             </div>
             <div class="p-8">
                 <p class="inline-flex items-center justify-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">{{ $entry->client_type_label }}</p>
+                @if($entry->service_label)
+                    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Service</p>
+                        <p class="mt-1 text-base font-semibold text-slate-900">{{ $entry->service_label }}</p>
+                        @if($entry->service_destination_label)
+                            <p class="mt-1 text-sm text-slate-500">Assigned to {{ $entry->service_destination_label }}</p>
+                        @endif
+                    </div>
+                @endif
                 <p class="text-slate-600 mb-4">Your queue number is</p>
                 <p class="text-5xl font-bold text-emerald-600 mb-2" aria-label="Queue number {{ $entry->queue_number }}">{{ $entry->queue_number }}</p>
                 <p class="text-slate-500 text-sm">Please wait for your number to be called.</p>

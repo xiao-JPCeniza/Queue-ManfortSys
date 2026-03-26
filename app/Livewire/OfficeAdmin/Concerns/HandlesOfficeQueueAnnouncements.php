@@ -17,6 +17,7 @@ trait HandlesOfficeQueueAnnouncements
                 'type' => $type,
                 'queue_number' => $queueNumber,
                 'service_window_number' => $serviceWindowNumber,
+                'service_window_label' => $serviceWindowNumber === null ? null : $office->serviceWindowLabel($serviceWindowNumber),
                 'triggered_at' => now()->toIso8601String(),
             ],
             now()->addMinutes(30)

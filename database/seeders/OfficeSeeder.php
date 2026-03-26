@@ -12,7 +12,7 @@ class OfficeSeeder extends Seeder
         $offices = [
             // Core offices (existing)
             ['name' => 'HRMO', 'slug' => 'hrmo', 'prefix' => 'HRMO', 'description' => 'Human Resource Management Office', 'service_window_count' => 5],
-            ['name' => 'Treasury', 'slug' => 'treasury', 'prefix' => 'TRSY', 'description' => 'Municipal Treasurer\'s Office', 'service_window_count' => 5],
+            ['name' => 'Treasury', 'slug' => 'treasury', 'prefix' => 'TRSY', 'description' => 'Municipal Treasurer\'s Office', 'service_window_count' => count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)],
             ['name' => 'Accounting', 'slug' => 'accounting', 'prefix' => 'ACCT', 'description' => 'Municipal Accounting Office', 'service_window_count' => 1],
             ['name' => 'Civil Registry', 'slug' => 'civil-registry', 'prefix' => 'CR', 'description' => 'Local Civil Registry Office', 'service_window_count' => 1],
             ['name' => 'Business Permits', 'slug' => 'business-permits', 'prefix' => 'BPLO', 'description' => 'Business Permits and Licensing Office', 'service_window_count' => 5],
@@ -38,6 +38,10 @@ class OfficeSeeder extends Seeder
                 'is_active' => true,
                 'show_in_public_queue' => in_array($office['slug'], Office::MUNICIPALITY_QUEUE_SERVICE_SLUGS, true),
             ]);
+
+            if (! $officeModel->exists && $office['slug'] === 'treasury') {
+                $officeModel->service_window_labels = Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS;
+            }
 
             if (!$officeModel->exists) {
                 $officeModel->next_number = 1;

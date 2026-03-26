@@ -197,7 +197,7 @@ class Dashboard extends Component
             }
         }
 
-        $next = $this->orderedWaitingEntries()->first();
+        $next = $this->orderedWaitingEntries($windowNumber)->first();
 
         if (! $next) {
             session()->flash('office_message', 'No one waiting in queue.');
@@ -287,27 +287,40 @@ class Dashboard extends Component
             ->whereBetween('created_at', [$dayStart, $dayEnd]);
     }
 
-    private function orderedWaitingEntries(): Collection
+    private function orderedWaitingEntries(?int $windowNumber = null): Collection
     {
-        $waitingEntries = $this->todayOfficeQueueEntries()
+        $waitingQuery = $this->todayOfficeQueueEntries()
             ->waiting()
             ->orderBy('created_at')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
+
+        $this->applyQueueRoutingFilter($waitingQuery, $windowNumber);
+
+        $waitingEntries = $waitingQuery
+            ->get()
+            ->map(function (QueueEntry $entry) {
+                $entry->setRelation('office', $this->office);
+
+                return $entry;
+            });
 
         return QueueEntry::sortWaitingEntriesForService(
             $waitingEntries,
-            $this->latestCalledOfficeEntry()
+            $this->latestCalledOfficeEntry($windowNumber)
         );
     }
 
-    private function latestCalledOfficeEntry(): ?QueueEntry
+    private function latestCalledOfficeEntry(?int $windowNumber = null): ?QueueEntry
     {
-        return $this->todayOfficeQueueEntries()
-            ->whereNotNull('called_at')
+        $query = $this->todayOfficeQueueEntries()
+            ->whereNotNull('called_at');
+
+        $this->applyQueueRoutingFilter($query, $windowNumber);
+
+        return $query
             ->orderByDesc('called_at')
             ->orderByDesc('id')
-            ->first();
+            ->first()?->setRelation('office', $this->office);
     }
 
     public function render()
@@ -324,6 +337,8 @@ class Dashboard extends Component
                 if ($entry->service_window_number === null) {
                     $entry->service_window_number = 1;
                 }
+
+                $entry->setRelation('office', $this->office);
 
                 return $entry;
             });
@@ -385,7 +400,24 @@ class Dashboard extends Component
             })
             ->orderBy('called_at')
             ->orderBy('id')
-            ->first();
+            ->first()?->setRelation('office', $this->office);
+    }
+
+    private function applyQueueRoutingFilter($query, ?int $windowNumber = null): void
+    {
+        if ($windowNumber === null || ! $this->office->hasQueueServiceOptions()) {
+            return;
+        }
+
+        $serviceKeys = $this->office->queueServiceKeysForWindow($windowNumber);
+
+        if ($serviceKeys === []) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->whereIn('service_key', $serviceKeys);
     }
 
     private function defaultAdvancedDashboardData(): array

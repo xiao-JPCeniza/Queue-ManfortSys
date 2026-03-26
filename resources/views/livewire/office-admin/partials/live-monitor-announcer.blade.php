@@ -8,6 +8,7 @@
     data-announcement-type="{{ $announcementPayload['type'] ?? '' }}"
     data-queue-number="{{ $announcementPayload['queue_number'] ?? '' }}"
     data-service-window-number="{{ $announcementPayload['service_window_number'] ?? '' }}"
+    data-service-window-label="{{ $announcementPayload['service_window_label'] ?? '' }}"
     data-triggered-at="{{ $announcementPayload['triggered_at'] ?? '' }}"
     aria-hidden="true"
 ></div>
@@ -211,9 +212,10 @@
                 return `${toSpokenCharacters(prefix)} ${toSpokenCharacters(number)}`;
             };
 
-            const buildAnnouncementMessage = (type, queueNumber, serviceWindowNumber) => {
-                const windowSuffix = serviceWindowNumber
-                    ? ` Please proceed to Window ${serviceWindowNumber}.`
+            const buildAnnouncementMessage = (type, queueNumber, serviceWindowNumber, serviceWindowLabel) => {
+                const destinationLabel = serviceWindowLabel || (serviceWindowNumber ? `Window ${serviceWindowNumber}` : '');
+                const windowSuffix = destinationLabel
+                    ? ` Please proceed to ${destinationLabel}.`
                     : ' Please proceed to the office.';
 
                 if (type === 'prepare') {
@@ -329,6 +331,7 @@
                 const announcementType = element.dataset.announcementType || '';
                 const queueNumber = element.dataset.queueNumber || '';
                 const serviceWindowNumber = element.dataset.serviceWindowNumber || '';
+                const serviceWindowLabel = element.dataset.serviceWindowLabel || '';
                 const triggeredAt = element.dataset.triggeredAt || '';
 
                 if (!officeSlug || !announcementId || !queueNumber) {
@@ -348,7 +351,7 @@
                 }
 
                 window.sessionStorage.setItem(seenKey, announcementId);
-                enqueueAnnouncement(announcementId, buildAnnouncementMessage(announcementType, queueNumber, serviceWindowNumber));
+                enqueueAnnouncement(announcementId, buildAnnouncementMessage(announcementType, queueNumber, serviceWindowNumber, serviceWindowLabel));
             };
 
             const syncAnnouncements = () => {

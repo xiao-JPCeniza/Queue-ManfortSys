@@ -496,6 +496,60 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
+    public function test_treasury_window_tab_calls_only_the_service_assigned_to_that_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 26, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'Treasury',
+            slug: 'treasury',
+            prefix: 'TRSY',
+            description: 'Treasury services',
+            attributes: [
+                'service_window_labels' => Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $marketChargesEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'TRSY-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 26, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'market_charges'
+        );
+
+        $releaseCashEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'TRSY-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 26, 9, 46, 0, 'Asia/Manila'),
+            serviceKey: 'release_of_disbursement_of_cash'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 10])
+            ->call('callNext')
+            ->assertSee('Now serving TRSY-002 at Window 1.')
+            ->assertSee('Release of Disbursement of Cash')
+            ->assertDontSee('TRSY-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $releaseCashEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 10,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $marketChargesEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+    }
+
     private function createOffice(
         int $serviceWindowCount = 1,
         string $name = 'Accounting Office',
@@ -538,13 +592,15 @@ class OfficeQueueDashboardTest extends TestCase
         string $queueNumber,
         string $status,
         Carbon $createdAt,
-        string $clientType = QueueEntry::TYPE_REGULAR
+        string $clientType = QueueEntry::TYPE_REGULAR,
+        ?string $serviceKey = null
     ): QueueEntry
     {
         $entry = QueueEntry::create([
             'office_id' => $office->id,
             'queue_number' => $queueNumber,
             'client_type' => $clientType,
+            'service_key' => $serviceKey,
             'status' => $status,
         ]);
 

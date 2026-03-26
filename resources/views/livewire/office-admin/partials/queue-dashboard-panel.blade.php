@@ -106,6 +106,9 @@
                                 <p class="gov-waiting-type {{ $entry->isPriorityClient() ? 'gov-waiting-type-priority' : 'gov-waiting-type-regular' }}">
                                     {{ $entry->client_type_label }}
                                 </p>
+                                @if($entry->service_label)
+                                    <p class="mt-2 text-xs font-semibold text-slate-700">{{ $entry->service_label }}</p>
+                                @endif
                                 <p class="gov-waiting-time">Joined {{ $entry->displayCreatedAt()?->format('h:i A') }}</p>
                             </div>
                             <span class="gov-waiting-order">#{{ $loop->iteration }}</span>

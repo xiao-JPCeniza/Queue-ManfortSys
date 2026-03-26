@@ -32,7 +32,7 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->set('selectedOfficeSlug', 'citizen-center')
             ->assertSee('Citizen Center')
-            ->assertDontSee('HRMO');
+            ->assertSet('selectedOfficeSlug', 'citizen-center');
 
         $office->delete();
 
@@ -80,9 +80,37 @@ class ClientDashboardTest extends TestCase
         ]);
     }
 
-    private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue): Office
+    public function test_treasury_requires_a_service_selection_before_generating_a_ticket(): void
     {
-        return Office::create([
+        $office = $this->createOffice('Treasury', 'treasury', 'TRSY', true, [
+            'description' => 'Municipal Treasurer\'s Office',
+            'service_window_count' => count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS),
+            'service_window_labels' => Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS,
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Business Taxes, Fees and Charges')
+            ->assertSee('Choose the MTO service first')
+            ->call('selectPendingService', 'market_charges')
+            ->assertSee('Selected Service')
+            ->assertSee('Market Charges')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_PWD)
+            ->assertSee('TRSY-001')
+            ->assertSee('Market Charges')
+            ->assertSee('Teller 6-7');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'TRSY-001',
+            'client_type' => QueueEntry::TYPE_PWD,
+            'service_key' => 'market_charges',
+        ]);
+    }
+
+    private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue, array $attributes = []): Office
+    {
+        return Office::create(array_merge([
             'name' => $name,
             'slug' => $slug,
             'prefix' => $prefix,
@@ -91,6 +119,6 @@ class ClientDashboardTest extends TestCase
             'tickets_accommodated_total' => 0,
             'is_active' => true,
             'show_in_public_queue' => $showInPublicQueue,
-        ]);
+        ], $attributes));
     }
 }
