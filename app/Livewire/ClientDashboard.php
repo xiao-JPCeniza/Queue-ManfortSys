@@ -159,6 +159,7 @@ class ClientDashboard extends Component
             'officeOptions' => $officeOptions,
             'clientTypeOptions' => QueueEntry::selectableClientTypeOptions(),
             'priorityClientTypeOptions' => QueueEntry::priorityClientTypeOptions(),
+            'pendingOfficeSlug' => $this->pendingOffice()?->slug,
             'pendingQueueServiceOptions' => $this->pendingOffice()?->queueServiceOptions() ?? [],
             'pendingQueueService' => $this->pendingOffice()?->queueServiceOption($this->pendingServiceKey),
         ]);

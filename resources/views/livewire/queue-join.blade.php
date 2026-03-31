@@ -1,13 +1,21 @@
 <div class="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
+    @php($isMtoOffice = in_array($office->slug, ['treasury', 'mto'], true))
+    @php($isCivilRegistryOffice = $office->slug === 'civil-registry')
     @if(!$joined)
         <div class="lgu-card rounded-2xl {{ $queueServiceOptions !== [] && !$selectedQueueService ? 'max-w-5xl' : 'max-w-md' }} w-full overflow-hidden border-2 border-slate-200">
             <div class="bg-blue-800 px-6 py-5 text-center">
                 <h1 class="text-xl font-bold text-white">{{ $office->name }}</h1>
-                <p class="text-blue-200 text-sm mt-0.5">{{ $office->description }}</p>
+                <p class="text-blue-200 text-sm mt-0.5">{{ $office->display_description }}</p>
             </div>
             <div class="p-8">
                 @if($queueServiceOptions !== [] && !$selectedQueueService)
-                    <p class="text-slate-600 mb-6">Select the MTO service you need first. After that, you can choose whether your ticket is Regular or Priority.</p>
+                    <p class="text-slate-600 mb-6">
+                        {{ $isMtoOffice
+                            ? 'Select the MTO service you need first. After that, you can choose whether your ticket is Regular or Priority.'
+                            : ($isCivilRegistryOffice
+                                ? 'Select the window you need first. The services handled by each window are shown below. After that, you can choose whether your ticket is Regular or Priority.'
+                                : 'Select the service you need first. After that, you can choose whether your ticket is Regular or Priority.') }}
+                    </p>
                     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                         @foreach($queueServiceOptions as $serviceKey => $serviceOption)
                             <button

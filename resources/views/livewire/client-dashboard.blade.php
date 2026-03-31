@@ -1,4 +1,13 @@
 <div wire:poll.10s class="queue-page min-h-screen flex flex-col">
+    @php($officeAbbreviations = [
+        'hrmo' => 'HRMO',
+        'treasury' => 'MTO',
+        'civil-registry' => 'MCR',
+        'business-permits' => 'BPLO',
+        'bplo' => 'BPLO',
+        'menro' => 'MENRO',
+        'mswdo' => 'MSWDO',
+    ])
     <header class="queue-header text-white relative overflow-hidden">
         <div class="queue-header-ribbon" aria-hidden="true"></div>
         <div class="queue-shell-inner queue-header-inner relative z-10">
@@ -13,15 +22,6 @@
                 </div>
                 <div class="queue-header-tools">
                     @if(!$ticket)
-                        @php($officeAbbreviations = [
-                            'hrmo' => 'HRMO',
-                            'treasury' => 'MTO',
-                            'civil-registry' => 'MCR',
-                            'business-permits' => 'BPLO',
-                            'bplo' => 'BPLO',
-                            'menro' => 'MENRO',
-                            'mswdo' => 'MSWDO',
-                        ])
                         <label for="office-filter" class="sr-only">Choose office</label>
                         <select id="office-filter" wire:model.live="selectedOfficeSlug" class="queue-office-select">
                             <option value="">All offices</option>
@@ -74,8 +74,8 @@
 
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <span class="queue-office-name">{{ $office->name }}</span>
-                                <p class="queue-office-description">{{ $office->description }}</p>
+                                <span class="queue-office-name">{{ $officeAbbreviations[$office->slug] ?? $office->name }}</span>
+                                <p class="queue-office-description">{{ $office->display_description }}</p>
                             </div>
                             <span class="queue-office-arrow" aria-hidden="true">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 5l7 7-7 7"/></svg>
@@ -156,8 +156,17 @@
             <div class="queue-modal-card {{ $pendingQueueServiceOptions !== [] && !$pendingQueueService ? 'queue-modal-card-wide' : '' }}">
                 <p class="queue-modal-kicker">Ticket Option</p>
                 <h2 id="queue-client-type-title" class="queue-modal-title">{{ $pendingOfficeName }}</h2>
+                @php($isPendingMtoOffice = in_array($pendingOfficeSlug ?? '', ['treasury', 'mto'], true))
+                @php($isPendingCivilRegistryOffice = ($pendingOfficeSlug ?? '') === 'civil-registry')
+
                 @if($pendingQueueServiceOptions !== [] && !$pendingQueueService)
-                    <p class="queue-modal-copy">Choose the MTO service first so the queue number can be routed to the correct teller or window.</p>
+                    <p class="queue-modal-copy">
+                        {{ $isPendingMtoOffice
+                            ? 'Choose the MTO service first so the queue number can be routed to the correct teller or window.'
+                            : ($isPendingCivilRegistryOffice
+                                ? 'Choose the window first so the queue number can be routed to the correct office window.'
+                                : 'Choose the service first so the queue number can be routed to the correct teller or window.') }}
+                    </p>
                 @else
                     <p class="queue-modal-copy">Choose the ticket type before generating the queue number.</p>
                 @endif
@@ -170,10 +179,13 @@
                                 wire:click="selectPendingService('{{ $serviceKey }}')"
                                 wire:loading.attr="disabled"
                                 wire:target="selectPendingService"
-                                class="queue-modal-option queue-modal-option-service"
+                                class="queue-modal-option queue-modal-option-service {{ $isPendingCivilRegistryOffice ? 'queue-modal-option-service-detailed' : '' }}"
                             >
                                 <span class="queue-modal-option-copy-wrap">
                                     <span class="queue-modal-option-title">{{ $serviceOption['label'] }}</span>
+                                    @if($isPendingCivilRegistryOffice && !empty($serviceOption['description']))
+                                        <span class="queue-modal-option-description">{{ $serviceOption['description'] }}</span>
+                                    @endif
                                 </span>
                                 <span class="queue-modal-option-icon queue-modal-option-icon-service" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -188,6 +200,9 @@
                         <div class="queue-selected-service">
                             <p class="queue-selected-service-kicker">Selected Service</p>
                             <p class="queue-selected-service-title">{{ $pendingQueueService['label'] }}</p>
+                            @if($isPendingCivilRegistryOffice && !empty($pendingQueueService['description']))
+                                <p class="queue-selected-service-copy">{{ $pendingQueueService['description'] }}</p>
+                            @endif
                         </div>
                     @endif
 
@@ -710,15 +725,18 @@
         inset: 0;
         z-index: 50;
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: center;
-        padding: 1rem;
+        overflow-y: auto;
+        padding: clamp(0.75rem, 2vh, 1rem);
         background: rgba(15, 23, 42, 0.56);
         backdrop-filter: blur(3px);
     }
 
     .queue-modal-card {
         width: min(100%, 32rem);
+        max-height: calc(100dvh - 1.5rem);
+        overflow-y: auto;
         border-radius: 1.35rem;
         border: 1px solid #d4dfec;
         background:
@@ -726,6 +744,8 @@
             linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
         box-shadow: 0 24px 44px rgba(15, 23, 42, 0.2);
         padding: 1.35rem;
+        margin: auto 0;
+        scrollbar-gutter: stable;
     }
 
     .queue-modal-card-wide {
@@ -822,6 +842,10 @@
             linear-gradient(135deg, rgb(255, 255, 255), rgb(239, 246, 255) 58%),
             linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         min-height: 100%;
+    }
+
+    .queue-modal-option-service-detailed {
+        align-items: flex-start;
     }
 
     .queue-modal-option-service:hover,
@@ -1017,6 +1041,37 @@
         font-size: 0.92rem;
         font-weight: 700;
         padding: 0.8rem 1rem;
+    }
+
+    @media (max-height: 920px) {
+        .queue-modal-card {
+            padding: 1rem;
+        }
+
+        .queue-modal-option-grid {
+            gap: 0.7rem;
+            margin-top: 0.95rem;
+        }
+
+        .queue-modal-option {
+            min-height: 4.6rem;
+            padding: 0.9rem 1rem;
+        }
+
+        .queue-selected-service {
+            margin-top: 0.95rem;
+            margin-bottom: 0.85rem;
+            padding: 0.9rem;
+        }
+
+        .queue-priority-dropdown {
+            gap: 0.5rem;
+            padding: 0.7rem;
+        }
+
+        .queue-priority-choice {
+            padding: 0.8rem 0.9rem;
+        }
     }
 
     @media (max-width: 1280px) {

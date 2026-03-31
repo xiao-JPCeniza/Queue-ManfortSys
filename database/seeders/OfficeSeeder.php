@@ -14,11 +14,11 @@ class OfficeSeeder extends Seeder
             ['name' => 'HRMO', 'slug' => 'hrmo', 'prefix' => 'HRMO', 'description' => 'Human Resource Management Office', 'service_window_count' => 5],
             ['name' => 'Treasury', 'slug' => 'treasury', 'prefix' => 'TRSY', 'description' => 'Municipal Treasurer\'s Office', 'service_window_count' => count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)],
             ['name' => 'Accounting', 'slug' => 'accounting', 'prefix' => 'ACCT', 'description' => 'Municipal Accounting Office', 'service_window_count' => 1],
-            ['name' => 'Civil Registry', 'slug' => 'civil-registry', 'prefix' => 'CR', 'description' => 'Local Civil Registry Office', 'service_window_count' => 1],
-            ['name' => 'Business Permits', 'slug' => 'business-permits', 'prefix' => 'BPLO', 'description' => 'Business Permits and Licensing Office', 'service_window_count' => 5],
+            ['name' => 'Civil Registry', 'slug' => 'civil-registry', 'prefix' => 'CR', 'description' => 'Municipal Local Civil Registry Office', 'service_window_count' => count(Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)],
+            ['name' => 'Business Permits', 'slug' => 'business-permits', 'prefix' => 'BPLO', 'description' => 'Business Permits and Licensing Office', 'service_window_count' => count(Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS)],
             // From OfficeDesignationSeeder (MISO360) – additional offices
             ['name' => 'Assessor\'s Office', 'slug' => 'assessors-office', 'prefix' => 'ASSR', 'description' => 'Municipal Assessor\'s Office', 'service_window_count' => 1],
-            ['name' => 'MENRO', 'slug' => 'menro', 'prefix' => 'MENRO', 'description' => 'Municipal Environment and Natural Resources Office', 'service_window_count' => 7],
+            ['name' => 'MENRO', 'slug' => 'menro', 'prefix' => 'MENRO', 'description' => 'Municipal Environment and Natural Resources Office', 'service_window_count' => count(Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS)],
             ['name' => 'MHO', 'slug' => 'mho', 'prefix' => 'MHO', 'description' => 'Municipal Health Office', 'service_window_count' => 1],
             ['name' => 'MSWDO', 'slug' => 'mswdo', 'prefix' => 'MSWDO', 'description' => 'Municipal Social Welfare and Development Office', 'service_window_count' => 7],
             ['name' => 'OBO', 'slug' => 'obo', 'prefix' => 'OBO', 'description' => 'Office of the Building Official', 'service_window_count' => 1],
@@ -41,6 +41,18 @@ class OfficeSeeder extends Seeder
 
             if (! $officeModel->exists && $office['slug'] === 'treasury') {
                 $officeModel->service_window_labels = Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS;
+            }
+
+            if (! $officeModel->exists && $office['slug'] === 'civil-registry') {
+                $officeModel->service_window_labels = Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS;
+            }
+
+            if (! $officeModel->exists && $office['slug'] === 'business-permits') {
+                $officeModel->service_window_labels = Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS;
+            }
+
+            if (! $officeModel->exists && $office['slug'] === 'menro') {
+                $officeModel->service_window_labels = Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS;
             }
 
             if (!$officeModel->exists) {

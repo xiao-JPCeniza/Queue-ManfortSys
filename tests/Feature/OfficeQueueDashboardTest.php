@@ -336,7 +336,7 @@ class OfficeQueueDashboardTest extends TestCase
             ->assertSee('Reset Queue Number')
             ->assertSee('Citizen Center Queue Operations Desk')
             ->assertSee('Service Window Tabs')
-            ->assertSee('Open Window 1 Tab')
+            ->assertSee('Window 1')
             ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 1]), false);
     }
 
@@ -380,12 +380,13 @@ class OfficeQueueDashboardTest extends TestCase
     public function test_menro_dashboard_shows_clear_waiting_line_quick_action(): void
     {
         $office = $this->createOffice(
-            serviceWindowCount: 7,
+            serviceWindowCount: count(Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS),
             attributes: [
                 'name' => 'MENRO',
                 'slug' => 'menro',
                 'prefix' => 'MENRO',
                 'description' => 'Municipal Environment and Natural Resources Office',
+                'service_window_labels' => Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS,
             ]
         );
 
@@ -398,14 +399,17 @@ class OfficeQueueDashboardTest extends TestCase
             ->assertSee('Clear Waiting Line');
     }
 
-    public function test_bplo_dashboard_shows_window_tab_buttons(): void
+    public function test_menro_dashboard_shows_configured_window_tab_buttons(): void
     {
         $office = $this->createOffice(
-            serviceWindowCount: 2,
-            name: 'Business Permits',
-            slug: 'business-permits',
-            prefix: 'BPLO',
-            description: 'Business permit services'
+            serviceWindowCount: count(Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'MENRO',
+            slug: 'menro',
+            prefix: 'MENRO',
+            description: 'Municipal Environment and Natural Resources Office',
+            attributes: [
+                'service_window_labels' => Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
         );
 
         $user = $this->createOfficeAdminUser($office);
@@ -414,8 +418,33 @@ class OfficeQueueDashboardTest extends TestCase
             ->get(route('office.dashboard', $office->slug))
             ->assertOk()
             ->assertSee('Service Window Tabs')
-            ->assertSee('Open Window 1 Tab')
-            ->assertSee('Open Window 2 Tab')
+            ->assertSee('Addressing Environmental Concerns')
+            ->assertSee('Issuance of CLIVE Card')
+            ->assertSee('Application for Environmental Clearance')
+            ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 2]), false);
+    }
+
+    public function test_bplo_dashboard_shows_window_tab_buttons(): void
+    {
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'Business Permits',
+            slug: 'business-permits',
+            prefix: 'BPLO',
+            description: 'Business permit services',
+            attributes: [
+                'service_window_labels' => Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $this->actingAs($user)
+            ->get(route('office.dashboard', $office->slug))
+            ->assertOk()
+            ->assertSee('Service Window Tabs')
+            ->assertSee('Business Permit Application')
+            ->assertSee('Request for Certifications')
             ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 1]), false);
     }
 
@@ -435,9 +464,9 @@ class OfficeQueueDashboardTest extends TestCase
             ->get(route('office.dashboard', $office->slug))
             ->assertOk()
             ->assertSee('Service Window Tabs')
-            ->assertSee('Open Window 1 Tab')
-            ->assertSee('Open Window 2 Tab')
-            ->assertSee('Open Window 3 Tab')
+            ->assertSee('Window 1')
+            ->assertSee('Window 2')
+            ->assertSee('Window 3')
             ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 3]), false);
     }
 
@@ -445,18 +474,18 @@ class OfficeQueueDashboardTest extends TestCase
     {
         $office = $this->createOffice(
             serviceWindowCount: 2,
-            name: 'Business Permits',
-            slug: 'business-permits',
-            prefix: 'BPLO',
-            description: 'Business permit services'
+            name: 'Citizen Center',
+            slug: 'citizen-center',
+            prefix: 'CCEN',
+            description: 'Citizen Center services'
         );
 
         $user = $this->createOfficeAdminUser($office);
 
         $this->actingAs($user)
-            ->get('/office/business-permits/window1')
+            ->get('/office/citizen-center/window1')
             ->assertOk()
-            ->assertSee('Business Permits Window 1')
+            ->assertSee('Citizen Center Window 1')
             ->assertSee('Call Next')
             ->assertSee('Back to Operations Desk');
     }
@@ -467,17 +496,17 @@ class OfficeQueueDashboardTest extends TestCase
 
         $office = $this->createOffice(
             serviceWindowCount: 2,
-            name: 'Business Permits',
-            slug: 'business-permits',
-            prefix: 'BPLO',
-            description: 'Business permit services'
+            name: 'Citizen Center',
+            slug: 'citizen-center',
+            prefix: 'CCEN',
+            description: 'Citizen Center services'
         );
 
         $user = $this->createOfficeAdminUser($office);
 
         $waitingEntry = $this->createQueueEntry(
             office: $office,
-            queueNumber: 'BPLO-001',
+            queueNumber: 'CCEN-001',
             status: QueueEntry::STATUS_WAITING,
             createdAt: Carbon::create(2026, 3, 23, 9, 45, 0, 'Asia/Manila')
         );
@@ -486,8 +515,8 @@ class OfficeQueueDashboardTest extends TestCase
 
         Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 1])
             ->call('callNext')
-            ->assertSee('Now serving BPLO-001 at Window 1.')
-            ->assertSee('BPLO-001');
+            ->assertSee('Now serving CCEN-001 at Window 1.')
+            ->assertSee('CCEN-001');
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $waitingEntry->id,
@@ -545,6 +574,168 @@ class OfficeQueueDashboardTest extends TestCase
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $marketChargesEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+    }
+
+    public function test_civil_registry_window_tab_calls_only_the_service_assigned_to_that_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 30, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'Civil Registry',
+            slug: 'civil-registry',
+            prefix: 'CR',
+            description: 'Municipal Local Civil Registry Office',
+            attributes: [
+                'service_window_labels' => Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $birthEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'CR-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 30, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'window_1_a'
+        );
+
+        $courtOrderEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'CR-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 30, 9, 46, 0, 'Asia/Manila'),
+            serviceKey: 'window_4_b'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 6])
+            ->call('callNext')
+            ->assertSee('Now serving CR-002 at Window 4-B.')
+            ->assertSee('Correction of Clerical Error')
+            ->assertDontSee('CR-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $courtOrderEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 6,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $birthEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+    }
+
+    public function test_bplo_window_tab_calls_only_the_service_assigned_to_that_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 31, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'Business Permits',
+            slug: 'business-permits',
+            prefix: 'BPLO',
+            description: 'Business Permits and Licensing Office',
+            attributes: [
+                'service_window_labels' => Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $permitEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'BPLO-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 31, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'business_permit_application'
+        );
+
+        $certificationEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'BPLO-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 31, 9, 46, 0, 'Asia/Manila'),
+            serviceKey: 'request_for_certifications'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 2])
+            ->call('callNext')
+            ->assertSee('Now serving BPLO-002 at Request for Certifications.')
+            ->assertSee('Request for Certifications')
+            ->assertDontSee('BPLO-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $certificationEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 2,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $permitEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+    }
+
+    public function test_menro_window_tab_calls_only_the_service_assigned_to_that_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 31, 10, 15, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'MENRO',
+            slug: 'menro',
+            prefix: 'MENRO',
+            description: 'Municipal Environment and Natural Resources Office',
+            attributes: [
+                'service_window_labels' => Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $concernEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MENRO-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 31, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'addressing_environmental_concerns'
+        );
+
+        $cliveEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MENRO-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 31, 9, 46, 0, 'Asia/Manila'),
+            serviceKey: 'issuance_of_clive_card'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 2])
+            ->call('callNext')
+            ->assertSee('Now serving MENRO-002 at Issuance of CLIVE Card.')
+            ->assertSee('Issuance of CLIVE Card')
+            ->assertDontSee('MENRO-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $cliveEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 2,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $concernEntry->id,
             'status' => QueueEntry::STATUS_WAITING,
             'service_window_number' => null,
         ]);

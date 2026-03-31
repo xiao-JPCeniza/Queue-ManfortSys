@@ -108,6 +108,89 @@ class ClientDashboardTest extends TestCase
         ]);
     }
 
+    public function test_civil_registry_requires_a_service_selection_before_generating_a_ticket(): void
+    {
+        $office = $this->createOffice('Civil Registry', 'civil-registry', 'CR', true, [
+            'description' => 'Municipal Local Civil Registry Office',
+            'service_window_count' => count(Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS),
+            'service_window_labels' => Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS,
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Birth Registration')
+            ->assertSee('Choose the window first')
+            ->call('selectPendingService', 'window_3')
+            ->assertSee('Selected Service')
+            ->assertSee('Death Registration')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_PREGNANT)
+            ->assertSee('CR-001')
+            ->assertSee('Death Registration');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'CR-001',
+            'client_type' => QueueEntry::TYPE_PREGNANT,
+            'service_key' => 'window_3',
+        ]);
+    }
+
+    public function test_bplo_requires_a_service_selection_before_generating_a_ticket(): void
+    {
+        $office = $this->createOffice('Business Permits', 'business-permits', 'BPLO', true, [
+            'description' => 'Business Permits and Licensing Office',
+            'service_window_count' => count(Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS),
+            'service_window_labels' => Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS,
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Business Permit Application (New & Renewal)')
+            ->assertSee('Choose the service first')
+            ->call('selectPendingService', 'request_for_certifications')
+            ->assertSee('Selected Service')
+            ->assertSee('Request for Certifications')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_SENIOR_CITIZEN)
+            ->assertSee('BPLO-001')
+            ->assertSee('Request for Certifications')
+            ->assertSee('Window 2');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'BPLO-001',
+            'client_type' => QueueEntry::TYPE_SENIOR_CITIZEN,
+            'service_key' => 'request_for_certifications',
+        ]);
+    }
+
+    public function test_menro_requires_a_service_selection_before_generating_a_ticket(): void
+    {
+        $office = $this->createOffice('MENRO', 'menro', 'MENRO', true, [
+            'description' => 'Municipal Environment and Natural Resources Office',
+            'service_window_count' => count(Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS),
+            'service_window_labels' => Office::MENRO_DEFAULT_SERVICE_WINDOW_LABELS,
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Addressing Environmental Concerns')
+            ->assertSee('Choose the service first')
+            ->call('selectPendingService', 'issuance_of_clive_card')
+            ->assertSee('Selected Service')
+            ->assertSee('Issuance of CLIVE Card')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_PWD)
+            ->assertSee('MENRO-001')
+            ->assertSee('Issuance of CLIVE Card')
+            ->assertSee('Window 2');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'MENRO-001',
+            'client_type' => QueueEntry::TYPE_PWD,
+            'service_key' => 'issuance_of_clive_card',
+        ]);
+    }
+
     private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue, array $attributes = []): Office
     {
         return Office::create(array_merge([

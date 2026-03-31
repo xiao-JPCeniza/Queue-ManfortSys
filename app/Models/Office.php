@@ -11,6 +11,88 @@ use Illuminate\Support\Str;
 
 class Office extends Model
 {
+    public const BPLO_DEFAULT_SERVICE_WINDOW_LABELS = [
+        1 => 'Business Permit Application',
+        2 => 'Request for Certifications',
+    ];
+
+    public const BPLO_QUEUE_SERVICE_OPTIONS = [
+        'business_permit_application' => [
+            'label' => 'Business Permit Application (New & Renewal)',
+            'description' => 'For new and renewal business permit applications handled at Window 1.',
+            'destination' => 'Window 1',
+            'window_numbers' => [1],
+        ],
+        'request_for_certifications' => [
+            'label' => 'Request for Certifications',
+            'description' => 'For certification requests handled at Window 2.',
+            'destination' => 'Window 2',
+            'window_numbers' => [2],
+        ],
+    ];
+
+    public const HRMO_DEFAULT_SERVICE_WINDOW_LABELS = [
+        1 => 'Recruitment Window 1',
+        2 => 'Recruitment Window 2',
+        3 => 'Certifications & Service Record',
+        4 => 'Valid ID Card',
+        5 => 'ARTA ID Card',
+    ];
+
+    public const HRMO_QUEUE_SERVICE_OPTIONS = [
+        'recruitment_selection_services' => [
+            'label' => 'Request for Recruitment and Selection Services',
+            'description' => 'For recruitment and selection service requests handled at Window 1 or Window 2.',
+            'destination' => 'Window 1-2',
+            'window_numbers' => [1, 2],
+        ],
+        'certifications_service_record' => [
+            'label' => 'Request for Certifications and Service Record',
+            'description' => 'For certification and service record requests handled at Window 3.',
+            'destination' => 'Window 3',
+            'window_numbers' => [3],
+        ],
+        'valid_identification_card' => [
+            'label' => 'Request for Valid Identification Card',
+            'description' => 'For valid identification card requests handled at Window 4.',
+            'destination' => 'Window 4',
+            'window_numbers' => [4],
+        ],
+        'arta_identification_card' => [
+            'label' => 'Request for Anti-Red Tape Act (ARTA) Identification Card',
+            'description' => 'For ARTA identification card requests handled at Window 5.',
+            'destination' => 'Window 5',
+            'window_numbers' => [5],
+        ],
+    ];
+
+    public const MENRO_DEFAULT_SERVICE_WINDOW_LABELS = [
+        1 => 'Addressing Environmental Concerns',
+        2 => 'Issuance of CLIVE Card',
+        3 => 'Application for Environmental Clearance',
+    ];
+
+    public const MENRO_QUEUE_SERVICE_OPTIONS = [
+        'addressing_environmental_concerns' => [
+            'label' => 'Addressing Environmental Concerns',
+            'description' => 'For environmental concerns handled at Window 1.',
+            'destination' => 'Window 1',
+            'window_numbers' => [1],
+        ],
+        'issuance_of_clive_card' => [
+            'label' => 'Issuance of CLIVE Card',
+            'description' => 'For CLIVE card issuance handled at Window 2.',
+            'destination' => 'Window 2',
+            'window_numbers' => [2],
+        ],
+        'application_for_environmental_clearance' => [
+            'label' => 'Application for Environmental Clearance',
+            'description' => 'For environmental clearance applications handled at Window 3.',
+            'destination' => 'Window 3',
+            'window_numbers' => [3],
+        ],
+    ];
+
     public const TREASURY_DEFAULT_SERVICE_WINDOW_LABELS = [
         1 => 'Teller 1',
         2 => 'Teller 2',
@@ -64,6 +146,54 @@ class Office extends Model
         ],
     ];
 
+    public const CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS = [
+        1 => 'Window 1-A',
+        2 => 'Window 1-B',
+        3 => 'Window 2',
+        4 => 'Window 3',
+        5 => 'Window 4-A',
+        6 => 'Window 4-B',
+    ];
+
+    public const CIVIL_REGISTRY_QUEUE_SERVICE_OPTIONS = [
+        'window_1_a' => [
+            'label' => 'Birth Registration',
+            'description' => 'Birth Registration (Current), Issuance of Birth Form 1A True Copy, Issuance of Birth Certified True Copy.',
+            'destination' => 'Window 1-A',
+            'window_numbers' => [1],
+        ],
+        'window_1_b' => [
+            'label' => 'Birth Registration',
+            'description' => 'Birth Registration (Current & Delayed), Issuance of Birth Form 1A True Copy, Issuance of Birth Certified True Copy, Legitimation.',
+            'destination' => 'Window 1-B',
+            'window_numbers' => [2],
+        ],
+        'window_2' => [
+            'label' => 'Marriage Registration',
+            'description' => 'Marriage Registration (Current & Delayed), Application of Marriage License, Issuance of Marriage Form 3A True Copy, Issuance of Marriage Certified True Copy.',
+            'destination' => 'Window 2',
+            'window_numbers' => [3],
+        ],
+        'window_3' => [
+            'label' => 'Death Registration',
+            'description' => 'Death Registration (Current & Delayed), Issuance of Death Form 2A True Copy, Issuance of Death Certified True Copy, PSA Request, PSA Releasing.',
+            'destination' => 'Window 3',
+            'window_numbers' => [4],
+        ],
+        'window_4_a' => [
+            'label' => 'PSA Request',
+            'description' => 'Correction of Clerical Error, Change of First Name.',
+            'destination' => 'Window 4-A',
+            'window_numbers' => [5],
+        ],
+        'window_4_b' => [
+            'label' => 'Correction of Clerical Error',
+            'description' => 'Change of Sex, Correction of Date of Birth, Court Order, Supplemental.',
+            'destination' => 'Window 4-B',
+            'window_numbers' => [6],
+        ],
+    ];
+
     public const MUNICIPALITY_QUEUE_SERVICE_SLUGS = [
         'hrmo',
         'treasury',
@@ -89,6 +219,10 @@ class Office extends Model
         'mswdo' => 'Municipal Social Welfare and Development Office',
         'obo' => 'Office of the Building Official',
         'treasury' => "Municipal Treasurer's Office",
+    ];
+
+    public const DISPLAY_DESCRIPTION_MAP = [
+        'civil-registry' => 'Municipal Local Civil Registry Office',
     ];
 
     protected $fillable = [
@@ -171,6 +305,13 @@ class Office extends Model
         return self::DISPLAY_NAME_MAP[$this->slug]
             ?? trim((string) $this->description)
             ?: $this->name;
+    }
+
+    public function getDisplayDescriptionAttribute(): string
+    {
+        return self::DISPLAY_DESCRIPTION_MAP[$this->slug]
+            ?? trim((string) $this->description)
+            ?: $this->display_name;
     }
 
     public function queueEntries(): HasMany
@@ -273,10 +414,38 @@ class Office extends Model
     public function defaultServiceWindowLabels(): array
     {
         if (
+            $this->usesBploRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if (
+            $this->usesHrmoRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if (
+            $this->usesMenroRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if (
             $this->usesTreasuryRouting()
             && $this->resolvedServiceWindowCount() >= count(self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)
         ) {
             return self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if (
+            $this->usesCivilRegistryRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS;
         }
 
         return [];
@@ -285,10 +454,38 @@ class Office extends Model
     public function queueServiceOptions(): array
     {
         if (
+            $this->usesBploRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::BPLO_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if (
+            $this->usesHrmoRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::HRMO_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if (
+            $this->usesMenroRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::MENRO_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if (
             $this->usesTreasuryRouting()
             && $this->resolvedServiceWindowCount() >= count(self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)
         ) {
             return self::TREASURY_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if (
+            $this->usesCivilRegistryRouting()
+            && $this->resolvedServiceWindowCount() >= count(self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)
+        ) {
+            return self::CIVIL_REGISTRY_QUEUE_SERVICE_OPTIONS;
         }
 
         return [];
@@ -400,5 +597,25 @@ class Office extends Model
     private function usesTreasuryRouting(): bool
     {
         return in_array($this->slug, ['treasury', 'mto'], true);
+    }
+
+    private function usesBploRouting(): bool
+    {
+        return in_array($this->slug, ['business-permits', 'bplo'], true);
+    }
+
+    private function usesHrmoRouting(): bool
+    {
+        return $this->slug === 'hrmo';
+    }
+
+    private function usesMenroRouting(): bool
+    {
+        return $this->slug === 'menro';
+    }
+
+    private function usesCivilRegistryRouting(): bool
+    {
+        return in_array($this->slug, ['civil-registry', 'cr'], true);
     }
 }
