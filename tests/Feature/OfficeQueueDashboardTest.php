@@ -464,9 +464,9 @@ class OfficeQueueDashboardTest extends TestCase
             ->get(route('office.dashboard', $office->slug))
             ->assertOk()
             ->assertSee('Service Window Tabs')
-            ->assertSee('Window 1')
-            ->assertSee('Window 2')
-            ->assertSee('Window 3')
+            ->assertSee('Teller 1')
+            ->assertSee('Teller 2')
+            ->assertSee('Teller 3')
             ->assertSee(route('office.window', ['office' => $office->slug, 'windowNumber' => 3]), false);
     }
 
@@ -723,6 +723,60 @@ class OfficeQueueDashboardTest extends TestCase
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $permitEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+    }
+
+    public function test_hrmo_window_tab_calls_only_the_service_assigned_to_that_window(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 4, 6, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::HRMO_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'HRMO',
+            slug: 'hrmo',
+            prefix: 'HRMO',
+            description: 'Human Resource Management Office',
+            attributes: [
+                'service_window_labels' => Office::HRMO_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $recruitmentEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'HRMO-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 6, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'recruitment_selection_services'
+        );
+
+        $artaEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'HRMO-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 6, 9, 46, 0, 'Asia/Manila'),
+            serviceKey: 'arta_identification_card'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 4])
+            ->call('callNext')
+            ->assertSee('Now serving HRMO-002 at ARTA Identification Card.')
+            ->assertSee('Request for Anti-Red Tape Act (ARTA) Identification Card')
+            ->assertDontSee('HRMO-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $artaEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 4,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $recruitmentEntry->id,
             'status' => QueueEntry::STATUS_WAITING,
             'service_window_number' => null,
         ]);

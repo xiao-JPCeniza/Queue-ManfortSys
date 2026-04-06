@@ -134,7 +134,6 @@ class ClientDashboard extends Component
             'client_type_label' => QueueEntry::clientTypeLabel($normalizedClientType),
             'service_key' => $resolvedServiceKey,
             'service_label' => $office->queueServiceLabel($resolvedServiceKey),
-            'service_destination_label' => $office->queueServiceDestinationLabel($resolvedServiceKey),
             'issued_date' => $issuedAt->format('F j, Y'),
             'issued_time' => $issuedAt->format('g:i A'),
         ];

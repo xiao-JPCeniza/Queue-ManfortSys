@@ -198,7 +198,7 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertSame(1, substr_count($html, 'Windows Currently Serving'));
         $this->assertStringContainsString('HRMO', $html);
         $this->assertStringContainsString('HRMO-001', $windowsSection);
-        $this->assertStringContainsString('Window 2', $windowsSection);
+        $this->assertStringContainsString('Certifications and Service Record', $windowsSection);
         $this->assertStringContainsString('gov-window-monitor-card-idle', $windowsSection);
         $this->assertStringContainsString('1 Active', $windowsSection);
         $this->assertStringNotContainsString('records</span>', $html);
@@ -350,7 +350,7 @@ class AllOfficesMonitorTest extends TestCase
 
         $this->assertStringContainsString('1 Active', $html);
         $this->assertStringContainsString($latestServing->queue_number, $servingNowSection);
-        $this->assertStringContainsString('Window 4', $servingNowSection);
+        $this->assertStringContainsString('ARTA Identification Card', $servingNowSection);
         $this->assertStringNotContainsString($olderServing->queue_number, $servingNowSection);
         $this->assertStringNotContainsString($middleServing->queue_number, $servingNowSection);
         $this->assertStringContainsString('3 Active', $windowsSection);

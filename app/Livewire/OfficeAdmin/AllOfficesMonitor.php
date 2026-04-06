@@ -19,7 +19,7 @@ class AllOfficesMonitor extends Component
     {
         [$dayStart, $dayEnd] = $this->manilaDayBounds();
         $todayEntries = QueueEntry::query()
-            ->with('office:id,name,slug,prefix,service_window_count')
+            ->with('office:id,name,slug,prefix,service_window_count,service_window_labels')
             ->whereBetween('created_at', [$dayStart, $dayEnd])
             ->orderBy('created_at')
             ->orderBy('id')

@@ -184,6 +184,12 @@ class WindowDesk extends Component
             return;
         }
 
-        $query->whereIn('service_key', $serviceKeys);
+        $query->where(function ($serviceQuery) use ($serviceKeys) {
+            $serviceQuery->whereIn('service_key', $serviceKeys);
+
+            if (! $this->office->hasConfiguredQueueServiceOptions()) {
+                $serviceQuery->orWhereNull('service_key');
+            }
+        });
     }
 }

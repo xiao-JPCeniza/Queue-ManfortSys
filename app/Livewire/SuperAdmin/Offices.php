@@ -343,10 +343,7 @@ class Offices extends Component
 
         $selectedOffice->update([
             'service_window_count' => $requestedWindowCount,
-            'service_window_labels' => $selectedOffice->sanitizeServiceWindowLabels(
-                $selectedOffice->service_window_labels ?? [],
-                $requestedWindowCount
-            ),
+            'service_window_labels' => $selectedOffice->alignedServiceWindowLabels($requestedWindowCount),
         ]);
         $this->syncServiceWindowSelection($this->publicQueueOffices());
         $this->syncServiceWindowLabels();

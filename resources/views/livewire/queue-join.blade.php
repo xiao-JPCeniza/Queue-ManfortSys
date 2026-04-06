@@ -25,9 +25,6 @@
                             >
                                 <span class="block text-base font-semibold text-slate-900">{{ $serviceOption['label'] }}</span>
                                 <span class="mt-1 block text-sm text-slate-500">{{ $serviceOption['description'] }}</span>
-                                <span class="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-600">
-                                    {{ $serviceOption['destination'] }}
-                                </span>
                             </button>
                         @endforeach
                     </div>
@@ -41,9 +38,6 @@
                             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Selected Service</p>
                             <p class="mt-2 text-lg font-semibold text-slate-900">{{ $selectedQueueService['label'] }}</p>
                             <p class="mt-1 text-sm text-slate-500">{{ $selectedQueueService['description'] }}</p>
-                            <p class="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">
-                                {{ $selectedQueueService['destination'] }}
-                            </p>
                         </div>
                     @endif
 
@@ -91,15 +85,6 @@
             </div>
             <div class="p-8">
                 <p class="inline-flex items-center justify-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">{{ $entry->client_type_label }}</p>
-                @if($entry->service_label)
-                    <div class="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
-                        <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Service</p>
-                        <p class="mt-1 text-base font-semibold text-slate-900">{{ $entry->service_label }}</p>
-                        @if($entry->service_destination_label)
-                            <p class="mt-1 text-sm text-slate-500">Assigned to {{ $entry->service_destination_label }}</p>
-                        @endif
-                    </div>
-                @endif
                 <p class="text-slate-600 mb-4">Your queue number is</p>
                 <p class="text-5xl font-bold text-emerald-600 mb-2" aria-label="Queue number {{ $entry->queue_number }}">{{ $entry->queue_number }}</p>
                 <p class="text-slate-500 text-sm">Please wait for your number to be called.</p>

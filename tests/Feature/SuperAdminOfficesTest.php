@@ -158,6 +158,59 @@ class SuperAdminOfficesTest extends TestCase
         ]);
     }
 
+    public function test_updating_service_windows_aligns_labels_for_special_offices(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', true, 4);
+        $hrmo->update([
+            'service_window_labels' => Office::HRMO_DEFAULT_SERVICE_WINDOW_LABELS,
+        ]);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->set('serviceWindowOfficeSlug', 'hrmo')
+            ->set('serviceWindowCountSelection', '2')
+            ->call('updateServiceWindowCount')
+            ->assertSee('HRMO service windows updated to 2.')
+            ->assertSet('serviceWindowLabels.1', 'Recruitment and Selection Services')
+            ->assertSet('serviceWindowLabels.2', 'Certifications and Service Record');
+
+        $this->assertSame(
+            [
+                1 => 'Recruitment and Selection Services',
+                2 => 'Certifications and Service Record',
+            ],
+            Office::query()->findOrFail($hrmo->id)->service_window_labels
+        );
+    }
+
+    public function test_updating_service_windows_aligns_labels_for_regular_offices(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+        $office = $this->createOffice('Citizen Center', 'citizen-center', 'CCEN', true, 1);
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->set('serviceWindowOfficeSlug', 'citizen-center')
+            ->set('serviceWindowCountSelection', '3')
+            ->call('updateServiceWindowCount')
+            ->assertSee('Citizen Center service windows updated to 3.')
+            ->assertSet('serviceWindowLabels.1', 'Window 1')
+            ->assertSet('serviceWindowLabels.2', 'Window 2')
+            ->assertSet('serviceWindowLabels.3', 'Window 3');
+
+        $this->assertSame(
+            [
+                1 => 'Window 1',
+                2 => 'Window 2',
+                3 => 'Window 3',
+            ],
+            Office::query()->findOrFail($office->id)->service_window_labels
+        );
+    }
+
     public function test_super_admin_cannot_reduce_service_windows_below_an_active_window_from_the_offices_page(): void
     {
         $superAdmin = $this->createSuperAdminUser();
@@ -176,7 +229,7 @@ class SuperAdminOfficesTest extends TestCase
             ->set('serviceWindowOfficeSlug', 'treasury')
             ->set('serviceWindowCountSelection', '2')
             ->call('updateServiceWindowCount')
-            ->assertSee('Treasury still has an active ticket at Window 4.')
+            ->assertSee('Treasury still has an active ticket at Teller 4.')
             ->assertSet('serviceWindowCountSelection', '4');
 
         $this->assertDatabaseHas('offices', [

@@ -32,37 +32,36 @@ class Office extends Model
     ];
 
     public const HRMO_DEFAULT_SERVICE_WINDOW_LABELS = [
-        1 => 'Recruitment Window 1',
-        2 => 'Recruitment Window 2',
-        3 => 'Certifications & Service Record',
-        4 => 'Valid ID Card',
-        5 => 'ARTA ID Card',
+        1 => 'Recruitment and Selection Services',
+        2 => 'Certifications and Service Record',
+        3 => 'Valid Identification Card',
+        4 => 'ARTA Identification Card',
     ];
 
     public const HRMO_QUEUE_SERVICE_OPTIONS = [
         'recruitment_selection_services' => [
             'label' => 'Request for Recruitment and Selection Services',
-            'description' => 'For recruitment and selection service requests handled at Window 1 or Window 2.',
-            'destination' => 'Window 1-2',
-            'window_numbers' => [1, 2],
+            'description' => 'For recruitment and selection service requests handled at Window 1.',
+            'destination' => 'Window 1',
+            'window_numbers' => [1],
         ],
         'certifications_service_record' => [
             'label' => 'Request for Certifications and Service Record',
-            'description' => 'For certification and service record requests handled at Window 3.',
-            'destination' => 'Window 3',
-            'window_numbers' => [3],
+            'description' => 'For certification and service record requests handled at Window 2.',
+            'destination' => 'Window 2',
+            'window_numbers' => [2],
         ],
         'valid_identification_card' => [
             'label' => 'Request for Valid Identification Card',
-            'description' => 'For valid identification card requests handled at Window 4.',
-            'destination' => 'Window 4',
-            'window_numbers' => [4],
+            'description' => 'For valid identification card requests handled at Window 3.',
+            'destination' => 'Window 3',
+            'window_numbers' => [3],
         ],
         'arta_identification_card' => [
             'label' => 'Request for Anti-Red Tape Act (ARTA) Identification Card',
-            'description' => 'For ARTA identification card requests handled at Window 5.',
-            'destination' => 'Window 5',
-            'window_numbers' => [5],
+            'description' => 'For ARTA identification card requests handled at Window 4.',
+            'destination' => 'Window 4',
+            'window_numbers' => [4],
         ],
     ];
 
@@ -377,12 +376,29 @@ class Office extends Model
 
     public function editableServiceWindowLabels(): Collection
     {
-        $customLabels = $this->sanitizeServiceWindowLabels($this->service_window_labels ?? []);
-
         return $this->serviceWindowNumbers()
             ->mapWithKeys(fn (int $windowNumber) => [
-                (string) $windowNumber => $customLabels[$windowNumber] ?? '',
+                (string) $windowNumber => $this->serviceWindowLabel($windowNumber),
             ]);
+    }
+
+    public function alignedServiceWindowLabels(?int $windowCount = null): array
+    {
+        $windowCount = max(1, (int) ($windowCount ?? $this->resolvedServiceWindowCount()));
+        $customLabels = $this->sanitizeServiceWindowLabels($this->service_window_labels ?? [], $windowCount);
+        $defaultLabels = collect($this->configuredDefaultServiceWindowLabels())
+            ->mapWithKeys(fn (string $label, int|string $windowNumber) => [(int) $windowNumber => $label])
+            ->all();
+
+        return collect(range(1, $windowCount))
+            ->mapWithKeys(function (int $windowNumber) use ($customLabels, $defaultLabels): array {
+                return [
+                    $windowNumber => $customLabels[$windowNumber]
+                        ?? $defaultLabels[$windowNumber]
+                        ?? 'Window '.$windowNumber,
+                ];
+            })
+            ->all();
     }
 
     public function sanitizeServiceWindowLabels(array $labels, ?int $maxWindowCount = null): array
@@ -413,87 +429,62 @@ class Office extends Model
 
     public function defaultServiceWindowLabels(): array
     {
-        if (
-            $this->usesBploRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS;
-        }
-
-        if (
-            $this->usesHrmoRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS;
-        }
-
-        if (
-            $this->usesMenroRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS;
-        }
-
-        if (
-            $this->usesTreasuryRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS;
-        }
-
-        if (
-            $this->usesCivilRegistryRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS;
-        }
-
-        return [];
+        return collect($this->configuredDefaultServiceWindowLabels())
+            ->mapWithKeys(fn (string $label, int|string $windowNumber) => [(int) $windowNumber => $label])
+            ->filter(fn (string $label, int $windowNumber) => $windowNumber <= $this->resolvedServiceWindowCount())
+            ->all();
     }
 
     public function queueServiceOptions(): array
     {
-        if (
-            $this->usesBploRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::BPLO_QUEUE_SERVICE_OPTIONS;
-        }
+        $configuredOptions = collect($this->configuredQueueServiceOptions())
+            ->mapWithKeys(function (array $serviceOption, string $serviceKey): array {
+                $windowNumbers = $this->availableServiceWindowNumbers($serviceOption['window_numbers'] ?? []);
 
-        if (
-            $this->usesHrmoRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::HRMO_QUEUE_SERVICE_OPTIONS;
-        }
+                if ($windowNumbers === []) {
+                    return [];
+                }
 
-        if (
-            $this->usesMenroRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::MENRO_QUEUE_SERVICE_OPTIONS;
-        }
+                $destination = $this->formatServiceWindowDestination($windowNumbers);
 
-        if (
-            $this->usesTreasuryRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::TREASURY_QUEUE_SERVICE_OPTIONS;
-        }
+                return [
+                    $serviceKey => array_merge($serviceOption, [
+                        'description' => $this->synchronizeServiceOptionDescription($serviceOption, $windowNumbers, $destination),
+                        'destination' => $destination,
+                        'window_numbers' => $windowNumbers,
+                    ]),
+                ];
+            })
+            ->all();
 
-        if (
-            $this->usesCivilRegistryRouting()
-            && $this->resolvedServiceWindowCount() >= count(self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)
-        ) {
-            return self::CIVIL_REGISTRY_QUEUE_SERVICE_OPTIONS;
-        }
+        $coveredWindowNumbers = collect($configuredOptions)
+            ->flatMap(fn (array $serviceOption) => $serviceOption['window_numbers'] ?? [])
+            ->map(fn ($windowNumber) => max(1, (int) $windowNumber))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
 
-        return [];
+        return collect(array_merge(
+            $configuredOptions,
+            $this->fallbackQueueServiceOptions($coveredWindowNumbers)
+        ))
+            ->sortBy(fn (array $serviceOption, string $serviceKey) => sprintf(
+                '%03d-%s',
+                min($serviceOption['window_numbers'] ?? [999]),
+                $serviceKey
+            ))
+            ->all();
     }
 
     public function hasQueueServiceOptions(): bool
     {
         return $this->queueServiceOptions() !== [];
+    }
+
+    public function hasConfiguredQueueServiceOptions(): bool
+    {
+        return $this->configuredQueueServiceOptions() !== [];
     }
 
     public function queueServiceOption(?string $serviceKey): ?array
@@ -592,6 +583,136 @@ class Office extends Model
         }
 
         return $prefix;
+    }
+
+    private function configuredDefaultServiceWindowLabels(): array
+    {
+        if ($this->usesBploRouting()) {
+            return self::BPLO_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if ($this->usesHrmoRouting()) {
+            return self::HRMO_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if ($this->usesMenroRouting()) {
+            return self::MENRO_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if ($this->usesTreasuryRouting()) {
+            return self::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        if ($this->usesCivilRegistryRouting()) {
+            return self::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS;
+        }
+
+        return [];
+    }
+
+    private function configuredQueueServiceOptions(): array
+    {
+        if ($this->usesBploRouting()) {
+            return self::BPLO_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if ($this->usesHrmoRouting()) {
+            return self::HRMO_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if ($this->usesMenroRouting()) {
+            return self::MENRO_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if ($this->usesTreasuryRouting()) {
+            return self::TREASURY_QUEUE_SERVICE_OPTIONS;
+        }
+
+        if ($this->usesCivilRegistryRouting()) {
+            return self::CIVIL_REGISTRY_QUEUE_SERVICE_OPTIONS;
+        }
+
+        return [];
+    }
+
+    private function fallbackQueueServiceOptions(array $coveredWindowNumbers): array
+    {
+        if ($coveredWindowNumbers === [] && ! $this->usesMultipleServiceWindows()) {
+            return [];
+        }
+
+        return $this->serviceWindowNumbers()
+            ->reject(fn (int $windowNumber) => in_array($windowNumber, $coveredWindowNumbers, true))
+            ->mapWithKeys(function (int $windowNumber): array {
+                $windowLabel = $this->serviceWindowLabel($windowNumber);
+
+                return [
+                    'service_window_'.$windowNumber => [
+                        'label' => $windowLabel,
+                        'description' => 'For transactions handled at '.$windowLabel.'.',
+                        'destination' => $windowLabel,
+                        'window_numbers' => [$windowNumber],
+                    ],
+                ];
+            })
+            ->all();
+    }
+
+    private function availableServiceWindowNumbers(array $windowNumbers): array
+    {
+        return collect($windowNumbers)
+            ->map(fn ($windowNumber) => max(1, (int) $windowNumber))
+            ->filter(fn (int $windowNumber) => $windowNumber <= $this->resolvedServiceWindowCount())
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+    }
+
+    private function formatServiceWindowDestination(array $windowNumbers): string
+    {
+        $labels = collect($windowNumbers)
+            ->map(fn (int $windowNumber) => $this->serviceWindowLabel($windowNumber))
+            ->values()
+            ->all();
+
+        return match (count($labels)) {
+            0 => '',
+            1 => $labels[0],
+            2 => $labels[0].' and '.$labels[1],
+            default => collect($labels)
+                ->slice(0, -1)
+                ->implode(', ')
+                .', and '
+                .$labels[array_key_last($labels)],
+        };
+    }
+
+    private function synchronizeServiceOptionDescription(array $serviceOption, array $windowNumbers, string $destination): string
+    {
+        $description = trim((string) ($serviceOption['description'] ?? ''));
+        $configuredWindowNumbers = $this->normalizeServiceWindowNumbers($serviceOption['window_numbers'] ?? []);
+        $configuredDestination = trim((string) ($serviceOption['destination'] ?? ''));
+
+        if (
+            $description !== ''
+            && $windowNumbers === $configuredWindowNumbers
+            && ($configuredDestination === '' || $destination === $configuredDestination)
+        ) {
+            return $description;
+        }
+
+        return 'For transactions handled at '.$destination.'.';
+    }
+
+    private function normalizeServiceWindowNumbers(array $windowNumbers): array
+    {
+        return collect($windowNumbers)
+            ->map(fn ($windowNumber) => max(1, (int) $windowNumber))
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
     }
 
     private function usesTreasuryRouting(): bool

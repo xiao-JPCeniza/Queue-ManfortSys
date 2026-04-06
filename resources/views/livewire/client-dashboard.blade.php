@@ -114,15 +114,6 @@
                     </div>
                     <div class="queue-ticket-body">
                         <p class="queue-ticket-type">{{ $ticket['client_type_label'] }}</p>
-                        @if(!empty($ticket['service_label']))
-                            <div class="mx-auto mb-3 max-w-[30ch] rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-left">
-                                <p class="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-slate-500">Service</p>
-                                <p class="mt-1 text-sm font-semibold text-slate-900">{{ $ticket['service_label'] }}</p>
-                                @if(!empty($ticket['service_destination_label']))
-                                    <p class="mt-1 text-[0.72rem] font-medium uppercase tracking-[0.08em] text-blue-700">{{ $ticket['service_destination_label'] }}</p>
-                                @endif
-                            </div>
-                        @endif
                         <p class="queue-ticket-label">Queue Number</p>
                         <p class="queue-ticket-number" id="ticket-number-display" aria-label="Your queue number is {{ $ticket['queue_number'] }}">{{ $ticket['queue_number'] }}</p>
                         <p class="queue-ticket-timestamp" aria-label="Ticket issue date and time">
@@ -130,7 +121,6 @@
                             <span aria-hidden="true">&bull;</span>
                             <span>{{ $ticket['issued_time'] ?? '' }}</span>
                         </p>
-                        <p class="queue-ticket-note">Please wait for your number to be called at the service desk.</p>
                         <p class="queue-ticket-status" data-ticket-print-status aria-live="polite">Printing automatically in 2 seconds...</p>
                         <button
                             type="button"
@@ -183,7 +173,7 @@
                             >
                                 <span class="queue-modal-option-copy-wrap">
                                     <span class="queue-modal-option-title">{{ $serviceOption['label'] }}</span>
-                                    @if($isPendingCivilRegistryOffice && !empty($serviceOption['description']))
+                                    @if(!empty($serviceOption['description']))
                                         <span class="queue-modal-option-description">{{ $serviceOption['description'] }}</span>
                                     @endif
                                 </span>
@@ -200,7 +190,7 @@
                         <div class="queue-selected-service">
                             <p class="queue-selected-service-kicker">Selected Service</p>
                             <p class="queue-selected-service-title">{{ $pendingQueueService['label'] }}</p>
-                            @if($isPendingCivilRegistryOffice && !empty($pendingQueueService['description']))
+                            @if(!empty($pendingQueueService['description']))
                                 <p class="queue-selected-service-copy">{{ $pendingQueueService['description'] }}</p>
                             @endif
                         </div>

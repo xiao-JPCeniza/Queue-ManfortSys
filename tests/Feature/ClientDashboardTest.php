@@ -97,9 +97,7 @@ class ClientDashboardTest extends TestCase
             ->assertSee('Selected Service')
             ->assertSee('Market Charges')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_PWD)
-            ->assertSee('TRSY-001')
-            ->assertSee('Market Charges')
-            ->assertSee('Teller 6-7');
+            ->assertSee('TRSY-001');
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,
@@ -126,8 +124,7 @@ class ClientDashboardTest extends TestCase
             ->assertSee('Selected Service')
             ->assertSee('Death Registration')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_PREGNANT)
-            ->assertSee('CR-001')
-            ->assertSee('Death Registration');
+            ->assertSee('CR-001');
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,
@@ -154,9 +151,7 @@ class ClientDashboardTest extends TestCase
             ->assertSee('Selected Service')
             ->assertSee('Request for Certifications')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_SENIOR_CITIZEN)
-            ->assertSee('BPLO-001')
-            ->assertSee('Request for Certifications')
-            ->assertSee('Window 2');
+            ->assertSee('BPLO-001');
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,
@@ -164,6 +159,33 @@ class ClientDashboardTest extends TestCase
             'client_type' => QueueEntry::TYPE_SENIOR_CITIZEN,
             'service_key' => 'request_for_certifications',
             'service_label' => 'Request for Certifications',
+        ]);
+    }
+
+    public function test_hrmo_requires_a_service_selection_before_generating_a_ticket(): void
+    {
+        $office = $this->createOffice('HRMO', 'hrmo', 'HRMO', true, [
+            'description' => 'Human Resource Management Office',
+            'service_window_count' => count(Office::HRMO_DEFAULT_SERVICE_WINDOW_LABELS),
+            'service_window_labels' => Office::HRMO_DEFAULT_SERVICE_WINDOW_LABELS,
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Request for Recruitment and Selection Services')
+            ->assertSee('Choose the service first')
+            ->call('selectPendingService', 'arta_identification_card')
+            ->assertSee('Selected Service')
+            ->assertSee('Request for Anti-Red Tape Act (ARTA) Identification Card')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_SENIOR_CITIZEN)
+            ->assertSee('HRMO-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'HRMO-001',
+            'client_type' => QueueEntry::TYPE_SENIOR_CITIZEN,
+            'service_key' => 'arta_identification_card',
+            'service_label' => 'Request for Anti-Red Tape Act (ARTA) Identification Card',
         ]);
     }
 
@@ -183,9 +205,7 @@ class ClientDashboardTest extends TestCase
             ->assertSee('Selected Service')
             ->assertSee('Issuance of CLIVE Card')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_PWD)
-            ->assertSee('MENRO-001')
-            ->assertSee('Issuance of CLIVE Card')
-            ->assertSee('Window 2');
+            ->assertSee('MENRO-001');
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,

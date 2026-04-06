@@ -21,7 +21,7 @@ return new class extends Migration
         DB::table('offices')
             ->where('slug', 'hrmo')
             ->update([
-                'service_window_count' => 5,
+                'service_window_count' => 4,
                 'service_window_labels' => null,
             ]);
     }
