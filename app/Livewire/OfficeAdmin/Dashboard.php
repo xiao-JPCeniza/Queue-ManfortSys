@@ -882,12 +882,19 @@ class Dashboard extends Component
             ->pluck('office_id')
             ->unique();
 
+        $managedOfficeIds = $managedOffices->pluck('id');
+
         $userManagementRows = User::query()
             ->with([
                 'role:id,name,slug',
                 'office:id,name,slug',
             ])
-            ->whereIn('office_id', $managedOffices->pluck('id'))
+            ->where(function ($query) use ($managedOfficeIds) {
+                $query->whereIn('office_id', $managedOfficeIds)
+                    ->orWhereHas('role', function ($roleQuery) {
+                        $roleQuery->where('slug', 'super_admin');
+                    });
+            })
             ->get()
             ->sortBy(function (User $user) {
                 return sprintf(
@@ -899,14 +906,17 @@ class Dashboard extends Component
             })
             ->values()
             ->map(function (User $user) use ($activeOfficeIds) {
-                $isQueueActive = $user->office_id !== null && $activeOfficeIds->contains($user->office_id);
+                $isQueueActive = $user->isSuperAdmin()
+                    || ($user->office_id !== null && $activeOfficeIds->contains($user->office_id));
                 $passwordInfo = $this->resolveUserManagementPasswordInfo($user);
 
                 return [
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role?->name ?? 'Unassigned',
-                    'office' => $user->office?->name ?? 'Unassigned',
+                    'office' => $user->isSuperAdmin()
+                        ? 'All Offices'
+                        : ($user->office?->name ?? 'Unassigned'),
                     'status_label' => $isQueueActive ? 'Active' : 'Not Active',
                     'status_badge_class' => $isQueueActive
                         ? 'bg-emerald-100 text-emerald-700'

@@ -99,6 +99,43 @@ class SuperAdminOfficesTest extends TestCase
         $this->assertSame('Citizen123', $officeAdminUser->recoverable_password);
     }
 
+    public function test_super_admin_can_add_a_public_queue_office_even_when_the_office_admin_role_is_missing(): void
+    {
+        $superAdmin = $this->createSuperAdminUser();
+
+        Role::query()->where('slug', 'office_admin')->delete();
+
+        $this->actingAs($superAdmin);
+
+        Livewire::test(SuperAdminOffices::class)
+            ->call('toggleCreateForm')
+            ->set('officeName', 'Business Center')
+            ->set('officePrefix', 'bcen')
+            ->set('officeDescription', 'Business Center services')
+            ->set('officeAdminEmail', 'business.center@manolofortich.gov.ph')
+            ->set('officeAdminPassword', 'Business123')
+            ->set('officeAdminPasswordConfirmation', 'Business123')
+            ->call('createOffice')
+            ->assertHasNoErrors()
+            ->assertSee('Business Center');
+
+        $officeAdminRoleId = Role::query()->where('slug', 'office_admin')->value('id');
+
+        $this->assertNotNull($officeAdminRoleId);
+
+        $this->assertDatabaseHas('offices', [
+            'name' => 'Business Center',
+            'slug' => 'business-center',
+            'prefix' => 'BCEN',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'business.center@manolofortich.gov.ph',
+            'role_id' => $officeAdminRoleId,
+            'office_id' => Office::query()->where('slug', 'business-center')->value('id'),
+        ]);
+    }
+
     public function test_super_admin_can_update_service_windows_from_the_offices_page(): void
     {
         $superAdmin = $this->createSuperAdminUser();

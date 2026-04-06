@@ -174,13 +174,7 @@ class Offices extends Component
             ]
         )->validate();
 
-        $officeAdminRole = Role::query()->where('slug', 'office_admin')->first();
-
-        if (! $officeAdminRole) {
-            session()->flash('error', 'Office Admin role is missing. Please seed roles first before creating a new office account.');
-
-            return;
-        }
+        $officeAdminRole = $this->resolveOfficeAdminRole();
 
         [$office, $officeAdminUser, $generatedPassword] = DB::transaction(function () use ($description, $name, $officeAdminEmail, $officeAdminPassword, $officeAdminRole, $prefix): array {
             $office = Office::create([
@@ -526,5 +520,16 @@ class Offices extends Component
         } while (User::query()->whereRaw('LOWER(email) = ?', [$candidateEmail])->exists());
 
         return $candidateEmail;
+    }
+
+    private function resolveOfficeAdminRole(): Role
+    {
+        return Role::firstOrCreate(
+            ['slug' => 'office_admin'],
+            [
+                'name' => 'Office Admin',
+                'description' => 'Manages queue for assigned office only: call next, complete, monitor.',
+            ]
+        );
     }
 }

@@ -914,31 +914,3 @@
         }
     </style>
 @endonce
-
-@once
-    <script>
-        document.addEventListener('click', (event) => {
-            const toggle = event.target.closest('[data-password-toggle].gov-profile-password-toggle');
-
-            if (! toggle) {
-                return;
-            }
-
-            const target = document.getElementById(toggle.dataset.passwordTarget);
-
-            if (! target) {
-                return;
-            }
-
-            const isVisible = target.type === 'text';
-
-            target.type = isVisible ? 'password' : 'text';
-            toggle.textContent = isVisible ? 'Show' : 'Hide';
-            toggle.setAttribute('aria-pressed', isVisible ? 'false' : 'true');
-            toggle.setAttribute(
-                'aria-label',
-                `${isVisible ? 'Show' : 'Hide'} ${target.getAttribute('aria-label')?.toLowerCase() ?? 'password'}`
-            );
-        });
-    </script>
-@endonce

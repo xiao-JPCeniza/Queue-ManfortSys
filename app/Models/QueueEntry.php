@@ -23,11 +23,14 @@ class QueueEntry extends Model
 
     protected $fillable = [
         'office_id',
+        'office_name',
         'queue_number',
         'client_type',
         'service_key',
+        'service_label',
         'status',
         'service_window_number',
+        'service_window_label',
         'served_by',
         'served_at',
         'called_at',
@@ -40,6 +43,13 @@ class QueueEntry extends Model
         'called_at' => 'datetime',
         'recent_transaction_cleared_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $entry): void {
+            $entry->syncContextSnapshotAttributes();
+        });
+    }
 
     public function office(): BelongsTo
     {
@@ -241,8 +251,12 @@ class QueueEntry extends Model
             : max(1, (int) $this->service_window_number);
     }
 
-    public function getServiceWindowLabelAttribute(): ?string
+    public function getServiceWindowLabelAttribute($value): ?string
     {
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
+        }
+
         $windowNumber = $this->resolvedServiceWindowNumber();
 
         if ($windowNumber === null) {
@@ -253,8 +267,12 @@ class QueueEntry extends Model
             ?? 'Window '.$windowNumber;
     }
 
-    public function getServiceLabelAttribute(): ?string
+    public function getServiceLabelAttribute($value): ?string
     {
+        if (is_string($value) && trim($value) !== '') {
+            return trim($value);
+        }
+
         return $this->office?->queueServiceLabel($this->service_key);
     }
 
@@ -288,5 +306,70 @@ class QueueEntry extends Model
 
         return Carbon::parse($rawValue, (string) config('app.timezone', 'UTC'))
             ->setTimezone($timezone);
+    }
+
+    public function syncContextSnapshotAttributes(?Office $office = null): void
+    {
+        $office ??= $this->resolveSnapshotOffice();
+        $isCreating = ! $this->exists;
+
+        if ($office !== null && ($isCreating || $this->isDirty('office_id') || ! $this->hasSnapshotValue('office_name'))) {
+            $this->office_name = $office->name;
+        }
+
+        if (! $this->hasServiceKey()) {
+            if ($isCreating || $this->isDirty('service_key')) {
+                $this->service_label = null;
+            }
+        } elseif (
+            $office !== null
+            && ($isCreating || $this->isDirty('service_key') || ! $this->hasSnapshotValue('service_label'))
+        ) {
+            $this->service_label = $office->queueServiceLabel($this->service_key);
+        }
+
+        $windowNumber = $this->resolvedServiceWindowNumber();
+
+        if ($windowNumber === null) {
+            if ($isCreating || $this->isDirty('service_window_number')) {
+                $this->service_window_label = null;
+            }
+        } elseif (
+            $office !== null
+            && ($isCreating || $this->isDirty('service_window_number') || ! $this->hasSnapshotValue('service_window_label'))
+        ) {
+            $this->service_window_label = $office->serviceWindowLabel($windowNumber);
+        }
+    }
+
+    private function resolveSnapshotOffice(): ?Office
+    {
+        if ($this->relationLoaded('office')) {
+            $office = $this->getRelation('office');
+
+            if ($office instanceof Office && (int) $office->getKey() === (int) $this->office_id) {
+                return $office;
+            }
+        }
+
+        if ($this->office_id === null) {
+            return null;
+        }
+
+        return Office::query()->find($this->office_id);
+    }
+
+    private function hasServiceKey(): bool
+    {
+        return is_string($this->service_key) && trim($this->service_key) !== '';
+    }
+
+    private function hasSnapshotValue(string $attribute): bool
+    {
+        $value = $this->attributes[$attribute] ?? null;
+
+        return is_string($value)
+            ? trim($value) !== ''
+            : $value !== null;
     }
 }

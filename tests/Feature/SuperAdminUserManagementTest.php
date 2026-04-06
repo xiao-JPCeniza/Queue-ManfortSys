@@ -108,6 +108,40 @@ class SuperAdminUserManagementTest extends TestCase
             ->assertDontSee('Unavailable');
     }
 
+    public function test_user_management_lists_super_admin_accounts_with_their_stored_passwords(): void
+    {
+        [$superAdminRole] = $this->createRoles();
+
+        $this->createOffice('HRMO', 'hrmo', 'HRMO', true);
+
+        $superAdmin = User::factory()->create([
+            'name' => 'Primary Super Admin',
+            'email' => 'admin@manolofortich.gov.ph',
+            'password' => 'RootPass123',
+            'recoverable_password' => 'RootPass123',
+            'role_id' => $superAdminRole->id,
+            'office_id' => null,
+        ]);
+
+        User::factory()->create([
+            'name' => 'Backup Super Admin',
+            'email' => 'backup-admin@manolofortich.gov.ph',
+            'password' => 'BackupPass123',
+            'recoverable_password' => 'BackupPass123',
+            'role_id' => $superAdminRole->id,
+            'office_id' => null,
+        ]);
+
+        $this->actingAs($superAdmin)
+            ->get(route('super-admin.user-management'))
+            ->assertOk()
+            ->assertSee('Backup Super Admin')
+            ->assertSee('backup-admin@manolofortich.gov.ph')
+            ->assertSee('All Offices')
+            ->assertSee('BackupPass123')
+            ->assertSee('This is the current password on file for this account.');
+    }
+
     private function createRoles(): array
     {
         return [

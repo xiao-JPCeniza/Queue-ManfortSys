@@ -579,6 +579,47 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
+    public function test_completing_a_window_transaction_saves_office_service_and_window_snapshots(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 26, 10, 5, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'Treasury',
+            slug: 'treasury',
+            prefix: 'TRSY',
+            description: 'Treasury services',
+            attributes: [
+                'service_window_labels' => Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $releaseCashEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'TRSY-010',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 26, 9, 55, 0, 'Asia/Manila'),
+            serviceKey: 'release_of_disbursement_of_cash'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 10])
+            ->call('callNext')
+            ->call('complete', $releaseCashEntry->id);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $releaseCashEntry->id,
+            'status' => QueueEntry::STATUS_COMPLETED,
+            'office_name' => 'Treasury',
+            'service_label' => 'Release of Disbursement of Cash',
+            'service_window_number' => 10,
+            'service_window_label' => 'Window 1',
+        ]);
+    }
+
     public function test_civil_registry_window_tab_calls_only_the_service_assigned_to_that_window(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 30, 10, 0, 0, 'Asia/Manila'));

@@ -5,6 +5,7 @@ const SESSION_PULSE_INTERVAL_MS = 60_000;
 let sessionPulsePromise = null;
 let sessionPulseTimerId = null;
 let livewireRecoveryBound = false;
+let passwordToggleBound = false;
 
 const getMeta = (name) => document.querySelector(`meta[name="${name}"]`);
 
@@ -139,6 +140,37 @@ const bindLivewireRecovery = () => {
     }
 };
 
+const bindPasswordVisibilityToggle = () => {
+    if (passwordToggleBound) {
+        return;
+    }
+
+    document.addEventListener('click', (event) => {
+        const toggle = event.target.closest('[data-password-toggle]');
+
+        if (!toggle) {
+            return;
+        }
+
+        const targetId = toggle.getAttribute('data-password-target');
+        const input = targetId ? document.getElementById(targetId) : null;
+
+        if (!input) {
+            return;
+        }
+
+        const shouldShow = input.type === 'password';
+        const inputLabel = input.getAttribute('aria-label')?.toLowerCase() ?? 'password';
+
+        input.type = shouldShow ? 'text' : 'password';
+        toggle.textContent = shouldShow ? 'Hide' : 'Show';
+        toggle.setAttribute('aria-label', `${shouldShow ? 'Hide' : 'Show'} ${inputLabel}`);
+        toggle.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+    });
+
+    passwordToggleBound = true;
+};
+
 setCsrfToken(getMeta('csrf-token')?.getAttribute('content'));
 
 bindLivewireRecovery();
@@ -155,6 +187,7 @@ window.addEventListener('focus', () => {
 
 const bootLivewireSupport = () => {
     bindLivewireRecovery();
+    bindPasswordVisibilityToggle();
     startSessionPulse();
     void syncSessionPulse();
 };

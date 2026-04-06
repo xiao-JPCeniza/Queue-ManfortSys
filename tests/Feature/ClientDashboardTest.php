@@ -55,6 +55,7 @@ class ClientDashboardTest extends TestCase
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,
+            'office_name' => 'Citizen Center',
             'queue_number' => 'CCEN-001',
             'client_type' => QueueEntry::TYPE_REGULAR,
         ]);
@@ -105,6 +106,7 @@ class ClientDashboardTest extends TestCase
             'queue_number' => 'TRSY-001',
             'client_type' => QueueEntry::TYPE_PWD,
             'service_key' => 'market_charges',
+            'service_label' => 'Market Charges',
         ]);
     }
 
@@ -132,6 +134,7 @@ class ClientDashboardTest extends TestCase
             'queue_number' => 'CR-001',
             'client_type' => QueueEntry::TYPE_PREGNANT,
             'service_key' => 'window_3',
+            'service_label' => 'Death Registration',
         ]);
     }
 
@@ -160,6 +163,7 @@ class ClientDashboardTest extends TestCase
             'queue_number' => 'BPLO-001',
             'client_type' => QueueEntry::TYPE_SENIOR_CITIZEN,
             'service_key' => 'request_for_certifications',
+            'service_label' => 'Request for Certifications',
         ]);
     }
 
@@ -188,6 +192,7 @@ class ClientDashboardTest extends TestCase
             'queue_number' => 'MENRO-001',
             'client_type' => QueueEntry::TYPE_PWD,
             'service_key' => 'issuance_of_clive_card',
+            'service_label' => 'Issuance of CLIVE Card',
         ]);
     }
 
