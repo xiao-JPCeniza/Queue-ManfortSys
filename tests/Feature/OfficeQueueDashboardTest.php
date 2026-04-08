@@ -130,6 +130,7 @@ class OfficeQueueDashboardTest extends TestCase
         $this->assertSame('serving', $announcement['type'] ?? null);
         $this->assertSame($nextInline->queue_number, $announcement['queue_number'] ?? null);
         $this->assertSame(2, $announcement['service_window_number'] ?? null);
+        $this->assertSame('Window 2', $announcement['service_window_label'] ?? null);
 
         $this->assertDatabaseHas('queue_entries', [
             'id' => $currentServing->id,
@@ -711,7 +712,7 @@ class OfficeQueueDashboardTest extends TestCase
 
         Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 2])
             ->call('callNext')
-            ->assertSee('Now serving BPLO-002 at Request for Certifications.')
+            ->assertSee('Now serving BPLO-002 at Window 2.')
             ->assertSee('Request for Certifications')
             ->assertDontSee('BPLO-001');
 
@@ -765,7 +766,7 @@ class OfficeQueueDashboardTest extends TestCase
 
         Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 4])
             ->call('callNext')
-            ->assertSee('Now serving HRMO-002 at ARTA Identification Card.')
+            ->assertSee('Now serving HRMO-002 at Window 4.')
             ->assertSee('Request for Anti-Red Tape Act (ARTA) Identification Card')
             ->assertDontSee('HRMO-001');
 
@@ -819,7 +820,7 @@ class OfficeQueueDashboardTest extends TestCase
 
         Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 2])
             ->call('callNext')
-            ->assertSee('Now serving MENRO-002 at Issuance of CLIVE Card.')
+            ->assertSee('Now serving MENRO-002 at Window 2.')
             ->assertSee('Issuance of CLIVE Card')
             ->assertDontSee('MENRO-001');
 

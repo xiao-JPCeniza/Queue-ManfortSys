@@ -374,6 +374,18 @@ class Office extends Model
         return $this->serviceWindowLabel($windowNumber);
     }
 
+    public function serviceWindowAnnouncementLabel(int $windowNumber): string
+    {
+        $windowNumber = max(1, $windowNumber);
+        $label = $this->serviceWindowLabel($windowNumber);
+
+        if ($this->isPhysicalServiceWindowLabel($label)) {
+            return $label;
+        }
+
+        return 'Window '.$windowNumber;
+    }
+
     public function editableServiceWindowLabels(): Collection
     {
         return $this->serviceWindowNumbers()
@@ -612,27 +624,33 @@ class Office extends Model
 
     private function configuredQueueServiceOptions(): array
     {
+        $options = [];
+
         if ($this->usesBploRouting()) {
-            return self::BPLO_QUEUE_SERVICE_OPTIONS;
+            $options = self::BPLO_QUEUE_SERVICE_OPTIONS;
         }
 
-        if ($this->usesHrmoRouting()) {
-            return self::HRMO_QUEUE_SERVICE_OPTIONS;
+        if ($options === [] && $this->usesHrmoRouting()) {
+            $options = self::HRMO_QUEUE_SERVICE_OPTIONS;
         }
 
-        if ($this->usesMenroRouting()) {
-            return self::MENRO_QUEUE_SERVICE_OPTIONS;
+        if ($options === [] && $this->usesMenroRouting()) {
+            $options = self::MENRO_QUEUE_SERVICE_OPTIONS;
         }
 
-        if ($this->usesTreasuryRouting()) {
-            return self::TREASURY_QUEUE_SERVICE_OPTIONS;
+        if ($options === [] && $this->usesTreasuryRouting()) {
+            $options = self::TREASURY_QUEUE_SERVICE_OPTIONS;
         }
 
-        if ($this->usesCivilRegistryRouting()) {
-            return self::CIVIL_REGISTRY_QUEUE_SERVICE_OPTIONS;
+        if ($options === [] && $this->usesCivilRegistryRouting()) {
+            $options = self::CIVIL_REGISTRY_QUEUE_SERVICE_OPTIONS;
         }
 
-        return [];
+        if (! $this->hasCompleteConfiguredQueueRouting($options)) {
+            return [];
+        }
+
+        return $options;
     }
 
     private function fallbackQueueServiceOptions(array $coveredWindowNumbers): array
@@ -713,6 +731,35 @@ class Office extends Model
             ->sort()
             ->values()
             ->all();
+    }
+
+    private function hasCompleteConfiguredQueueRouting(array $options): bool
+    {
+        if ($options === []) {
+            return true;
+        }
+
+        $highestRequiredWindowNumber = collect($options)
+            ->flatMap(fn (array $serviceOption) => $serviceOption['window_numbers'] ?? [])
+            ->map(fn ($windowNumber) => max(1, (int) $windowNumber))
+            ->max();
+
+        if (! is_int($highestRequiredWindowNumber)) {
+            return true;
+        }
+
+        return $highestRequiredWindowNumber <= $this->resolvedServiceWindowCount();
+    }
+
+    private function isPhysicalServiceWindowLabel(string $label): bool
+    {
+        $normalizedLabel = trim($label);
+
+        if ($normalizedLabel === '') {
+            return false;
+        }
+
+        return preg_match('/^(window|teller|counter|desk|booth|lane|cashier|room|station|cubicle|area|bay)\b/i', $normalizedLabel) === 1;
     }
 
     private function usesTreasuryRouting(): bool

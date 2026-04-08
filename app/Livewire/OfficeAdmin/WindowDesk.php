@@ -64,7 +64,7 @@ class WindowDesk extends Component
 
         session()->flash(
             'office_message',
-            sprintf('Now serving %s at %s.', $next->queue_number, $this->office->serviceWindowLabel($this->windowNumber))
+            sprintf('Now serving %s at %s.', $next->queue_number, $this->office->serviceWindowAnnouncementLabel($this->windowNumber))
         );
     }
 

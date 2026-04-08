@@ -24,7 +24,6 @@
                                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             >
                                 <span class="block text-base font-semibold text-slate-900">{{ $serviceOption['label'] }}</span>
-                                <span class="mt-1 block text-sm text-slate-500">{{ $serviceOption['description'] }}</span>
                             </button>
                         @endforeach
                     </div>
@@ -37,7 +36,6 @@
                         <div class="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
                             <p class="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Selected Service</p>
                             <p class="mt-2 text-lg font-semibold text-slate-900">{{ $selectedQueueService['label'] }}</p>
-                            <p class="mt-1 text-sm text-slate-500">{{ $selectedQueueService['description'] }}</p>
                         </div>
                     @endif
 

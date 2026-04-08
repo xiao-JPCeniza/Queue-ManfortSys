@@ -173,9 +173,6 @@
                             >
                                 <span class="queue-modal-option-copy-wrap">
                                     <span class="queue-modal-option-title">{{ $serviceOption['label'] }}</span>
-                                    @if(!empty($serviceOption['description']))
-                                        <span class="queue-modal-option-description">{{ $serviceOption['description'] }}</span>
-                                    @endif
                                 </span>
                                 <span class="queue-modal-option-icon queue-modal-option-icon-service" aria-hidden="true">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -190,9 +187,6 @@
                         <div class="queue-selected-service">
                             <p class="queue-selected-service-kicker">Selected Service</p>
                             <p class="queue-selected-service-title">{{ $pendingQueueService['label'] }}</p>
-                            @if(!empty($pendingQueueService['description']))
-                                <p class="queue-selected-service-copy">{{ $pendingQueueService['description'] }}</p>
-                            @endif
                         </div>
                     @endif
 

@@ -216,6 +216,39 @@ class ClientDashboardTest extends TestCase
         ]);
     }
 
+    public function test_treasury_with_reduced_window_count_uses_active_window_labels_on_the_queue_page(): void
+    {
+        $office = $this->createOffice('MTO', 'mto', 'MTO', true, [
+            'description' => 'Municipal Treasurer\'s Office',
+            'service_window_count' => 3,
+            'service_window_labels' => [
+                1 => 'Business Taxes, Fees and Charges',
+                2 => 'Teller 2',
+                3 => 'Marriage License',
+            ],
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Business Taxes, Fees and Charges')
+            ->assertSee('Teller 2')
+            ->assertSee('Marriage License')
+            ->assertDontSee('Real Property Taxes')
+            ->call('selectPendingService', 'service_window_3')
+            ->assertSee('Selected Service')
+            ->assertSee('Marriage License')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_REGULAR)
+            ->assertSee('MTO-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'MTO-001',
+            'client_type' => QueueEntry::TYPE_REGULAR,
+            'service_key' => 'service_window_3',
+            'service_label' => 'Marriage License',
+        ]);
+    }
+
     private function createOffice(string $name, string $slug, string $prefix, bool $showInPublicQueue, array $attributes = []): Office
     {
         return Office::create(array_merge([

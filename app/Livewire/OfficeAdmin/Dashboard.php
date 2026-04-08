@@ -215,7 +215,7 @@ class Dashboard extends Component
         $this->storeOfficeAnnouncement($this->office, 'serving', $next->queue_number, $windowNumber);
         session()->flash(
             'office_message',
-            sprintf('Now serving %s at %s.', $next->queue_number, $this->office->serviceWindowLabel($windowNumber))
+            sprintf('Now serving %s at %s.', $next->queue_number, $this->office->serviceWindowAnnouncementLabel($windowNumber))
         );
     }
 
