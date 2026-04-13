@@ -55,6 +55,13 @@
                             <p class="mt-4 text-sm font-semibold text-slate-800">{{ $windowEntry->service_label }}</p>
                         @endif
                         <p class="mt-4 text-sm text-slate-500">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
+                        <div class="mt-4 inline-flex flex-col rounded-2xl border border-emerald-200/80 bg-white/80 px-4 py-3 shadow-sm">
+                            <span class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-emerald-700">Elapsed Time</span>
+                            <span class="mt-1 font-mono text-2xl font-semibold tracking-[0.14em] text-slate-900">
+                                {{ $windowEntry->serviceDurationLabel() ?? '00:00:00' }}
+                            </span>
+                            <span class="mt-1 text-xs text-slate-500">Starts on call and stops once the transaction is completed.</span>
+                        </div>
                     </div>
                 @else
                     <div class="mt-6 flex min-h-[18rem] items-center justify-center rounded-[1.5rem] border border-dashed border-sky-200 bg-slate-50 px-6 text-center">

@@ -568,6 +568,22 @@ class Office extends Model
             ->all();
     }
 
+    public function queueRoutingServiceKeysForWindow(int $windowNumber): array
+    {
+        $windowNumber = max(1, $windowNumber);
+        $serviceKeys = $this->queueServiceKeysForWindow($windowNumber);
+        $sharedServiceKeys = $this->sharedTreasuryFrontlineRoutingServiceKeys();
+
+        if (
+            $sharedServiceKeys === []
+            || ! collect($serviceKeys)->contains(fn (string $serviceKey) => in_array($serviceKey, $sharedServiceKeys, true))
+        ) {
+            return $serviceKeys;
+        }
+
+        return $sharedServiceKeys;
+    }
+
     public function getQueueJoinUrl(): string
     {
         return route('queue.join', ['office' => $this->slug]);
@@ -795,6 +811,26 @@ class Office extends Model
         }
 
         return preg_match('/^(window|teller|counter|desk|booth|lane|cashier|room|station|cubicle|area|bay)\b/i', $normalizedLabel) === 1;
+    }
+
+    private function sharedTreasuryFrontlineRoutingServiceKeys(): array
+    {
+        if (! $this->usesTreasuryRouting()) {
+            return [];
+        }
+
+        $sharedLabels = [
+            'Business Taxes, Fees and Charges',
+            'Real Property Taxes',
+            'Marriage License',
+            'Market Charges',
+        ];
+
+        return collect($this->queueServiceOptions())
+            ->filter(fn (array $serviceOption) => in_array((string) ($serviceOption['label'] ?? ''), $sharedLabels, true))
+            ->keys()
+            ->values()
+            ->all();
     }
 
     private function usesTreasuryRouting(): bool

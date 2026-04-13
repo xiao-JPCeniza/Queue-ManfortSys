@@ -186,7 +186,7 @@ class WindowDesk extends Component
             return;
         }
 
-        $serviceKeys = $this->office->queueServiceKeysForWindow($this->windowNumber);
+        $serviceKeys = $this->office->queueRoutingServiceKeysForWindow($this->windowNumber);
 
         if ($serviceKeys === []) {
             $query->whereRaw('1 = 0');

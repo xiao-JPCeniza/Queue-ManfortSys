@@ -271,6 +271,21 @@
                     Cancel
                 </button>
             </div>
+
+            <div
+                wire:loading.flex
+                wire:target="selectPendingService"
+                class="queue-loading-popup-backdrop"
+            >
+                <div class="queue-loading-popup" role="status" aria-live="polite" aria-atomic="true">
+                    <svg class="queue-loading-popup-spinner" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="queue-loading-popup-spinner-track" cx="12" cy="12" r="9"></circle>
+                        <path class="queue-loading-popup-spinner-head" d="M12 3a9 9 0 0 1 9 9"></path>
+                    </svg>
+                    <p class="queue-loading-popup-title">Please wait</p>
+                    <p class="queue-loading-popup-copy">Preparing your ticket options...</p>
+                </div>
+            </div>
         </div>
     @endif
 
@@ -708,6 +723,62 @@
         backdrop-filter: blur(3px);
     }
 
+    .queue-loading-popup-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.28);
+    }
+
+    .queue-loading-popup {
+        width: min(100%, 20rem);
+        border-radius: 1.2rem;
+        border: 1px solid rgba(191, 219, 254, 0.9);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #eff6ff 100%);
+        box-shadow: 0 20px 38px rgba(15, 23, 42, 0.22);
+        padding: 1.25rem 1.35rem;
+        text-align: center;
+    }
+
+    .queue-loading-popup-spinner {
+        width: 2.6rem;
+        height: 2.6rem;
+        margin: 0 auto 0.9rem;
+        animation: queue-popup-spin 0.85s linear infinite;
+    }
+
+    .queue-loading-popup-spinner-track {
+        fill: none;
+        stroke: #dbeafe;
+        stroke-width: 2.2;
+    }
+
+    .queue-loading-popup-spinner-head {
+        fill: none;
+        stroke: #14539e;
+        stroke-linecap: round;
+        stroke-width: 2.2;
+    }
+
+    .queue-loading-popup-title {
+        margin: 0;
+        color: #0f172a;
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+
+    .queue-loading-popup-copy {
+        margin: 0.4rem 0 0;
+        color: #475569;
+        font-size: 0.92rem;
+        line-height: 1.45;
+        font-weight: 600;
+    }
+
     .queue-modal-card {
         width: min(100%, 32rem);
         max-height: calc(100dvh - 1.5rem);
@@ -1016,6 +1087,16 @@
         font-size: 0.92rem;
         font-weight: 700;
         padding: 0.8rem 1rem;
+    }
+
+    @keyframes queue-popup-spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     @media (max-height: 920px) {

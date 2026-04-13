@@ -573,6 +573,40 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
+    public function test_window_tab_shows_elapsed_service_time_for_the_active_ticket(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 4, 13, 10, 0, 0, 'UTC'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: 1,
+            name: 'MTO',
+            slug: 'mto',
+            prefix: 'MTO',
+            description: 'Municipal Treasurer\'s Office'
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $entry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MTO-001',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 4, 13, 9, 45, 0, 'UTC')
+        );
+
+        QueueEntry::whereKey($entry)->update([
+            'service_window_number' => 1,
+            'called_at' => Carbon::create(2026, 4, 13, 9, 50, 0, 'UTC'),
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 1])
+            ->assertSee('Elapsed Time')
+            ->assertSee('00:10:00')
+            ->assertSee('Starts on call and stops once the transaction is completed.');
+    }
+
     public function test_treasury_window_tab_calls_only_the_service_assigned_to_that_window(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 26, 10, 0, 0, 'Asia/Manila'));
@@ -624,6 +658,136 @@ class OfficeQueueDashboardTest extends TestCase
             'id' => $marketChargesEntry->id,
             'status' => QueueEntry::STATUS_WAITING,
             'service_window_number' => null,
+        ]);
+    }
+
+    public function test_mto_frontline_window_tabs_share_the_same_waiting_pool(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 4, 13, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS),
+            name: 'MTO',
+            slug: 'mto',
+            prefix: 'MTO',
+            description: 'Municipal Treasurer\'s Office',
+            attributes: [
+                'service_window_labels' => Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS,
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $businessTaxesEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MTO-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 13, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'business_taxes_fees_charges'
+        );
+
+        $marriageLicenseEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MTO-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 13, 9, 46, 0, 'Asia/Manila'),
+            serviceKey: 'marriage_license'
+        );
+
+        $marketChargesEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MTO-003',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 13, 9, 47, 0, 'Asia/Manila'),
+            serviceKey: 'market_charges'
+        );
+
+        $releaseCashEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MTO-004',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 13, 9, 48, 0, 'Asia/Manila'),
+            serviceKey: 'release_of_disbursement_of_cash'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 5])
+            ->assertSee('MTO-001')
+            ->assertSee('MTO-002')
+            ->assertSee('MTO-003')
+            ->assertDontSee('MTO-004')
+            ->call('callNext')
+            ->assertSee('Now serving MTO-001 at Teller 5.')
+            ->assertSee('Business Taxes, Fees and Charges');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $businessTaxesEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 5,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $marriageLicenseEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $marketChargesEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $releaseCashEntry->id,
+            'status' => QueueEntry::STATUS_WAITING,
+            'service_window_number' => null,
+        ]);
+    }
+
+    public function test_mto_custom_frontline_tabs_share_the_same_waiting_pool(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 4, 13, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: 4,
+            name: 'MTO',
+            slug: 'mto',
+            prefix: 'MTO',
+            description: 'Municipal Treasurer\'s Office',
+            attributes: [
+                'service_window_labels' => [
+                    1 => 'Business Taxes, Fees and Charges',
+                    2 => 'Real Property Taxes',
+                    3 => 'Marriage License',
+                    4 => 'Market Charges',
+                ],
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $businessTaxesEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'MTO-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 4, 13, 9, 45, 0, 'Asia/Manila'),
+            serviceKey: 'service_window_1'
+        );
+
+        $this->actingAs($user);
+
+        Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 3])
+            ->assertSee('MTO-001')
+            ->assertSee('Business Taxes, Fees and Charges')
+            ->call('callNext')
+            ->assertSee('Now serving MTO-001 at Window 3.');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'id' => $businessTaxesEntry->id,
+            'status' => QueueEntry::STATUS_SERVING,
+            'service_window_number' => 3,
         ]);
     }
 

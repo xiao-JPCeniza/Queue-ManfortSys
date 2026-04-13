@@ -296,6 +296,34 @@ class QueueEntry extends Model
         return $this->displayTimestamp('served_at', $timezone);
     }
 
+    public function serviceDurationInSeconds(?Carbon $reference = null): ?int
+    {
+        if (! $this->called_at instanceof Carbon) {
+            return null;
+        }
+
+        $endTime = $this->served_at instanceof Carbon
+            ? $this->served_at
+            : ($reference ?? now('Asia/Manila'));
+
+        return max(0, $this->called_at->diffInSeconds($endTime, false));
+    }
+
+    public function serviceDurationLabel(?Carbon $reference = null): ?string
+    {
+        $durationInSeconds = $this->serviceDurationInSeconds($reference);
+
+        if ($durationInSeconds === null) {
+            return null;
+        }
+
+        $hours = intdiv($durationInSeconds, 3600);
+        $minutes = intdiv($durationInSeconds % 3600, 60);
+        $seconds = $durationInSeconds % 60;
+
+        return sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+    }
+
     private function displayTimestamp(string $column, string $timezone): ?Carbon
     {
         $rawValue = $this->getRawOriginal($column);

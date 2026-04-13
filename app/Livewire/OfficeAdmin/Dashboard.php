@@ -409,7 +409,7 @@ class Dashboard extends Component
             return;
         }
 
-        $serviceKeys = $this->office->queueServiceKeysForWindow($windowNumber);
+        $serviceKeys = $this->office->queueRoutingServiceKeysForWindow($windowNumber);
 
         if ($serviceKeys === []) {
             $query->whereRaw('1 = 0');
