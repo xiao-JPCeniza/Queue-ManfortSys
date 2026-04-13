@@ -33,12 +33,16 @@ class AllOfficesMonitor extends Component
             ->sort(fn (array $left, array $right) => $this->compareOfficeRows($left, $right))
             ->values();
 
-        $featuredOfficeRow = $officeRows->first();
         $hasCurrentTransaction = $officeRows->contains(fn (array $row) => $row['serving'] !== null);
         $hasQueuedNextInline = $officeRows->contains(fn (array $row) => $row['nextInline'] !== null);
+        $featuredOfficeRow = $hasCurrentTransaction
+            ? $officeRows->first(fn (array $row) => $row['serving'] !== null)
+            : $this->selectUpcomingOfficeRow($officeRows);
+        $featuredNextInlineRow = $this->selectUpcomingOfficeRow($officeRows);
 
         return view('livewire.office-admin.all-offices-monitor', [
             'featuredOfficeRow' => $featuredOfficeRow,
+            'featuredNextInlineRow' => $featuredNextInlineRow,
             'announcementOfficeRows' => $officeRows,
             'hasCurrentTransaction' => $hasCurrentTransaction,
             'hasQueuedNextInline' => $hasQueuedNextInline,
@@ -94,13 +98,17 @@ class AllOfficesMonitor extends Component
 
         $announcementPayload = $this->getOfficeAnnouncement($office);
         $activeWindowCount = $servingEntries->count();
-        $windowCount = $office->resolvedServiceWindowCount();
+        $windowCount = max(
+            $office->resolvedServiceWindowCount(),
+            max(1, (int) ($servingEntries->max(fn (QueueEntry $entry) => $entry->service_window_number ?? 1) ?? 1))
+        );
 
         return [
             'office' => $office,
             'serving' => $servingEntries->first(),
             'servingEntries' => $servingEntries,
             'nextInline' => $nextInline,
+            'next_inline_timestamp' => $nextInline?->displayCreatedAt()?->getTimestamp() ?? 0,
             'waiting_count' => $waitingEntries->count(),
             'active_window_count' => $activeWindowCount,
             'window_count' => $windowCount,
@@ -121,6 +129,22 @@ class AllOfficesMonitor extends Component
         }
 
         return strcasecmp((string) $left['office']->name, (string) $right['office']->name);
+    }
+
+    private function selectUpcomingOfficeRow(Collection $officeRows): ?array
+    {
+        return $officeRows
+            ->filter(fn (array $row) => $row['nextInline'] !== null)
+            ->sort(function (array $left, array $right) {
+                $nextInlineComparison = ($right['next_inline_timestamp'] ?? 0) <=> ($left['next_inline_timestamp'] ?? 0);
+
+                if ($nextInlineComparison !== 0) {
+                    return $nextInlineComparison;
+                }
+
+                return strcasecmp((string) $left['office']->name, (string) $right['office']->name);
+            })
+            ->first();
     }
 
     private function announcementTimestamp(?array $announcementPayload): int

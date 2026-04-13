@@ -14,7 +14,7 @@ class OfficeSeeder extends Seeder
             ['name' => 'HRMO', 'slug' => 'hrmo', 'prefix' => 'HRMO', 'description' => 'Human Resource Management Office', 'service_window_count' => count(Office::HRMO_DEFAULT_SERVICE_WINDOW_LABELS)],
             ['name' => 'Treasury', 'slug' => 'treasury', 'prefix' => 'TRSY', 'description' => 'Municipal Treasurer\'s Office', 'service_window_count' => count(Office::TREASURY_DEFAULT_SERVICE_WINDOW_LABELS)],
             ['name' => 'Accounting', 'slug' => 'accounting', 'prefix' => 'ACCT', 'description' => 'Municipal Accounting Office', 'service_window_count' => 1],
-            ['name' => 'Civil Registry', 'slug' => 'civil-registry', 'prefix' => 'CR', 'description' => 'Municipal Local Civil Registry Office', 'service_window_count' => count(Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)],
+            ['name' => 'Civil Registry', 'slug' => 'civil-registry', 'prefix' => 'MCR', 'description' => 'Municipal Local Civil Registry Office', 'service_window_count' => count(Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS)],
             ['name' => 'Business Permits', 'slug' => 'business-permits', 'prefix' => 'BPLO', 'description' => 'Business Permits and Licensing Office', 'service_window_count' => count(Office::BPLO_DEFAULT_SERVICE_WINDOW_LABELS)],
             // From OfficeDesignationSeeder (MISO360) – additional offices
             ['name' => 'Assessor\'s Office', 'slug' => 'assessors-office', 'prefix' => 'ASSR', 'description' => 'Municipal Assessor\'s Office', 'service_window_count' => 1],

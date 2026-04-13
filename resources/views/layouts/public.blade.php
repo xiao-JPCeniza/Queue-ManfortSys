@@ -2,6 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     @php($lockQueueZoom = request()->routeIs('queue.client'))
+    @php($isPublicLiveMonitor = request()->routeIs('live-monitor.public'))
     <meta charset="utf-8">
     <meta name="viewport" content="{{ $lockQueueZoom ? 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' : 'width=device-width, initial-scale=1' }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -16,6 +17,13 @@
     @livewireStyles
     <style>
         body { font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif; }
+        @if($isPublicLiveMonitor)
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+        @endif
         @if($lockQueueZoom)
         html,
         body {
@@ -28,7 +36,7 @@
         @endif
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased min-h-screen {{ $lockQueueZoom ? 'queue-zoom-locked' : '' }}">
+<body class="bg-slate-50 text-slate-900 antialiased {{ $isPublicLiveMonitor ? 'h-screen overflow-hidden' : 'min-h-screen' }} {{ $lockQueueZoom ? 'queue-zoom-locked' : '' }}">
     @hasSection('content')
         @yield('content')
     @else

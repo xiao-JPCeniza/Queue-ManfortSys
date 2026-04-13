@@ -92,7 +92,7 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Business Taxes, Fees and Charges')
-            ->assertSee('Choose the MTO service first')
+            ->assertSee('Choose the service you need to visit.')
             ->call('selectPendingService', 'market_charges')
             ->assertSee('Selected Service')
             ->assertSee('Market Charges')
@@ -119,16 +119,16 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Birth Registration')
-            ->assertSee('Choose the window first')
+            ->assertSee('Choose the service you need to visit.')
             ->call('selectPendingService', 'window_3')
             ->assertSee('Selected Service')
             ->assertSee('Death Registration')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_PREGNANT)
-            ->assertSee('CR-001');
+            ->assertSee('MCR-001');
 
         $this->assertDatabaseHas('queue_entries', [
             'office_id' => $office->id,
-            'queue_number' => 'CR-001',
+            'queue_number' => 'MCR-001',
             'client_type' => QueueEntry::TYPE_PREGNANT,
             'service_key' => 'window_3',
             'service_label' => 'Death Registration',
@@ -146,7 +146,7 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Business Permit Application (New & Renewal)')
-            ->assertSee('Choose the service first')
+            ->assertSee('Choose the service you need to visit.')
             ->call('selectPendingService', 'request_for_certifications')
             ->assertSee('Selected Service')
             ->assertSee('Request for Certifications')
@@ -173,7 +173,7 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Request for Recruitment and Selection Services')
-            ->assertSee('Choose the service first')
+            ->assertSee('Choose the service you need to visit.')
             ->call('selectPendingService', 'arta_identification_card')
             ->assertSee('Selected Service')
             ->assertSee('Request for Anti-Red Tape Act (ARTA) Identification Card')
@@ -200,7 +200,7 @@ class ClientDashboardTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Addressing Environmental Concerns')
-            ->assertSee('Choose the service first')
+            ->assertSee('Choose the service you need to visit.')
             ->call('selectPendingService', 'issuance_of_clive_card')
             ->assertSee('Selected Service')
             ->assertSee('Issuance of CLIVE Card')

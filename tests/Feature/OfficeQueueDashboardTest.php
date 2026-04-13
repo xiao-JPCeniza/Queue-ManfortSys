@@ -91,6 +91,53 @@ class OfficeQueueDashboardTest extends TestCase
         ]);
     }
 
+    public function test_service_window_tabs_ignore_stale_serving_entries_from_previous_days(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 4, 13, 10, 0, 0, 'Asia/Manila'));
+
+        $office = $this->createOffice(
+            serviceWindowCount: 5,
+            name: 'Civil Registry',
+            slug: 'civil-registry',
+            prefix: 'CR',
+            description: 'Municipal Local Civil Registry Office',
+            attributes: [
+                'service_window_labels' => [
+                    1 => 'Birth Registration',
+                    2 => 'Marriage Registration',
+                    3 => 'Death Registration',
+                    4 => 'PSA Request',
+                    5 => 'Correction of Clerical Error',
+                ],
+            ]
+        );
+
+        $user = $this->createOfficeAdminUser($office);
+
+        $staleServingEntry = $this->createQueueEntry(
+            office: $office,
+            queueNumber: 'CR-001',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 4, 12, 15, 0, 0, 'Asia/Manila')
+        );
+
+        QueueEntry::whereKey($staleServingEntry)->update([
+            'service_window_number' => 6,
+            'called_at' => Carbon::create(2026, 4, 12, 15, 5, 0, 'Asia/Manila')
+                ->setTimezone((string) config('app.timezone', 'UTC')),
+        ]);
+
+        $this->actingAs($user);
+
+        Livewire::test(Dashboard::class, ['office' => $office])
+            ->assertSee('Birth Registration')
+            ->assertSee('Marriage Registration')
+            ->assertSee('Death Registration')
+            ->assertSee('PSA Request')
+            ->assertSee('Correction of Clerical Error')
+            ->assertDontSee('Window 6');
+    }
+
     public function test_call_next_can_assign_the_next_ticket_to_another_available_window(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 3, 9, 10, 0, 0, 'Asia/Manila'));

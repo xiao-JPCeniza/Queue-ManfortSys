@@ -91,12 +91,12 @@ class OfficeLiveMonitorTest extends TestCase
 
         $this->assertStringContainsString('1 Active', $html);
         $this->assertStringContainsString($latestServing->queue_number, $servingNowSection);
-        $this->assertStringContainsString('Window 2', $servingNowSection);
+        $this->assertStringContainsString($office->serviceWindowLabel(2), $servingNowSection);
         $this->assertStringContainsString('Windows Currently Serving', $html);
         $this->assertStringContainsString('2 Active', $windowsSection);
         $this->assertStringContainsString($latestServing->queue_number, $windowsSection);
         $this->assertStringContainsString($olderServing->queue_number, $windowsSection);
-        $this->assertStringContainsString('Window 1', $windowsSection);
+        $this->assertStringContainsString($office->serviceWindowLabel(1), $windowsSection);
         $this->assertStringContainsString('data-has-current-transaction="true"', $html);
         $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
         $this->assertStringContainsString('data-live-monitor-idle-video-config', $html);
@@ -105,7 +105,7 @@ class OfficeLiveMonitorTest extends TestCase
         $this->assertStringContainsString(route('media.tourism-video'), $html);
         $this->assertStringNotContainsString('records</span>', $html);
         $this->assertStringNotContainsString($olderServing->queue_number, $servingNowSection);
-        $this->assertStringNotContainsString('Window 1', $servingNowSection);
+        $this->assertStringNotContainsString($office->serviceWindowLabel(1), $servingNowSection);
     }
 
     public function test_bplo_monitor_marks_a_waiting_next_ticket_as_non_idle(): void

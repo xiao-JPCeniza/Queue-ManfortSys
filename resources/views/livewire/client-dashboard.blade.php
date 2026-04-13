@@ -146,17 +146,8 @@
             <div class="queue-modal-card {{ $pendingQueueServiceOptions !== [] && !$pendingQueueService ? 'queue-modal-card-wide' : '' }}">
                 <p class="queue-modal-kicker">Ticket Option</p>
                 <h2 id="queue-client-type-title" class="queue-modal-title">{{ $pendingOfficeName }}</h2>
-                @php($isPendingMtoOffice = in_array($pendingOfficeSlug ?? '', ['treasury', 'mto'], true))
-                @php($isPendingCivilRegistryOffice = ($pendingOfficeSlug ?? '') === 'civil-registry')
-
                 @if($pendingQueueServiceOptions !== [] && !$pendingQueueService)
-                    <p class="queue-modal-copy">
-                        {{ $isPendingMtoOffice
-                            ? 'Choose the MTO service first so the queue number can be routed to the correct teller or window.'
-                            : ($isPendingCivilRegistryOffice
-                                ? 'Choose the window first so the queue number can be routed to the correct office window.'
-                                : 'Choose the service first so the queue number can be routed to the correct teller or window.') }}
-                    </p>
+                    <p class="queue-modal-copy">Choose the service you need to visit.</p>
                 @else
                     <p class="queue-modal-copy">Choose the ticket type before generating the queue number.</p>
                 @endif
@@ -169,7 +160,7 @@
                                 wire:click="selectPendingService('{{ $serviceKey }}')"
                                 wire:loading.attr="disabled"
                                 wire:target="selectPendingService"
-                                class="queue-modal-option queue-modal-option-service {{ $isPendingCivilRegistryOffice ? 'queue-modal-option-service-detailed' : '' }}"
+                                class="queue-modal-option queue-modal-option-service"
                             >
                                 <span class="queue-modal-option-copy-wrap">
                                     <span class="queue-modal-option-title">{{ $serviceOption['label'] }}</span>

@@ -366,7 +366,7 @@ class Dashboard extends Component
     {
         $servingByWindow = $servingEntries->keyBy(fn (QueueEntry $entry) => $entry->service_window_number ?? 1);
 
-        return $this->office->serviceWindowNumbers()
+        return $this->office->accessibleServiceWindowNumbers()
             ->map(function (int $windowNumber) use ($servingByWindow) {
                 return [
                     'number' => $windowNumber,
@@ -451,9 +451,10 @@ class Dashboard extends Component
             'peakHourLabel' => 'No tickets yet today',
             'monthlyVolumeSeries' => [],
             'monthlyVolumeMax' => 1,
-            'monthlyPeakMonthLabel' => 'No tickets in the last 12 months',
+            'monthlyPeakMonthLabel' => 'No tickets recorded this year',
             'monthlyStatusSeries' => [],
             'monthlyStatusLegend' => [],
+            'monthlyScopeLabel' => 'Current Year',
             'officeAccommodatedSummary' => [],
             'officeAccommodatedChartSeries' => [],
             'officeAccommodatedPieStyle' => 'conic-gradient(#e2e8f0 0 100%)',
@@ -591,10 +592,11 @@ class Dashboard extends Component
             ];
         })->all();
 
-        $startMonthManila = $manilaNow->copy()->startOfMonth()->subMonths(11);
-        $endMonthManila = $manilaNow->copy()->endOfMonth();
+        $startMonthManila = $manilaNow->copy()->startOfYear();
+        $endMonthManila = $manilaNow->copy()->endOfYear();
         $monthStartDb = $startMonthManila->copy()->setTimezone($dbTimezone);
         $monthEndDb = $endMonthManila->copy()->setTimezone($dbTimezone);
+        $monthlyScopeLabel = 'Current Year ('.$manilaNow->format('Y').')';
 
         $monthlyEntries = QueueEntry::whereIn('office_id', $reportOfficeIds)
             ->whereBetween('created_at', [$monthStartDb, $monthEndDb])
@@ -641,7 +643,7 @@ class Dashboard extends Component
         })->all();
 
         $monthlyVolumeMax = max(1, (int) collect($monthlyVolumeSeries)->max('total'));
-        $monthlyPeakMonthLabel = 'No tickets in the last 12 months';
+        $monthlyPeakMonthLabel = 'No tickets recorded this year';
         $peakMonth = collect($monthlyVolumeSeries)->sortByDesc('total')->first();
 
         if ($peakMonth && $peakMonth['total'] > 0) {
@@ -654,6 +656,7 @@ class Dashboard extends Component
             'monthlyPeakMonthLabel' => $monthlyPeakMonthLabel,
             'monthlyStatusSeries' => $monthlyStatusSeries,
             'monthlyStatusLegend' => $monthlyStatusLegend,
+            'monthlyScopeLabel' => $monthlyScopeLabel,
         ];
     }
 

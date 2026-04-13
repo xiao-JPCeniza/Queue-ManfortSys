@@ -343,6 +343,31 @@ class Office extends Model
         return collect(range(1, $this->resolvedServiceWindowCount()));
     }
 
+    public function accessibleServiceWindowCount(): int
+    {
+        if (! $this->exists) {
+            return $this->resolvedServiceWindowCount();
+        }
+
+        [$dayStart, $dayEnd] = $this->manilaDayBounds();
+
+        $highestServingWindowNumber = QueueEntry::query()
+            ->where('office_id', $this->getKey())
+            ->serving()
+            ->whereBetween('created_at', [$dayStart, $dayEnd])
+            ->max(DB::raw('COALESCE(service_window_number, 1)'));
+
+        return max(
+            $this->resolvedServiceWindowCount(),
+            max(1, (int) $highestServingWindowNumber)
+        );
+    }
+
+    public function accessibleServiceWindowNumbers(): Collection
+    {
+        return collect(range(1, $this->accessibleServiceWindowCount()));
+    }
+
     public function serviceWindowLabel(int $windowNumber): string
     {
         $windowNumber = max(1, $windowNumber);
@@ -548,6 +573,11 @@ class Office extends Model
         return route('queue.join', ['office' => $this->slug]);
     }
 
+    public function queuePrefix(): string
+    {
+        return $this->resolveQueuePrefix();
+    }
+
     public function generateNextQueueNumber(): string
     {
         return DB::transaction(function (): string {
@@ -556,7 +586,7 @@ class Office extends Model
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $prefix = $office->resolveQueuePrefix();
+            $prefix = $office->queuePrefix();
             $manilaNow = now('Asia/Manila');
             $dbTimezone = (string) config('app.timezone', 'UTC');
             $dayStart = $manilaNow->copy()->startOfDay()->setTimezone($dbTimezone);
@@ -588,6 +618,11 @@ class Office extends Model
         // Keep HRMO ticket format stable even if old data has a wrong prefix.
         if ($this->slug === 'hrmo') {
             $prefix = 'HRMO';
+        }
+
+        // Keep Civil Registry ticket format aligned with the MCR abbreviation.
+        if ($this->usesCivilRegistryRouting()) {
+            $prefix = 'MCR';
         }
 
         if ($prefix === '') {
@@ -785,5 +820,16 @@ class Office extends Model
     private function usesCivilRegistryRouting(): bool
     {
         return in_array($this->slug, ['civil-registry', 'cr'], true);
+    }
+
+    private function manilaDayBounds(): array
+    {
+        $manilaNow = now('Asia/Manila');
+        $dbTimezone = (string) config('app.timezone', 'UTC');
+
+        return [
+            $manilaNow->copy()->startOfDay()->setTimezone($dbTimezone),
+            $manilaNow->copy()->endOfDay()->setTimezone($dbTimezone),
+        ];
     }
 }

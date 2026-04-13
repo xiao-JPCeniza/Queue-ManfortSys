@@ -64,16 +64,21 @@ class AllOfficesMonitorTest extends TestCase
             createdAt: Carbon::create(2026, 3, 8, 9, 20, 0, 'Asia/Manila')
         );
 
-        Livewire::test(AllOfficesMonitor::class)
-            ->assertSee('HRMO')
-            ->assertSee('HRMO-001')
-            ->assertSee('HRMO-002')
-            ->assertSeeHtml('data-has-current-transaction="true"')
-            ->assertSeeHtml('data-idle-video-delay-ms="60000"')
-            ->assertDontSee('Treasury')
-            ->assertDontSee('TRSY-001')
-            ->assertDontSee('MSWDO')
-            ->assertDontSee('MSWDO-001');
+        $html = Livewire::test(AllOfficesMonitor::class)->html();
+        $servingNowSection = $this->extractSection($html, 'Serving Now', 'Next in Line');
+        $nextInLineSection = $this->extractSection($html, 'Next in Line', 'Windows Currently Serving');
+        $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</section>');
+
+        $this->assertStringContainsString('HRMO', $html);
+        $this->assertStringContainsString('HRMO-001', $servingNowSection);
+        $this->assertStringContainsString('data-has-current-transaction="true"', $html);
+        $this->assertStringContainsString('data-idle-video-delay-ms="60000"', $html);
+        $this->assertStringContainsString('Treasury', $nextInLineSection);
+        $this->assertStringContainsString('TRSY-001', $nextInLineSection);
+        $this->assertStringNotContainsString('HRMO-002', $html);
+        $this->assertStringNotContainsString('Treasury', $servingNowSection.$windowsSection);
+        $this->assertStringNotContainsString('MSWDO', $html);
+        $this->assertStringNotContainsString('MSWDO-001', $html);
     }
 
     public function test_it_keeps_the_monitor_out_of_idle_when_an_office_has_a_waiting_next_ticket(): void
@@ -99,6 +104,76 @@ class AllOfficesMonitorTest extends TestCase
         $this->assertStringContainsString('wire:ignore', $html);
         $this->assertStringContainsString(route('media.tourism-video'), $html);
         $this->assertStringContainsString('TRSY-001', $html);
+    }
+
+    public function test_it_shows_the_latest_upcoming_ticket_from_any_office_in_the_next_in_line_panel(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 21, 10, 0, 0, 'Asia/Manila'));
+
+        $hrmo = $this->createOffice('HRMO', 'hrmo', 'HRMO', 2);
+        $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY');
+
+        $hrmoServing = $this->createQueueEntry(
+            office: $hrmo,
+            queueNumber: 'HRMO-001',
+            status: QueueEntry::STATUS_SERVING,
+            createdAt: Carbon::create(2026, 3, 21, 9, 15, 0, 'Asia/Manila')
+        );
+
+        $this->setCalledAt($hrmoServing, Carbon::create(2026, 3, 21, 9, 20, 0, 'Asia/Manila'));
+
+        $this->createQueueEntry(
+            office: $hrmo,
+            queueNumber: 'HRMO-002',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 21, 9, 25, 0, 'Asia/Manila')
+        );
+
+        $treasuryUpcoming = $this->createQueueEntry(
+            office: $treasury,
+            queueNumber: 'TRSY-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 21, 9, 40, 0, 'Asia/Manila')
+        );
+
+        $html = Livewire::test(AllOfficesMonitor::class)->html();
+        $servingNowSection = $this->extractSection($html, 'Serving Now', 'Next in Line');
+        $nextInLineSection = $this->extractSection($html, 'Next in Line', 'Windows Currently Serving');
+
+        $this->assertStringContainsString('HRMO', $html);
+        $this->assertStringContainsString('HRMO-001', $servingNowSection);
+        $this->assertStringContainsString($treasury->name, $nextInLineSection);
+        $this->assertStringContainsString($treasuryUpcoming->queue_number, $nextInLineSection);
+        $this->assertStringNotContainsString('HRMO-002', $nextInLineSection);
+    }
+
+    public function test_it_features_the_office_with_the_latest_upcoming_ticket_when_no_office_is_serving(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 3, 21, 10, 0, 0, 'Asia/Manila'));
+
+        $accounting = $this->createOffice('Accounting', 'accounting', 'ACCT');
+        $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY');
+
+        $this->createQueueEntry(
+            office: $accounting,
+            queueNumber: 'ACCT-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 21, 9, 10, 0, 'Asia/Manila')
+        );
+
+        $treasuryUpcoming = $this->createQueueEntry(
+            office: $treasury,
+            queueNumber: 'TRSY-001',
+            status: QueueEntry::STATUS_WAITING,
+            createdAt: Carbon::create(2026, 3, 21, 9, 45, 0, 'Asia/Manila')
+        );
+
+        $html = Livewire::test(AllOfficesMonitor::class)->html();
+
+        $this->assertStringContainsString('Treasury', $html);
+        $this->assertStringContainsString($treasuryUpcoming->queue_number, $html);
+        $this->assertStringNotContainsString('Accounting', $html);
+        $this->assertStringNotContainsString('ACCT-001', $html);
     }
 
     public function test_it_marks_the_monitor_as_idle_when_there_are_no_current_or_waiting_transactions(): void
@@ -292,14 +367,19 @@ class AllOfficesMonitorTest extends TestCase
         $this->setServedAt($treasuryRecent, Carbon::create(2026, 3, 9, 8, 55, 0, 'Asia/Manila'));
 
         $html = Livewire::test(AllOfficesMonitor::class)->html();
+        $servingNowSection = $this->extractSection($html, 'Serving Now', 'Next in Line');
+        $nextInLineSection = $this->extractSection($html, 'Next in Line', 'Windows Currently Serving');
         $windowsSection = $this->extractSection($html, 'Windows Currently Serving', '</section>');
 
         $this->assertSame(1, substr_count($html, 'Windows Currently Serving'));
+        $this->assertStringContainsString('Accounting', $html);
+        $this->assertStringContainsString('ACCT-001', $servingNowSection);
         $this->assertStringContainsString('ACCT-001', $windowsSection);
+        $this->assertStringContainsString('Treasury', $nextInLineSection);
+        $this->assertStringContainsString('TRSY-001', $nextInLineSection);
         $this->assertStringNotContainsString('TRSY-004', $html);
         $this->assertStringNotContainsString('records</span>', $html);
-        $this->assertStringContainsString('Accounting', $html);
-        $this->assertStringNotContainsString('Treasury', $html);
+        $this->assertStringNotContainsString('Treasury', $servingNowSection.$windowsSection);
     }
 
     public function test_it_displays_only_the_latest_called_ticket_in_serving_now_for_the_featured_office(): void

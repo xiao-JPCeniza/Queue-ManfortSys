@@ -94,7 +94,7 @@
                         <h2 class="mt-2 text-2xl font-semibold text-slate-900">{{ $waiting->count() }} waiting</h2>
                     </div>
                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-                        {{ $office->prefix }}
+                        {{ $office->queuePrefix() }}
                     </span>
                 </div>
 

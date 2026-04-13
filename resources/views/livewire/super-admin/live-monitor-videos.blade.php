@@ -320,6 +320,7 @@
                 showUploadModal: openOnLoad,
                 search: '',
                 isUploading: false,
+                activeUploadRequest: null,
                 uploadProgress: 0,
                 uploadError: '',
                 uploadStatusLabel: 'Uploading video...',
@@ -331,7 +332,7 @@
                 },
                 closeUploadModal() {
                     if (this.isUploading) {
-                        return;
+                        this.abortUpload();
                     }
 
                     this.resetUploadState();
@@ -341,12 +342,22 @@
                     this.uploadError = '';
                 },
                 resetUploadState() {
+                    this.activeUploadRequest = null;
                     this.isUploading = false;
                     this.uploadProgress = 0;
                     this.uploadError = '';
                     this.uploadStatusLabel = 'Uploading video...';
                     this.uploadedBytes = 0;
                     this.totalBytes = 0;
+
+                    if (this.$refs.uploadInput) {
+                        this.$refs.uploadInput.value = '';
+                    }
+                },
+                abortUpload() {
+                    if (this.activeUploadRequest) {
+                        this.activeUploadRequest.abort();
+                    }
                 },
                 submitUpload(event) {
                     if (this.isUploading) {
@@ -371,6 +382,7 @@
                     this.totalBytes = file.size || 0;
 
                     const request = new XMLHttpRequest();
+                    this.activeUploadRequest = request;
 
                     request.open(form.method || 'POST', form.action, true);
                     request.responseType = 'json';
@@ -390,6 +402,7 @@
 
                     request.addEventListener('load', () => {
                         const payload = this.parseUploadResponse(request);
+                        this.activeUploadRequest = null;
 
                         if (request.status >= 200 && request.status < 300) {
                             this.uploadProgress = 100;
@@ -410,12 +423,17 @@
                     });
 
                     request.addEventListener('error', () => {
+                        this.activeUploadRequest = null;
                         this.isUploading = false;
                         this.uploadProgress = 0;
                         this.uploadedBytes = 0;
                         this.totalBytes = 0;
                         this.uploadStatusLabel = 'Uploading video...';
                         this.uploadError = 'Unable to upload the video right now. Please check your network and try again.';
+                    });
+
+                    request.addEventListener('abort', () => {
+                        this.resetUploadState();
                     });
 
                     request.send(new FormData(form));

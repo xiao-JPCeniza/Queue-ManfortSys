@@ -211,7 +211,7 @@ class SuperAdminOfficesTest extends TestCase
         );
     }
 
-    public function test_super_admin_cannot_reduce_service_windows_below_an_active_window_from_the_offices_page(): void
+    public function test_super_admin_can_reduce_service_windows_even_with_an_active_window_from_the_offices_page(): void
     {
         $superAdmin = $this->createSuperAdminUser();
         $treasury = $this->createOffice('Treasury', 'treasury', 'TRSY', true, 4);
@@ -229,12 +229,12 @@ class SuperAdminOfficesTest extends TestCase
             ->set('serviceWindowOfficeSlug', 'treasury')
             ->set('serviceWindowCountSelection', '2')
             ->call('updateServiceWindowCount')
-            ->assertSee('Treasury still has an active ticket at Teller 4.')
-            ->assertSet('serviceWindowCountSelection', '4');
+            ->assertSee('Treasury service windows updated to 2.')
+            ->assertSet('serviceWindowCountSelection', '2');
 
         $this->assertDatabaseHas('offices', [
             'id' => $treasury->id,
-            'service_window_count' => 4,
+            'service_window_count' => 2,
         ]);
 
         $this->assertDatabaseHas('queue_entries', [

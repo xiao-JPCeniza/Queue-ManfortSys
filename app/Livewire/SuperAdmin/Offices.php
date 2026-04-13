@@ -319,28 +319,6 @@ class Offices extends Component
             return;
         }
 
-        $activeWindowNumbers = QueueEntry::query()
-            ->where('office_id', $selectedOffice->id)
-            ->serving()
-            ->get(['service_window_number'])
-            ->map(fn (QueueEntry $entry) => $entry->service_window_number ?? 1)
-            ->filter(fn (int $windowNumber) => $windowNumber > $requestedWindowCount)
-            ->unique()
-            ->sort()
-            ->values();
-
-        if ($activeWindowNumbers->isNotEmpty()) {
-            $blockedWindowNumber = (int) $activeWindowNumbers->first();
-            $this->syncServiceWindowSelection($officeOptions);
-
-            session()->flash(
-                'error',
-                $selectedOffice->name.' still has an active ticket at '.$selectedOffice->serviceWindowLabel($blockedWindowNumber).'. Complete it before reducing the service windows.'
-            );
-
-            return;
-        }
-
         $selectedOffice->update([
             'service_window_count' => $requestedWindowCount,
             'service_window_labels' => $selectedOffice->alignedServiceWindowLabels($requestedWindowCount),

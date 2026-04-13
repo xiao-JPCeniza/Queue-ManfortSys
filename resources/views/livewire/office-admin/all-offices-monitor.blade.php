@@ -66,22 +66,25 @@
                             </div>
                         </section>
 
-                        <section class="gov-monitor-panel gov-panel-next" aria-labelledby="next-{{ $featuredOfficeRow['office']->slug }}">
+                        <section class="gov-monitor-panel gov-panel-next" aria-labelledby="next-inline-heading">
                             <div class="gov-panel-head">
-                                <h3 id="next-{{ $featuredOfficeRow['office']->slug }}" class="gov-font-heading gov-panel-title">Next in Line</h3>
-                                <span class="gov-status-badge {{ $featuredOfficeRow['nextInline'] ? 'gov-status-badge-queue' : 'gov-status-badge-idle' }}">
-                                    {{ $featuredOfficeRow['nextInline'] ? 'Queued' : 'Empty' }}
+                                <h3 id="next-inline-heading" class="gov-font-heading gov-panel-title">Next in Line</h3>
+                                <span class="gov-status-badge {{ $featuredNextInlineRow ? 'gov-status-badge-queue' : 'gov-status-badge-idle' }}">
+                                    {{ $featuredNextInlineRow ? 'Queued' : 'Empty' }}
                                 </span>
                             </div>
 
                             <div class="gov-panel-body">
-                                @if($featuredOfficeRow['nextInline'])
+                                @if($featuredNextInlineRow)
                                     <div class="gov-ticket-card gov-ticket-card-next">
-                                        <p class="gov-ticket-label">Upcoming Ticket</p>
-                                        <p class="gov-ticket-number gov-ticket-number-next" aria-live="polite">{{ $featuredOfficeRow['nextInline']->queue_number }}</p>
+                                        <div class="gov-ticket-heading">
+                                            <p class="gov-ticket-label">Upcoming Ticket</p>
+                                            <p class="gov-ticket-office">{{ $featuredNextInlineRow['office']->name }}</p>
+                                        </div>
+                                        <p class="gov-ticket-number gov-ticket-number-next" aria-live="polite">{{ $featuredNextInlineRow['nextInline']->queue_number }}</p>
                                         <div class="gov-ticket-meta-block">
                                             <p class="gov-ticket-meta-label">Queued at</p>
-                                            <p class="gov-ticket-meta-value">{{ $featuredOfficeRow['nextInline']->displayCreatedAt()?->format('h:i:s A') }}</p>
+                                            <p class="gov-ticket-meta-value">{{ $featuredNextInlineRow['nextInline']->displayCreatedAt()?->format('h:i:s A') }}</p>
                                         </div>
                                     </div>
                                 @else
@@ -188,6 +191,7 @@
             width: 100%;
             height: 100%;
             min-height: 100dvh;
+            max-height: 100dvh;
             overflow: hidden;
             background:
                 radial-gradient(circle at 10% 5%, rgb(255 255 255 / 0.66), transparent 34%),
@@ -198,6 +202,7 @@
             width: 100%;
             min-height: 100%;
             height: 100dvh;
+            max-height: 100dvh;
             display: flex;
             flex-direction: column;
             color: var(--gov-ink-900);
@@ -534,6 +539,19 @@
             font-weight: 700;
             color: #1f4f7f;
             flex-shrink: 0;
+        }
+
+        .gov-ticket-heading {
+            display: grid;
+            gap: 0.18rem;
+        }
+
+        .gov-ticket-office {
+            margin: 0;
+            color: var(--gov-ink-900);
+            font-size: clamp(1rem, 1.08vw, 1.12rem);
+            font-weight: 700;
+            line-height: 1.2;
         }
 
         .gov-ticket-number {

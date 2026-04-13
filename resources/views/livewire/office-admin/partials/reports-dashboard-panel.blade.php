@@ -207,7 +207,7 @@
                 <div class="gov-report-card-head gov-report-card-head-wide">
                     <div>
                         <p class="gov-report-card-kicker">Annual Analytics</p>
-                        <h2 id="annual-analytics-heading" class="gov-font-heading gov-report-card-title">Ticket Volume Per Month (Last 12 Months)</h2>
+                        <h2 id="annual-analytics-heading" class="gov-font-heading gov-report-card-title">Ticket Volume Per Month ({{ $monthlyScopeLabel }})</h2>
                     </div>
                     <p class="gov-report-card-meta">Peak month: {{ $monthlyPeakMonthLabel }}</p>
                 </div>
@@ -331,7 +331,7 @@
                 <div class="gov-report-card-head">
                     <div>
                         <p class="gov-report-card-kicker">Annual Volume</p>
-                        <h2 id="monthly-volume-heading" class="gov-font-heading gov-report-card-title">Ticket Volume Per Month (Last 12 Months)</h2>
+                        <h2 id="monthly-volume-heading" class="gov-font-heading gov-report-card-title">Ticket Volume Per Month ({{ $monthlyScopeLabel }})</h2>
                     </div>
                     <p class="gov-report-card-meta">Peak month: {{ $monthlyPeakMonthLabel }}</p>
                 </div>
@@ -362,7 +362,7 @@
                 <div class="gov-report-card-head gov-report-card-head-wide">
                     <div>
                         <p class="gov-report-card-kicker">Monthly Performance</p>
-                        <h2 id="monthly-status-heading" class="gov-font-heading gov-report-card-title">Status Per Month (Last 12 Months)</h2>
+                        <h2 id="monthly-status-heading" class="gov-font-heading gov-report-card-title">Status Per Month ({{ $monthlyScopeLabel }})</h2>
                     </div>
                     <div class="gov-report-pill-row">
                         @foreach($monthlyStatusLegend as $legend)

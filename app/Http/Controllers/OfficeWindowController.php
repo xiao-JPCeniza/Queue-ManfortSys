@@ -12,7 +12,7 @@ class OfficeWindowController extends Controller
         $officeModel = $request->attributes->get('office') ?? Office::where('slug', $office)->firstOrFail();
 
         abort_if(
-            $windowNumber < 1 || $windowNumber > $officeModel->resolvedServiceWindowCount(),
+            $windowNumber < 1 || $windowNumber > $officeModel->accessibleServiceWindowCount(),
             404,
             'Service window not found.'
         );

@@ -23,7 +23,7 @@ class WindowDesk extends Component
     public function mount(Office $office, int $windowNumber): void
     {
         abort_if(
-            $windowNumber < 1 || $windowNumber > $office->resolvedServiceWindowCount(),
+            $windowNumber < 1 || $windowNumber > $office->accessibleServiceWindowCount(),
             404,
             'Service window not found.'
         );
@@ -34,6 +34,12 @@ class WindowDesk extends Component
 
     public function callNext(): void
     {
+        if ($this->windowNumber > $this->office->resolvedServiceWindowCount()) {
+            session()->flash('office_message', 'This service window is no longer available for new tickets.');
+
+            return;
+        }
+
         $currentServing = $this->servingEntryQuery()->first();
 
         if ($currentServing !== null) {
@@ -91,12 +97,16 @@ class WindowDesk extends Component
 
         $windowEntry = $this->servingEntryQuery()->first()?->setRelation('office', $this->office);
         $waiting = $this->orderedWaitingEntries();
+        $windowLabel = $windowEntry?->service_window_label
+            ?? $this->office->serviceWindowLabel($this->windowNumber);
+        $windowDisplayTitle = $windowEntry?->service_label
+            ?? $windowLabel;
 
         return view('livewire.office-admin.window-desk', [
             'windowEntry' => $windowEntry,
             'waiting' => $waiting,
-            'windowLabel' => $this->office->serviceWindowLabel($this->windowNumber),
-            'windowDisplayTitle' => $this->office->serviceWindowDisplayTitle($this->windowNumber),
+            'windowLabel' => $windowLabel,
+            'windowDisplayTitle' => $windowDisplayTitle,
         ]);
     }
 

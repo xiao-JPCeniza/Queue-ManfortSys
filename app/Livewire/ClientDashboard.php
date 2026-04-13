@@ -129,7 +129,7 @@ class ClientDashboard extends Component
             'office_id' => $office->id,
             'office_name' => $office->name,
             'queue_number' => $entry->queue_number,
-            'prefix' => $office->prefix,
+            'prefix' => $office->queuePrefix(),
             'client_type' => $normalizedClientType,
             'client_type_label' => QueueEntry::clientTypeLabel($normalizedClientType),
             'service_key' => $resolvedServiceKey,

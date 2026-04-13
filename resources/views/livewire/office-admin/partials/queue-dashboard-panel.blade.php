@@ -34,7 +34,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Service Window Tabs</p>
                     <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        @foreach($office->serviceWindowNumbers() as $serviceWindowNumber)
+                        @foreach($office->accessibleServiceWindowNumbers() as $serviceWindowNumber)
                             <a
                                 href="{{ route('office.window', ['office' => $office->slug, 'windowNumber' => $serviceWindowNumber]) }}"
                                 target="_blank"

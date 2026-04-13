@@ -202,27 +202,37 @@
                 .map((character) => character === '0' ? 'zero' : character)
                 .join(' ');
 
-            const toSpokenQueue = (value) => {
+            const normalizeAnnouncementQueuePrefix = (officeSlug, prefix) => {
+                const normalizedPrefix = (prefix || '').toUpperCase();
+
+                if (officeSlug === 'civil-registry' && normalizedPrefix === 'CR') {
+                    return 'MCR';
+                }
+
+                return normalizedPrefix;
+            };
+
+            const toSpokenQueue = (officeSlug, value) => {
                 const [prefix, number] = value.split('-');
 
                 if (!number) {
                     return toSpokenCharacters(value);
                 }
 
-                return `${toSpokenCharacters(prefix)} ${toSpokenCharacters(number)}`;
+                return `${toSpokenCharacters(normalizeAnnouncementQueuePrefix(officeSlug, prefix))} ${toSpokenCharacters(number)}`;
             };
 
-            const buildAnnouncementMessage = (type, queueNumber, serviceWindowNumber, serviceWindowLabel) => {
+            const buildAnnouncementMessage = (officeSlug, type, queueNumber, serviceWindowNumber, serviceWindowLabel) => {
                 const destinationLabel = serviceWindowLabel || (serviceWindowNumber ? `Window ${serviceWindowNumber}` : '');
                 const windowSuffix = destinationLabel
                     ? ` Please proceed to ${destinationLabel}.`
                     : ' Please proceed to the office.';
 
                 if (type === 'prepare') {
-                    return `Next in line, Queue number ${toSpokenQueue(queueNumber)}. Please prepare.`;
+                    return `Next in line, Queue number ${toSpokenQueue(officeSlug, queueNumber)}. Please prepare.`;
                 }
 
-                return `Now serving, Queue number ${toSpokenQueue(queueNumber)}.${windowSuffix}`;
+                return `Now serving, Queue number ${toSpokenQueue(officeSlug, queueNumber)}.${windowSuffix}`;
             };
 
             const speakMessage = async (message) => {
@@ -351,7 +361,7 @@
                 }
 
                 window.sessionStorage.setItem(seenKey, announcementId);
-                enqueueAnnouncement(announcementId, buildAnnouncementMessage(announcementType, queueNumber, serviceWindowNumber, serviceWindowLabel));
+                enqueueAnnouncement(announcementId, buildAnnouncementMessage(officeSlug, announcementType, queueNumber, serviceWindowNumber, serviceWindowLabel));
             };
 
             const syncAnnouncements = () => {

@@ -357,7 +357,7 @@
                         <tr class="border-t border-slate-100">
                             <td class="px-6 py-4 font-medium text-slate-800">{{ $office->name }}</td>
                             <td class="px-6 py-4 text-slate-700">{{ $office->display_name }}</td>
-                            <td class="px-6 py-4 text-slate-600">{{ $office->prefix }}</td>
+                            <td class="px-6 py-4 text-slate-600">{{ $office->queuePrefix() }}</td>
                             <td class="px-6 py-4 text-slate-600">{{ $office->resolvedServiceWindowCount() }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-wrap items-center gap-2">

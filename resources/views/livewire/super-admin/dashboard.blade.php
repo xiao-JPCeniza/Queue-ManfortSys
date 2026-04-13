@@ -91,7 +91,7 @@
                                 <h3 class="gov-font-heading gov-office-title">{{ $officeDisplayName }}</h3>
 
                                 <div class="gov-office-meta" aria-label="Office queue numbering">
-                                    <span class="gov-office-meta-chip">{{ $office->prefix }}</span>
+                                    <span class="gov-office-meta-chip">{{ $office->queuePrefix() }}</span>
                                     <span class="gov-office-meta-text">Next ticket release: #{{ $office->next_number }}</span>
                                     <span class="gov-office-meta-text">{{ number_format($office->window_count ?? 1) }} window{{ ($office->window_count ?? 1) === 1 ? '' : 's' }}</span>
                                 </div>
@@ -170,7 +170,7 @@
                                     <td>
                                         <div class="gov-admin-table-office">
                                             <span class="gov-admin-table-office-name">{{ $entryOfficeDisplayName }}</span>
-                                            <span class="gov-admin-table-office-code">{{ $entry->office->prefix }}</span>
+                                            <span class="gov-admin-table-office-code">{{ $entry->office->queuePrefix() }}</span>
                                         </div>
                                     </td>
                                     <td>
