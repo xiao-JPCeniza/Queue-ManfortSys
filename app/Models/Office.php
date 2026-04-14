@@ -482,10 +482,12 @@ class Office extends Model
                     return [];
                 }
 
+                $label = $this->synchronizeServiceOptionLabel($serviceOption, $windowNumbers);
                 $destination = $this->formatServiceWindowDestination($windowNumbers);
 
                 return [
                     $serviceKey => array_merge($serviceOption, [
+                        'label' => $label,
                         'description' => $this->synchronizeServiceOptionDescription($serviceOption, $windowNumbers, $destination),
                         'destination' => $destination,
                         'window_numbers' => $windowNumbers,
@@ -757,6 +759,29 @@ class Office extends Model
         };
     }
 
+    private function synchronizeServiceOptionLabel(array $serviceOption, array $windowNumbers): string
+    {
+        $configuredLabel = trim((string) ($serviceOption['label'] ?? ''));
+
+        if (count($windowNumbers) !== 1) {
+            return $configuredLabel !== ''
+                ? $configuredLabel
+                : $this->serviceWindowLabel($windowNumbers[0] ?? 1);
+        }
+
+        $windowNumber = $windowNumbers[0];
+        $currentWindowLabel = $this->serviceWindowLabel($windowNumber);
+        $defaultWindowLabel = $this->configuredDefaultServiceWindowLabel($windowNumber);
+
+        if ($defaultWindowLabel !== null && $currentWindowLabel !== $defaultWindowLabel) {
+            return $currentWindowLabel;
+        }
+
+        return $configuredLabel !== ''
+            ? $configuredLabel
+            : $currentWindowLabel;
+    }
+
     private function synchronizeServiceOptionDescription(array $serviceOption, array $windowNumbers, string $destination): string
     {
         $description = trim((string) ($serviceOption['description'] ?? ''));
@@ -772,6 +797,15 @@ class Office extends Model
         }
 
         return 'For transactions handled at '.$destination.'.';
+    }
+
+    private function configuredDefaultServiceWindowLabel(int $windowNumber): ?string
+    {
+        $windowNumber = max(1, $windowNumber);
+
+        return collect($this->configuredDefaultServiceWindowLabels())
+            ->mapWithKeys(fn (string $label, int|string $configuredWindowNumber) => [(int) $configuredWindowNumber => $label])
+            ->get($windowNumber);
     }
 
     private function normalizeServiceWindowNumbers(array $windowNumbers): array

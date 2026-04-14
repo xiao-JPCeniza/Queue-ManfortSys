@@ -46,21 +46,29 @@
 
                 @if($windowEntry)
                     <div class="mt-6 rounded-[1.5rem] border border-emerald-200 bg-[linear-gradient(180deg,#f3fff9_0%,#e9f8f0_100%)] p-6">
-                        <p class="text-sm font-medium text-slate-500">Ticket Number</p>
-                        <p class="mt-2 text-5xl font-semibold tracking-[0.06em] text-slate-900">{{ $windowEntry->queue_number }}</p>
-                        <p class="mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] {{ $windowEntry->isPriorityClient() ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600' }}">
-                            {{ $windowEntry->client_type_label }}
-                        </p>
-                        @if($windowEntry->service_label)
-                            <p class="mt-4 text-sm font-semibold text-slate-800">{{ $windowEntry->service_label }}</p>
-                        @endif
-                        <p class="mt-4 text-sm text-slate-500">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
-                        <div class="mt-4 inline-flex flex-col rounded-2xl border border-emerald-200/80 bg-white/80 px-4 py-3 shadow-sm">
-                            <span class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-emerald-700">Elapsed Time</span>
-                            <span class="mt-1 font-mono text-2xl font-semibold tracking-[0.14em] text-slate-900">
-                                {{ $windowEntry->serviceDurationLabel() ?? '00:00:00' }}
-                            </span>
-                            <span class="mt-1 text-xs text-slate-500">Starts on call and stops once the transaction is completed.</span>
+                        <div class="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium text-slate-500">Ticket Number</p>
+                                <p class="mt-2 text-5xl font-semibold tracking-[0.06em] text-slate-900">{{ $windowEntry->queue_number }}</p>
+                                <p class="mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] {{ $windowEntry->isPriorityClient() ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600' }}">
+                                    {{ $windowEntry->client_type_label }}
+                                </p>
+                                <p class="mt-4 text-sm text-slate-500">Called at {{ $windowEntry->displayCalledAt()?->format('h:i A') }}</p>
+                            </div>
+
+                            <div
+                                class="inline-flex flex-col self-start rounded-2xl border border-emerald-200/80 bg-white/80 px-4 py-3 shadow-sm xl:w-[18rem] xl:flex-none"
+                            >
+                                <span class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-emerald-700">Elapsed Time</span>
+                                <span
+                                    data-window-desk-elapsed
+                                    data-called-at="{{ $windowEntry->called_at?->toIso8601String() }}"
+                                    class="mt-1 font-mono text-2xl font-semibold tracking-[0.14em] text-slate-900"
+                                >
+                                    {{ $windowEntry->serviceDurationLabel() ?? '00:00:00' }}
+                                </span>
+                                <span class="mt-1 text-xs text-slate-500">Starts on call and stops once the transaction is completed.</span>
+                            </div>
                         </div>
                     </div>
                 @else
@@ -131,3 +139,42 @@
         </div>
     </section>
 </div>
+
+@once
+    <script>
+        function formatWindowDeskElapsed(seconds) {
+            const hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const remainingSeconds = String(seconds % 60).padStart(2, '0');
+
+            return `${hours}:${minutes}:${remainingSeconds}`;
+        }
+
+        function updateWindowDeskElapsedTimers() {
+            document.querySelectorAll('[data-window-desk-elapsed]').forEach((element) => {
+                const calledAt = element.dataset.calledAt;
+
+                if (! calledAt) {
+                    element.textContent = '00:00:00';
+
+                    return;
+                }
+
+                const calledTimestamp = Date.parse(calledAt);
+
+                if (Number.isNaN(calledTimestamp)) {
+                    return;
+                }
+
+                const elapsedSeconds = Math.max(0, Math.floor((Date.now() - calledTimestamp) / 1000));
+                element.textContent = formatWindowDeskElapsed(elapsedSeconds);
+            });
+        }
+
+        updateWindowDeskElapsedTimers();
+
+        if (! window.windowDeskElapsedTimerIntervalId) {
+            window.windowDeskElapsedTimerIntervalId = window.setInterval(updateWindowDeskElapsedTimers, 1000);
+        }
+    </script>
+@endonce

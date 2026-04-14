@@ -40,10 +40,10 @@ class ServiceWindowSyncTest extends TestCase
 
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
-            ->assertSee('Request for Recruitment and Selection Services')
-            ->assertSee('Request for Certifications and Service Record')
-            ->assertDontSee('Request for Valid Identification Card')
-            ->assertDontSee('Request for Anti-Red Tape Act (ARTA) Identification Card');
+            ->assertSee('Recruitment and Selection Services')
+            ->assertSee('Certifications and Service Record')
+            ->assertDontSee('Valid Identification Card')
+            ->assertDontSee('ARTA Identification Card');
     }
 
     public function test_public_live_monitor_uses_the_saved_window_labels(): void
@@ -144,7 +144,7 @@ class ServiceWindowSyncTest extends TestCase
         Livewire::test(ClientDashboard::class)
             ->call('promptOfficeSelection', $office->id)
             ->assertSee('Request for Recruitment and Selection Services')
-            ->assertSee('ARTA Identification Card')
+            ->assertSee('Request for Anti-Red Tape Act (ARTA) Identification Card')
             ->assertSee('Releasing Counter')
             ->call('selectPendingService', 'service_window_5')
             ->call('confirmOfficeSelection', QueueEntry::TYPE_PWD)
@@ -155,6 +155,46 @@ class ServiceWindowSyncTest extends TestCase
             'queue_number' => 'HRMO-001',
             'service_key' => 'service_window_5',
             'service_label' => 'Releasing Counter',
+        ]);
+    }
+
+    public function test_custom_single_window_labels_are_reused_as_queue_service_labels(): void
+    {
+        $office = Office::create([
+            'name' => 'Civil Registry',
+            'slug' => 'civil-registry',
+            'prefix' => 'CR',
+            'description' => 'Municipal Local Civil Registry Office',
+            'next_number' => 1,
+            'service_window_count' => count(Office::CIVIL_REGISTRY_DEFAULT_SERVICE_WINDOW_LABELS),
+            'service_window_labels' => [
+                1 => 'Birth Registration (Current)',
+                2 => 'Birth Registration (Delayed)',
+                3 => 'Marriage Registration',
+                4 => 'Death Registration',
+                5 => 'PSA Request',
+                6 => 'Correction of Clerical Error',
+            ],
+            'tickets_accommodated_total' => 0,
+            'is_active' => true,
+            'show_in_public_queue' => true,
+        ]);
+
+        Livewire::test(ClientDashboard::class)
+            ->call('promptOfficeSelection', $office->id)
+            ->assertSee('Birth Registration (Current)')
+            ->assertSee('Birth Registration (Delayed)')
+            ->assertDontSee('Window 1-A')
+            ->call('selectPendingService', 'window_1_b')
+            ->assertSee('Birth Registration (Delayed)')
+            ->call('confirmOfficeSelection', QueueEntry::TYPE_REGULAR)
+            ->assertSee('MCR-001');
+
+        $this->assertDatabaseHas('queue_entries', [
+            'office_id' => $office->id,
+            'queue_number' => 'MCR-001',
+            'service_key' => 'window_1_b',
+            'service_label' => 'Birth Registration (Delayed)',
         ]);
     }
 
@@ -195,7 +235,8 @@ class ServiceWindowSyncTest extends TestCase
 
         Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 3])
             ->call('callNext')
-            ->assertSee('Now serving CCEN-002 at Release Counter.')
+            ->assertSee('Now serving CCEN-002 at Window 3.')
+            ->assertSee('Release Counter')
             ->assertDontSee('CCEN-001');
 
         $this->assertDatabaseHas('queue_entries', [

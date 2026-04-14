@@ -304,7 +304,7 @@ class QueueEntry extends Model
 
         $endTime = $this->served_at instanceof Carbon
             ? $this->served_at
-            : ($reference ?? now('Asia/Manila'));
+            : ($reference ?? now());
 
         return max(0, $this->called_at->diffInSeconds($endTime, false));
     }

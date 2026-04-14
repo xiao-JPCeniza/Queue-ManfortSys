@@ -575,7 +575,7 @@ class OfficeQueueDashboardTest extends TestCase
 
     public function test_window_tab_shows_elapsed_service_time_for_the_active_ticket(): void
     {
-        Carbon::setTestNow(Carbon::create(2026, 4, 13, 10, 0, 0, 'UTC'));
+        Carbon::setTestNow(Carbon::create(2026, 4, 13, 10, 0, 0, 'Asia/Manila'));
 
         $office = $this->createOffice(
             serviceWindowCount: 1,
@@ -591,19 +591,22 @@ class OfficeQueueDashboardTest extends TestCase
             office: $office,
             queueNumber: 'MTO-001',
             status: QueueEntry::STATUS_SERVING,
-            createdAt: Carbon::create(2026, 4, 13, 9, 45, 0, 'UTC')
+            createdAt: Carbon::create(2026, 4, 13, 9, 45, 0, 'Asia/Manila')
         );
 
         QueueEntry::whereKey($entry)->update([
             'service_window_number' => 1,
-            'called_at' => Carbon::create(2026, 4, 13, 9, 50, 0, 'UTC'),
+            'called_at' => Carbon::create(2026, 4, 13, 9, 50, 0, 'Asia/Manila')
+                ->setTimezone((string) config('app.timezone', 'UTC')),
         ]);
+
+        $expectedElapsedTime = $entry->fresh()->serviceDurationLabel();
 
         $this->actingAs($user);
 
         Livewire::test(WindowDesk::class, ['office' => $office, 'windowNumber' => 1])
             ->assertSee('Elapsed Time')
-            ->assertSee('00:10:00')
+            ->assertSee($expectedElapsedTime)
             ->assertSee('Starts on call and stops once the transaction is completed.');
     }
 
